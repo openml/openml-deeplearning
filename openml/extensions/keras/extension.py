@@ -10,10 +10,10 @@ import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 import warnings
+import pickle
 
 import numpy as np
 import pandas as pd
-import scipy.stats
 import scipy.sparse
 
 import keras
@@ -27,8 +27,6 @@ from openml.tasks import (
     OpenMLTask,
     OpenMLSupervisedTask,
     OpenMLClassificationTask,
-    OpenMLLearningCurveTask,
-    OpenMLClusteringTask,
     OpenMLRegressionTask,
 )
 
@@ -105,6 +103,7 @@ class KerasExtension(Extension):
         """
         return self._deserialize_keras(flow, initialize_with_defaults=initialize_with_defaults)
 
+    #TODO: implement
     def _deserialize_keras(
             self,
             o: Any,
@@ -156,63 +155,23 @@ class KerasExtension(Extension):
                 pass
 
         if isinstance(o, dict):
-            # Check if the dict encodes a 'special' object, which could not
-            # easily converted into a string, but rather the information to
-            # re-create the object were stored in a dictionary.
-            if 'oml-python:serialized_object' in o:
-                serialized_type = o['oml-python:serialized_object']
-                value = o['value']
-                if serialized_type == 'type':
-                    rval = self._deserialize_type(value)
-                elif serialized_type == 'rv_frozen':
-                    rval = self._deserialize_rv_frozen(value)
-                elif serialized_type == 'function':
-                    rval = self._deserialize_function(value)
-                elif serialized_type == 'component_reference':
-                    assert components is not None  # Necessary for mypy
-                    value = self._deserialize_keras(value, recursion_depth=depth_pp)
-                    step_name = value['step_name']
-                    key = value['key']
-                    component = self._deserialize_keras(
-                        components[key],
+            rval = OrderedDict(
+                (
+                    self._deserialize_keras(
+                        o=key,
+                        components=components,
                         initialize_with_defaults=initialize_with_defaults,
-                        recursion_depth=depth_pp
+                        recursion_depth=depth_pp,
+                    ),
+                    self._deserialize_keras(
+                        o=value,
+                        components=components,
+                        initialize_with_defaults=initialize_with_defaults,
+                        recursion_depth=depth_pp,
                     )
-                    # The component is now added to where it should be used
-                    # later. It should not be passed to the constructor of the
-                    # main flow object.
-                    del components[key]
-                    if step_name is None:
-                        rval = component
-                    elif 'argument_1' not in value:
-                        rval = (step_name, component)
-                    else:
-                        rval = (step_name, component, value['argument_1'])
-                elif serialized_type == 'cv_object':
-                    rval = self._deserialize_cross_validator(
-                        value, recursion_depth=recursion_depth
-                    )
-                else:
-                    raise ValueError('Cannot flow_to_keras %s' % serialized_type)
-
-            else:
-                rval = OrderedDict(
-                    (
-                        self._deserialize_keras(
-                            o=key,
-                            components=components,
-                            initialize_with_defaults=initialize_with_defaults,
-                            recursion_depth=depth_pp,
-                        ),
-                        self._deserialize_keras(
-                            o=value,
-                            components=components,
-                            initialize_with_defaults=initialize_with_defaults,
-                            recursion_depth=depth_pp,
-                        )
-                    )
-                    for key, value in sorted(o.items())
                 )
+                for key, value in sorted(o.items())
+            )
         elif isinstance(o, (list, tuple)):
             rval = [
                 self._deserialize_keras(
@@ -359,15 +318,14 @@ class KerasExtension(Extension):
         parameters, parameters_meta_info, subcomponents, subcomponents_explicit = \
             self._extract_information_from_model(model)
 
-        # Check that a component does not occur multiple times in a flow as this
-        # is not supported by OpenML
-        self._check_multiple_occurence_of_component_in_flow(model, subcomponents)
-
         # Create a flow name, which contains all components in brackets, e.g.:
         # RandomizedSearchCV(Pipeline(StandardScaler,AdaBoostClassifier(DecisionTreeClassifier)),
         # StandardScaler,AdaBoostClassifier(DecisionTreeClassifier))
         class_name = model.__module__ + "." + model.__class__.__name__
-        class_name += '(' + ','.join([layer.name for layer in model.layers]) + ')'
+        class_name += '.' + format(
+            hash(frozenset(sorted(parameters.items()))) & 0xffffffffffffffff,
+            'X'
+        )
 
         # will be part of the name (in brackets)
         sub_components_names = ""
@@ -440,41 +398,25 @@ class KerasExtension(Extension):
                 external_versions.add(external_version)
         return ','.join(list(sorted(external_versions)))
 
-    def _check_multiple_occurence_of_component_in_flow(
-            self,
-            model: Any,
-            sub_components: Dict[str, OpenMLFlow],
-    ) -> None:
-        to_visit_stack = []  # type: List[OpenMLFlow]
-        to_visit_stack.extend(sub_components.values())
-        known_sub_components = set()  # type: Set[str]
-        while len(to_visit_stack) > 0:
-            visitee = to_visit_stack.pop()
-            if visitee.name in known_sub_components:
-                raise ValueError('Found a second occurence of component %s when '
-                                 'trying to serialize %s.' % (visitee.name, model))
-            else:
-                known_sub_components.add(visitee.name)
-                to_visit_stack.extend(visitee.components.values())
-
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         parameters = OrderedDict()  # type: OrderedDict[str, Any]
 
-        d = json.loads(model.to_json())
-        config = d['config']
-        del d['config']
-        for k, v in d.items():
+        config = model.get_config()
+        layers = config['layers']
+        del config['layers']
+
+        for k, v in config.items():
             parameters[k] = self._serialize_keras(v, model)
 
-        layers = config['layers']
         max_len = int(np.ceil(np.log10(len(layers))))
         len_format = '{0:0>' + str(max_len) + '}'
 
         for i, v in enumerate(layers):
             layer = v['config']
             k = 'layer' + len_format.format(i) + "_" + layer['name']
-            del layer['name']
             parameters[k] = self._serialize_keras(v, model)
+
+        parameters['backend'] = keras.backend.backend()
 
         return parameters
 
@@ -513,16 +455,16 @@ class KerasExtension(Extension):
                         yield el
 
             is_non_empty_list_of_lists_with_same_type = (
-                isinstance(rval, (list, tuple))
-                and len(rval) > 0
-                and isinstance(rval[0], (list, tuple))
-                and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
+                    isinstance(rval, (list, tuple))
+                    and len(rval) > 0
+                    and isinstance(rval[0], (list, tuple))
+                    and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
             )
 
             # Check that all list elements are of simple types.
             nested_list_of_simple_types = (
-                is_non_empty_list_of_lists_with_same_type
-                and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
+                    is_non_empty_list_of_lists_with_same_type
+                    and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
             )
 
             if is_non_empty_list_of_lists_with_same_type and not nested_list_of_simple_types:
@@ -530,7 +472,7 @@ class KerasExtension(Extension):
                 # we assume they are steps in a pipeline, feature union, or base classifiers in
                 # a voting classifier.
                 parameter_value = list()  # type: List
-                reserved_keywords = set(model.get_params(deep=False).keys())
+                reserved_keywords = set(self._get_parameters(model).keys())
 
                 for sub_component_tuple in rval:
                     identifier = sub_component_tuple[0]
@@ -646,10 +588,10 @@ class KerasExtension(Extension):
         return optional_params, required_params
 
     def _deserialize_model(
-        self,
-        flow: OpenMLFlow,
-        keep_defaults: bool,
-        recursion_depth: int,
+            self,
+            flow: OpenMLFlow,
+            keep_defaults: bool,
+            recursion_depth: int,
     ) -> Any:
         logging.info('-%s deserialize %s' % ('-' * recursion_depth, flow.name))
         model_name = flow.class_name
@@ -747,49 +689,11 @@ class KerasExtension(Extension):
                                  '%s not satisfied.' % dependency_string)
 
     def _format_external_version(
-        self,
-        model_package_name: str,
-        model_package_version_number: str,
+            self,
+            model_package_name: str,
+            model_package_version_number: str,
     ) -> str:
         return '%s==%s' % (model_package_name, model_package_version_number)
-
-    @staticmethod
-    def _get_parameter_values_recursive(param_grid: Union[Dict, List[Dict]],
-                                        parameter_name: str) -> List[Any]:
-        """
-        Returns a list of values for a given hyperparameter, encountered
-        recursively throughout the flow. (e.g., n_jobs can be defined
-        for various flows)
-
-        Parameters
-        ----------
-        param_grid: Union[Dict, List[Dict]]
-            Dict mapping from hyperparameter list to value, to a list of
-            such dicts
-
-        parameter_name: str
-            The hyperparameter that needs to be inspected
-
-        Returns
-        -------
-        List
-            A list of all values of hyperparameters with this name
-        """
-        if isinstance(param_grid, dict):
-            result = list()
-            for param, value in param_grid.items():
-                # n_jobs is keras parameter for parallelizing jobs
-                if param.split('__')[-1] == parameter_name:
-                    result.append(value)
-            return result
-        elif isinstance(param_grid, list):
-            result = list()
-            for sub_grid in param_grid:
-                result.extend(KerasExtension._get_parameter_values_recursive(sub_grid,
-                                                                               parameter_name))
-            return result
-        else:
-            raise ValueError('Param_grid should either be a dict or list of dicts')
 
     def _can_measure_cputime(self, model: Any) -> bool:
         """
@@ -825,7 +729,7 @@ class KerasExtension(Extension):
             False
         """
 
-        return False
+        return True
 
     ################################################################################################
     # Methods for performing runs with extension modules
@@ -845,9 +749,6 @@ class KerasExtension(Extension):
         bool
         """
         return isinstance(model, keras.models.Model)
-
-    def is_layer(self, model: Any) -> bool:
-        return isinstance(model, keras.layers.Layer)
 
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
         """Set the random state of all the unseeded components of a model and return the seeded
@@ -871,18 +772,18 @@ class KerasExtension(Extension):
         -------
         Any
         """
-
+        #TODO: implement
         return model
 
     def _run_model_on_fold(
-        self,
-        model: Any,
-        task: 'OpenMLTask',
-        X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
-        rep_no: int,
-        fold_no: int,
-        y_train: Optional[np.ndarray] = None,
-        X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
+            self,
+            model: Any,
+            task: 'OpenMLTask',
+            X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
+            rep_no: int,
+            fold_no: int,
+            y_train: Optional[np.ndarray] = None,
+            X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
     ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional[OpenMLRunTrace]]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction
         information.
@@ -969,11 +870,10 @@ class KerasExtension(Extension):
         # in case of custom experimentation,
         # but not desirable if we want to upload to OpenML).
 
-        model_copy = keras.models.clone_model(model)
-        #
-        model_copy.compile(optimizer='adam',
-                      loss='sparse_categorical_crossentropy',
-                      metrics=['accuracy'])
+        # This might look like a hack, and it is, but it maintains the compilation status, in contrast to
+        # clone_model, and also is faster than using get_config + load_from_config since it avoids string parsing
+        model_copy = pickle.loads(pickle.dumps(model))
+
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_copy)
         can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
@@ -1010,11 +910,10 @@ class KerasExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             pred_y = model_copy.predict(X_test)
+            pred_y = keras.backend.argmax(pred_y)
+            pred_y = keras.backend.eval(pred_y)
         else:
             raise ValueError(task)
-
-        pred_y = keras.backend.argmax(pred_y)
-        pred_y = keras.backend.eval(pred_y)
 
         if can_measure_cputime:
             modelpredict_duration_cputime = (time.process_time()
@@ -1031,7 +930,7 @@ class KerasExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
 
             try:
-                proba_y = model_copy.predict_proba(X_test)
+                proba_y = model_copy.predict(X_test)
             except AttributeError:
                 proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
 
@@ -1068,9 +967,9 @@ class KerasExtension(Extension):
         return pred_y, proba_y, user_defined_measures, trace
 
     def obtain_parameter_values(
-        self,
-        flow: 'OpenMLFlow',
-        model: Any = None,
+            self,
+            flow: 'OpenMLFlow',
+            model: Any = None,
     ) -> List[Dict[str, Any]]:
         """Extracts all parameter settings required for the flow from the model.
 
@@ -1200,7 +1099,7 @@ class KerasExtension(Extension):
                 _params.append(_current)
 
             for _identifier in _flow.components:
-                subcomponent_model = component_model.get_params()[_identifier]
+                subcomponent_model = self._get_parameters(component_model)[_identifier]
                 _params.extend(extract_parameters(_flow.components[_identifier],
                                                   _flow_dict, subcomponent_model))
             return _params
@@ -1212,12 +1111,12 @@ class KerasExtension(Extension):
         return parameters
 
     def _openml_param_name_to_keras(
-        self,
-        openml_parameter: openml.setups.OpenMLParameter,
-        flow: OpenMLFlow,
+            self,
+            openml_parameter: openml.setups.OpenMLParameter,
+            flow: OpenMLFlow,
     ) -> str:
         """
-        Converts the name of an OpenMLParameter into the sklean name, given a flow.
+        Converts the name of an OpenMLParameter into the keras name, given a flow.
 
         Parameters
         ----------
@@ -1244,9 +1143,9 @@ class KerasExtension(Extension):
         return '__'.join(flow_structure[name] + [openml_parameter.parameter_name])
 
     def instantiate_model_from_hpo_class(
-        self,
-        model: Any,
-        trace_iteration: OpenMLTraceIteration,
+            self,
+            model: Any,
+            trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
         optimization model.
@@ -1262,7 +1161,8 @@ class KerasExtension(Extension):
         -------
         Any
         """
-
+        #TODO:implement
         return model
+
 
 register_extension(KerasExtension)
