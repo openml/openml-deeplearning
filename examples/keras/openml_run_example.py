@@ -1,14 +1,16 @@
 import openml
-import openml.extensions.keras as keras_extension
+import openml.extensions.keras
 
 import keras
 
 model = keras.models.Sequential([
     keras.layers.BatchNormalization(),
     keras.layers.Reshape(target_shape=(32, 32, 3)),
-    keras.layers.Conv2D(filters=32, kernel_size=[5, 5], padding='same', activation=keras.activations.relu),
+    keras.layers.Conv2D(filters=32, kernel_size=[5, 5], padding='same',
+                        activation=keras.activations.relu),
     keras.layers.MaxPool2D(pool_size=[2, 2], strides=2),
-    keras.layers.Conv2D(filters=64, kernel_size=[5, 5], padding='same', activation=keras.activations.relu),
+    keras.layers.Conv2D(filters=64, kernel_size=[5, 5], padding='same',
+                        activation=keras.activations.relu),
     keras.layers.MaxPool2D(pool_size=[2, 2], strides=2),
     keras.layers.Flatten(),
     keras.layers.Dense(units=1024, activation=keras.activations.relu),

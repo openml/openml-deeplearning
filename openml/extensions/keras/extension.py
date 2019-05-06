@@ -22,7 +22,7 @@ import openml
 from openml.exceptions import PyOpenMLError
 from openml.extensions import Extension, register_extension
 from openml.flows import OpenMLFlow
-from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration, PREFIX
+from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration
 from openml.tasks import (
     OpenMLTask,
     OpenMLSupervisedTask,
@@ -103,7 +103,7 @@ class KerasExtension(Extension):
         """
         return self._deserialize_keras(flow, initialize_with_defaults=initialize_with_defaults)
 
-    #TODO: implement
+    # TODO: implement
     def _deserialize_keras(
             self,
             o: Any,
@@ -293,10 +293,8 @@ class KerasExtension(Extension):
 
     @classmethod
     def _is_keras_flow(cls, flow: OpenMLFlow) -> bool:
-        return (
-                flow.external_version.startswith('keras==')
-                or ',keras==' in flow.external_version
-        )
+        return (flow.external_version.startswith('keras==')
+                or ',keras==' in flow.external_version)
 
     def _serialize_model(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
@@ -455,16 +453,16 @@ class KerasExtension(Extension):
                         yield el
 
             is_non_empty_list_of_lists_with_same_type = (
-                    isinstance(rval, (list, tuple))
-                    and len(rval) > 0
-                    and isinstance(rval[0], (list, tuple))
-                    and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
+                isinstance(rval, (list, tuple))
+                and len(rval) > 0
+                and isinstance(rval[0], (list, tuple))
+                and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
             )
 
             # Check that all list elements are of simple types.
             nested_list_of_simple_types = (
-                    is_non_empty_list_of_lists_with_same_type
-                    and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
+                is_non_empty_list_of_lists_with_same_type
+                and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
             )
 
             if is_non_empty_list_of_lists_with_same_type and not nested_list_of_simple_types:
@@ -750,6 +748,7 @@ class KerasExtension(Extension):
         """
         return isinstance(model, keras.models.Model)
 
+    # TODO: implement
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
         """Set the random state of all the unseeded components of a model and return the seeded
         model.
@@ -772,7 +771,6 @@ class KerasExtension(Extension):
         -------
         Any
         """
-        #TODO: implement
         return model
 
     def _run_model_on_fold(
@@ -870,8 +868,9 @@ class KerasExtension(Extension):
         # in case of custom experimentation,
         # but not desirable if we want to upload to OpenML).
 
-        # This might look like a hack, and it is, but it maintains the compilation status, in contrast to
-        # clone_model, and also is faster than using get_config + load_from_config since it avoids string parsing
+        # This might look like a hack, and it is, but it maintains the compilation status,
+        # in contrast to clone_model, and also is faster than using get_config + load_from_config
+        # since it avoids string parsing
         model_copy = pickle.loads(pickle.dumps(model))
 
         # Runtime can be measured if the model is run sequentially
@@ -1142,6 +1141,7 @@ class KerasExtension(Extension):
         name = openml_parameter.flow_name  # for PEP8
         return '__'.join(flow_structure[name] + [openml_parameter.parameter_name])
 
+    # TODO:implement
     def instantiate_model_from_hpo_class(
             self,
             model: Any,
@@ -1161,7 +1161,6 @@ class KerasExtension(Extension):
         -------
         Any
         """
-        #TODO:implement
         return model
 
 
