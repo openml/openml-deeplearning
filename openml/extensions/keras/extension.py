@@ -154,6 +154,7 @@ class KerasExtension(Extension):
             except JSONDecodeError:
                 pass
 
+        rval = None  # type: Any
         if isinstance(o, dict):
             rval = OrderedDict(
                 (
@@ -900,7 +901,7 @@ class KerasExtension(Extension):
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
-            model_classes = y_train.argmax(axis=-1)
+            model_classes = keras.backend.argmax(y_train, axis=-1)
 
         modelpredict_start_cputime = time.process_time()
         modelpredict_start_walltime = time.time()
@@ -931,29 +932,32 @@ class KerasExtension(Extension):
             try:
                 proba_y = model_copy.predict(X_test)
             except AttributeError:
-                proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
+                if task.class_labels is not None:
+                    proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
+                else:
+                    raise ValueError('The task has no class labels')
+            if task.class_labels is not None:
+                if proba_y.shape[1] != len(task.class_labels):
+                    # Remap the probabilities in case there was a class missing at training time
+                    # By default, the classification targets are mapped to be zero-based indices
+                    # to the actual classes. Therefore, the model_classes contain the correct
+                    # indices to the correct probability array. Example:
+                    # classes in the dataset: 0, 1, 2, 3, 4, 5
+                    # classes in the training set: 0, 1, 2, 4, 5
+                    # then we need to add a column full of zeros into the probabilities for class 3
+                    # (because the rest of the library expects that the probabilities are ordered
+                    # the same way as the classes are ordered).
+                    proba_y_new = np.zeros((proba_y.shape[0], len(task.class_labels)))
+                    for idx, model_class in enumerate(model_classes):
+                        proba_y_new[:, model_class] = proba_y[:, idx]
+                    proba_y = proba_y_new
 
-            if proba_y.shape[1] != len(task.class_labels):
-                # Remap the probabilities in case there was a class missing at training time
-                # By default, the classification targets are mapped to be zero-based indices to the
-                # actual classes. Therefore, the model_classes contain the correct indices to the
-                # correct probability array. Example:
-                # classes in the dataset: 0, 1, 2, 3, 4, 5
-                # classes in the training set: 0, 1, 2, 4, 5
-                # then we need to add a column full of zeros into the probabilities for class 3
-                # (because the rest of the library expects that the probabilities are ordered the
-                # same way as the classes are ordered).
-                proba_y_new = np.zeros((proba_y.shape[0], len(task.class_labels)))
-                for idx, model_class in enumerate(model_classes):
-                    proba_y_new[:, model_class] = proba_y[:, idx]
-                proba_y = proba_y_new
-
-            if proba_y.shape[1] != len(task.class_labels):
-                message = "Estimator only predicted for {}/{} classes!".format(
-                    proba_y.shape[1], len(task.class_labels),
-                )
-                warnings.warn(message)
-                openml.config.logger.warn(message)
+                if proba_y.shape[1] != len(task.class_labels):
+                    message = "Estimator only predicted for {}/{} classes!".format(
+                        proba_y.shape[1], len(task.class_labels),
+                    )
+                    warnings.warn(message)
+                    openml.config.logger.warn(message)
 
         elif isinstance(task, OpenMLRegressionTask):
             proba_y = None
