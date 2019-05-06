@@ -66,6 +66,9 @@ setuptools.setup(name="openml",
                          'ipython',
                          'ipykernel',
                          'seaborn'
+                     ],
+                     'dlkeras':[
+                         'keras'
                      ]
                  },
                  test_suite="pytest",
