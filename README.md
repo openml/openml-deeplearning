@@ -7,12 +7,8 @@ http://nvie.com/posts/a-successful-git-branching-model/
 
 Master branch:
 
-[![Build Status](https://travis-ci.org/openml/openml-python.svg?branch=master)](https://travis-ci.org/openml/openml-python)
-[![Code Health](https://landscape.io/github/openml/openml-python/master/landscape.svg)](https://landscape.io/github/openml/openml-python/master)
-[![Coverage Status](https://coveralls.io/repos/github/openml/openml-python/badge.svg?branch=master)](https://coveralls.io/github/openml/openml-python?branch=master)
+[![Build Status](https://travis-ci.org/adriansmares/OpenML-DeepLearning.svg?branch=master)](https://travis-ci.org/adriansmares/OpenML-DeepLearning)
 
 Development branch:
 
-[![Build Status](https://travis-ci.org/openml/openml-python.svg?branch=develop)](https://travis-ci.org/openml/openml-python)
-[![Code Health](https://landscape.io/github/openml/openml-python/master/landscape.svg)](https://landscape.io/github/openml/openml-python/master)
-[![Coverage Status](https://coveralls.io/repos/github/openml/openml-python/badge.svg?branch=develop)](https://coveralls.io/github/openml/openml-python?branch=develop)
+[![Build Status](https://travis-ci.org/adriansmares/OpenML-DeepLearning.svg?branch=develop)](https://travis-ci.org/adriansmares/OpenML-DeepLearning)
