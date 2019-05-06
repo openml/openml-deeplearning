@@ -22,7 +22,7 @@ import openml
 from openml.exceptions import PyOpenMLError
 from openml.extensions import Extension, register_extension
 from openml.flows import OpenMLFlow
-from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration, PREFIX
+from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration
 from openml.tasks import (
     OpenMLTask,
     OpenMLSupervisedTask,
@@ -103,7 +103,7 @@ class KerasExtension(Extension):
         """
         return self._deserialize_keras(flow, initialize_with_defaults=initialize_with_defaults)
 
-    #TODO: implement
+    # TODO: implement
     def _deserialize_keras(
             self,
             o: Any,
@@ -154,6 +154,7 @@ class KerasExtension(Extension):
             except JSONDecodeError:
                 pass
 
+        rval = None  # type: Any
         if isinstance(o, dict):
             rval = OrderedDict(
                 (
@@ -293,10 +294,8 @@ class KerasExtension(Extension):
 
     @classmethod
     def _is_keras_flow(cls, flow: OpenMLFlow) -> bool:
-        return (
-                flow.external_version.startswith('keras==')
-                or ',keras==' in flow.external_version
-        )
+        return (flow.external_version.startswith('keras==')
+                or ',keras==' in flow.external_version)
 
     def _serialize_model(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
@@ -455,16 +454,16 @@ class KerasExtension(Extension):
                         yield el
 
             is_non_empty_list_of_lists_with_same_type = (
-                    isinstance(rval, (list, tuple))
-                    and len(rval) > 0
-                    and isinstance(rval[0], (list, tuple))
-                    and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
+                isinstance(rval, (list, tuple))
+                and len(rval) > 0
+                and isinstance(rval[0], (list, tuple))
+                and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
             )
 
             # Check that all list elements are of simple types.
             nested_list_of_simple_types = (
-                    is_non_empty_list_of_lists_with_same_type
-                    and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
+                is_non_empty_list_of_lists_with_same_type
+                and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
             )
 
             if is_non_empty_list_of_lists_with_same_type and not nested_list_of_simple_types:
@@ -750,6 +749,7 @@ class KerasExtension(Extension):
         """
         return isinstance(model, keras.models.Model)
 
+    # TODO: implement
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
         """Set the random state of all the unseeded components of a model and return the seeded
         model.
@@ -772,7 +772,6 @@ class KerasExtension(Extension):
         -------
         Any
         """
-        #TODO: implement
         return model
 
     def _run_model_on_fold(
@@ -870,8 +869,9 @@ class KerasExtension(Extension):
         # in case of custom experimentation,
         # but not desirable if we want to upload to OpenML).
 
-        # This might look like a hack, and it is, but it maintains the compilation status, in contrast to
-        # clone_model, and also is faster than using get_config + load_from_config since it avoids string parsing
+        # This might look like a hack, and it is, but it maintains the compilation status,
+        # in contrast to clone_model, and also is faster than using get_config + load_from_config
+        # since it avoids string parsing
         model_copy = pickle.loads(pickle.dumps(model))
 
         # Runtime can be measured if the model is run sequentially
@@ -901,7 +901,7 @@ class KerasExtension(Extension):
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
-            model_classes = y_train.argmax(axis=-1)
+            model_classes = keras.backend.argmax(y_train, axis=-1)
 
         modelpredict_start_cputime = time.process_time()
         modelpredict_start_walltime = time.time()
@@ -932,29 +932,32 @@ class KerasExtension(Extension):
             try:
                 proba_y = model_copy.predict(X_test)
             except AttributeError:
-                proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
+                if task.class_labels is not None:
+                    proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
+                else:
+                    raise ValueError('The task has no class labels')
+            if task.class_labels is not None:
+                if proba_y.shape[1] != len(task.class_labels):
+                    # Remap the probabilities in case there was a class missing at training time
+                    # By default, the classification targets are mapped to be zero-based indices
+                    # to the actual classes. Therefore, the model_classes contain the correct
+                    # indices to the correct probability array. Example:
+                    # classes in the dataset: 0, 1, 2, 3, 4, 5
+                    # classes in the training set: 0, 1, 2, 4, 5
+                    # then we need to add a column full of zeros into the probabilities for class 3
+                    # (because the rest of the library expects that the probabilities are ordered
+                    # the same way as the classes are ordered).
+                    proba_y_new = np.zeros((proba_y.shape[0], len(task.class_labels)))
+                    for idx, model_class in enumerate(model_classes):
+                        proba_y_new[:, model_class] = proba_y[:, idx]
+                    proba_y = proba_y_new
 
-            if proba_y.shape[1] != len(task.class_labels):
-                # Remap the probabilities in case there was a class missing at training time
-                # By default, the classification targets are mapped to be zero-based indices to the
-                # actual classes. Therefore, the model_classes contain the correct indices to the
-                # correct probability array. Example:
-                # classes in the dataset: 0, 1, 2, 3, 4, 5
-                # classes in the training set: 0, 1, 2, 4, 5
-                # then we need to add a column full of zeros into the probabilities for class 3
-                # (because the rest of the library expects that the probabilities are ordered the
-                # same way as the classes are ordered).
-                proba_y_new = np.zeros((proba_y.shape[0], len(task.class_labels)))
-                for idx, model_class in enumerate(model_classes):
-                    proba_y_new[:, model_class] = proba_y[:, idx]
-                proba_y = proba_y_new
-
-            if proba_y.shape[1] != len(task.class_labels):
-                message = "Estimator only predicted for {}/{} classes!".format(
-                    proba_y.shape[1], len(task.class_labels),
-                )
-                warnings.warn(message)
-                openml.config.logger.warn(message)
+                if proba_y.shape[1] != len(task.class_labels):
+                    message = "Estimator only predicted for {}/{} classes!".format(
+                        proba_y.shape[1], len(task.class_labels),
+                    )
+                    warnings.warn(message)
+                    openml.config.logger.warn(message)
 
         elif isinstance(task, OpenMLRegressionTask):
             proba_y = None
@@ -1142,6 +1145,7 @@ class KerasExtension(Extension):
         name = openml_parameter.flow_name  # for PEP8
         return '__'.join(flow_structure[name] + [openml_parameter.parameter_name])
 
+    # TODO:implement
     def instantiate_model_from_hpo_class(
             self,
             model: Any,
@@ -1161,7 +1165,6 @@ class KerasExtension(Extension):
         -------
         Any
         """
-        #TODO:implement
         return model
 
 
