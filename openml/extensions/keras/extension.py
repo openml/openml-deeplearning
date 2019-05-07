@@ -46,14 +46,14 @@ SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
 
 
 class KerasExtension(Extension):
-    """Connect keras to OpenML-Python."""
+    """Connect Keras to OpenML-Python."""
 
     ################################################################################################
     # General setup
 
     @classmethod
     def can_handle_flow(cls, flow: 'OpenMLFlow') -> bool:
-        """Check whether a given describes a keras neural network.
+        """Check whether a given flow describes a Keras neural network.
 
         This is done by parsing the ``external_version`` field.
 
@@ -189,7 +189,7 @@ class KerasExtension(Extension):
             rval = o
         elif isinstance(o, OpenMLFlow):
             if not self._is_keras_flow(o):
-                raise ValueError('Only keras flows can be reinstantiated')
+                raise ValueError('Only Keras flows can be reinstantiated')
             rval = self._deserialize_model(
                 flow=o,
                 keep_defaults=initialize_with_defaults,
@@ -655,6 +655,7 @@ class KerasExtension(Extension):
                     del parameter_dict[param]
         return model_class(**parameter_dict)
 
+    #TODO: WRITE DOCUMENTATION
     def _check_dependencies(self, dependencies: str) -> None:
         if not dependencies:
             return
@@ -687,6 +688,7 @@ class KerasExtension(Extension):
                 raise ValueError('Trying to deserialize a model with dependency '
                                  '%s not satisfied.' % dependency_string)
 
+    #TODO: WRITE DOCUMENTATION
     def _format_external_version(
             self,
             model_package_name: str,
@@ -734,7 +736,7 @@ class KerasExtension(Extension):
     # Methods for performing runs with extension modules
 
     def is_estimator(self, model: Any) -> bool:
-        """Check whether the given model is a keras neural network.
+        """Check whether the given model is a Keras neural network.
 
         This function is only required for backwards compatibility and will be removed in the
         near future.
