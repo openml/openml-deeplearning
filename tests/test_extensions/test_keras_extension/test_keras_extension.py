@@ -24,7 +24,6 @@ from openml.flows.functions import assert_flows_equal
 from openml.runs.trace import OpenMLRunTrace
 from openml.testing import TestBase
 
-
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
@@ -91,7 +90,6 @@ def test_run_model_on_fold_classification_1(self):
         check_scores=False,
     )
 
-
 def test_run_model_on_fold_classification_2(self):
     task = openml.tasks.get_task(1793)
 
@@ -157,8 +155,7 @@ def test_run_model_on_fold_classification_2(self):
         check_scores=False,
     )
 
-
-def test_run_model_on_fold_regression(self):
+def test_run_model_on_fold_regression_1(self):
     # There aren't any regression tasks on the test server
     openml.config.server = self.production_server
     task = openml.tasks.get_task(2999)
@@ -178,6 +175,70 @@ def test_run_model_on_fold_regression(self):
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
+
+    # TODO add some mocking here to actually test the innards of this function, too!
+    res = self.extension._run_model_on_fold(
+        model=model,
+        task=task,
+        fold_no=0,
+        rep_no=0,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+    )
+
+    y_hat, y_hat_proba, user_defined_measures, trace = res
+
+    # predictions
+    self.assertIsInstance(y_hat, np.ndarray)
+    self.assertEqual(y_hat.shape, y_test.shape)
+    self.assertIsNone(y_hat_proba)
+
+    # check user defined measures
+    fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
+    for measure in user_defined_measures:
+        fold_evaluations[measure][0][0] = user_defined_measures[measure]
+
+    # trace. SGD does not produce any
+    self.assertIsNone(trace)
+
+    self._check_fold_timing_evaluations(
+        fold_evaluations,
+        num_repeats=1,
+        num_folds=1,
+        task_type=task.task_type_id,
+        check_scores=False,
+    )
+
+def test_run_model_on_fold_regression_2(self):
+    # There aren't any regression tasks on the test server
+    openml.config.server = self.production_server
+    task = openml.tasks.get_task(2999)
+
+    X, y = task.get_X_and_y()
+    train_indices, test_indices = task.get_train_test_split_indices(
+        repeat=0, fold=0, sample=0)
+    X_train = X[train_indices]
+    y_train = y[train_indices]
+    X_test = X[test_indices]
+    y_test = y[test_indices]
+
+    # get number of columns in training data
+    n_cols = X_train.shape[1]
+
+    inputs = Input(shape=(n_cols,))
+
+    # a layer instance is callable on a tensor, and returns a tensor
+    x = BatchNormalization()(inputs)
+    x = Dense(1024, activation=keras.activations.relu)(x)
+    x = Dropout(rate=0.4)(x)
+    predictions = Dense(1, activation=keras.activations.softmax)(x)
+
+    # This creates a model that includes
+    # the Input layer and three Dense layers
+    model = Model(inputs=inputs, outputs=predictions)
+
+    model.compile(optimizer='adam', loss='mean_squared_error')
 
     # TODO add some mocking here to actually test the innards of this function, too!
     res = self.extension._run_model_on_fold(
