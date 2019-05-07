@@ -174,13 +174,12 @@ class TestKerasExtensionRunFunctions(TestBase):
         X_test = X[test_indices]
         y_test = y[test_indices]
 
-        # get number of columns in training data
-        n_cols = X_train.shape[1]
-
-        inputs = Input(shape=(n_cols, ))
-        x = Dense(10, activation=keras.activations.relu)(inputs)
-        predictions = Dense(1, activation=keras.activations.relu)(x)
-        model = Model(inputs=inputs, outputs=predictions)
+        model = keras.models.Sequential([
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(units=1024, activation=keras.activations.relu),
+            keras.layers.Dropout(rate=0.4),
+            keras.layers.Dense(units=1, activation=keras.activations.softmax),
+        ])
         model.compile(optimizer='adam',
                       loss='mean_squared_error',
                       metrics=['accuracy'])
