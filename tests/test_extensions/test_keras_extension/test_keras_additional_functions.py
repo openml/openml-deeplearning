@@ -1,20 +1,12 @@
-import collections
-import json
-import os
-import sys
 import unittest
 from distutils.version import LooseVersion
-from collections import OrderedDict
 from unittest import mock
-import warnings
 
 import keras
-import scipy
 import sklearn
 
 from sklearn import pipeline
 from sklearn import tree
-from sklearn import preprocessing
 
 if LooseVersion(sklearn.__version__) < "0.20":
     from sklearn.preprocessing import Imputer
@@ -23,14 +15,6 @@ else:
 
 from openml.extensions.keras import KerasExtension
 from openml.extensions.sklearn import SklearnExtension
-
-
-# from openml.exceptions import PyOpenMLError
-# from openml.flows import OpenMLFlow
-# from openml.flows.functions import assert_flows_equal
-# from openml.runs.trace import OpenMLRunTrace
-# from openml.testing import TestBase
-
 
 class SklearnModel(sklearn.base.BaseEstimator):
     def __init__(self, boolean, integer, floating_point_value):
