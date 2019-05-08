@@ -7,8 +7,4 @@ http://nvie.com/posts/a-successful-git-branching-model/
 
 Master branch:
 
-[![Build Status](https://travis-ci.com/adriansmares/OpenML-DeepLearning.svg?branch=master)](https://travis-ci.com/adriansmares/OpenML-DeepLearning)
-
-Development branch:
-
-[![Build Status](https://travis-ci.com/adriansmares/OpenML-DeepLearning.svg?branch=develop)](https://travis-ci.com/adriansmares/OpenML-DeepLearning)
+[![Build Status](https://travis-ci.com/adriansmares/openml-deeplearning.svg?token=Zacky3eEi6cg2MndspRi&branch=master)](https://travis-ci.com/adriansmares/openml-deeplearning)
