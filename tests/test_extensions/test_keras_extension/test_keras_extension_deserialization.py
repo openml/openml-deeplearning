@@ -107,16 +107,15 @@ class TestKerasExtensionFlowFunctions(TestBase):
         )
 
     def test_get_config(self):
-        model = keras.models.Sequential([
+        model_orig = keras.models.Sequential([
             keras.layers.BatchNormalization(),
             keras.layers.Dense(units=1024, activation=keras.activations.relu),
             keras.layers.Dropout(rate=0.4),
             keras.layers.Dense(units=2, activation=keras.activations.softmax),
         ])
-        config_orig = model.get_config()
-        parameters = self.extension._get_parameters(model)
-        config_new = self.extension._get_config(parameters)
-        self.assertEqual(config_orig, config_new)
+        parameters = self.extension._get_parameters(model_orig)
+        model_new = self.extension._get_model_from_parameters(parameters)
+        self.assertEqual(model_orig, model_new)
 
     def test_get_parameters(self):
         model = keras.models.Sequential([
