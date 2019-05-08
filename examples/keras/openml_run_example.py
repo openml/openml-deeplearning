@@ -20,7 +20,7 @@ result = old_flow.publish()
 
 new_flow = openml.flows.get_flow(old_flow.flow_id, True)
 
-task = openml.tasks.get_task(1793)
+task = openml.tasks.get_task(31)
 
 run = openml.runs.run_flow_on_task(new_flow, task, avoid_duplicate_runs=False)
 run.publish()

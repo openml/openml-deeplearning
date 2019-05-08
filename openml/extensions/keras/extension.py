@@ -400,32 +400,36 @@ class KerasExtension(Extension):
 
     def _from_parameters(self, parameters: 'OrderedDict[str, Any]') -> Any:
         config = {}
+        # Add the expected configuration parameters back to the configuration dictionary,
+        # as long as they are not layers, since they need to be deserialized separately
         for k, v in parameters.items():
             if not LAYER_PATTERN.match(k):
                 config[k] = self._deserialize_keras(v)
 
+        # Recreate the layers list and start to deserialize them back to the correct location
         config['config']['layers'] = []
         for k, v in parameters.items():
             if LAYER_PATTERN.match(k):
                 v = self._deserialize_keras(v)
                 config['config']['layers'].append(v)
 
-        config_str = json.dumps(config)
+        # Deserialize the model from the configuration dictionary
+        model = keras.layers.deserialize(config)
 
-        model = keras.models.model_from_json(config_str)
-
+        # Attempt to recompile the model if compilation parameters were present
+        # during serialization
         if 'optimizer' in parameters:
             training_config = self._deserialize_keras(parameters['optimizer'])
             optimizer_config = training_config['optimizer_config']
             optimizer = keras.optimizers.deserialize(optimizer_config)
 
-            # Recover loss functions and metrics.
+            # Recover loss functions and metrics
             loss = training_config['loss']
             metrics = training_config['metrics']
             sample_weight_mode = training_config['sample_weight_mode']
             loss_weights = training_config['loss_weights']
 
-            # Compile model.
+            # Compile model
             model.compile(optimizer=optimizer,
                           loss=loss,
                           metrics=metrics,
@@ -441,25 +445,37 @@ class KerasExtension(Extension):
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         parameters = OrderedDict()  # type: OrderedDict[str, Any]
 
-        # Instead of attempting to decompose each component manually, use the provided
-        # configuration dictionary. This way ensures no data is lost due to breaking API
-        # changes (outside of 'layers' changes)
-        config_top = json.loads(model.to_json())
-        config = config_top['config']
-        layers = config['layers']
-        del config['layers']
+        # Construct the configuration dictionary in the same manner as
+        # keras.engine.Network.to_json does
+        model_config = {
+            'class_name': model.__class__.__name__,
+            'config': model.get_config(),
+            'keras_version': keras.__version__,
+            'backend': keras.backend.backend()
+        }
 
-        for k, v in config_top.items():
+        # Remove the layers from the configuration in order to allow them to be
+        # pretty printed as model parameters
+        layers = model_config['config']['layers']
+        del model_config['config']['layers']
+
+        # Add the rest of the model configuration entries to the parameter list
+        for k, v in model_config.items():
             parameters[k] = self._serialize_keras(v, model)
 
+        # Compute the format of the layer numbering. This pads the layer numbers with 0s in
+        # order to ensure that the layers are printed in a human-friendly order, instead of
+        # having weird orderings
         max_len = int(np.ceil(np.log10(len(layers))))
         len_format = '{0:0>' + str(max_len) + '}'
 
+        # Add the layers as hyper-parameters
         for i, v in enumerate(layers):
             layer = v['config']
             k = 'layer' + len_format.format(i) + "_" + layer['name']
             parameters[k] = self._serialize_keras(v, model)
 
+        # Introduce the optimizer settings as hyper-parameters, if the model has been compiled
         if model.optimizer:
             parameters['optimizer'] = self._serialize_keras({
                 'optimizer_config': {
