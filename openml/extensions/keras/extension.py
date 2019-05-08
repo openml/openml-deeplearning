@@ -4,11 +4,11 @@ from distutils.version import LooseVersion
 import importlib
 import json
 import logging
-import re
 import sys
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
+import re
 import pickle
 
 import numpy as np
@@ -42,6 +42,9 @@ DEPENDENCIES_PATTERN = re.compile(
 SIMPLE_NUMPY_TYPES = [nptype for type_cat, nptypes in np.sctypes.items()
                       for nptype in nptypes if type_cat != 'others']
 SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
+
+
+LAYER_PATTERN = re.compile(r'layer\d+\_(.*)')
 
 
 class KerasExtension(Extension):
@@ -102,7 +105,6 @@ class KerasExtension(Extension):
         """
         return self._deserialize_keras(flow, initialize_with_defaults=initialize_with_defaults)
 
-    # TODO: implement
     def _deserialize_keras(
             self,
             o: Any,
@@ -155,7 +157,7 @@ class KerasExtension(Extension):
 
         rval = None  # type: Any
         if isinstance(o, dict):
-            rval = OrderedDict(
+            rval = dict(
                 (
                     self._deserialize_keras(
                         o=key,
@@ -316,9 +318,9 @@ class KerasExtension(Extension):
         parameters, parameters_meta_info, subcomponents, subcomponents_explicit = \
             self._extract_information_from_model(model)
 
-        # Create a flow name, which contains all components in brackets, e.g.:
-        # RandomizedSearchCV(Pipeline(StandardScaler,AdaBoostClassifier(DecisionTreeClassifier)),
-        # StandardScaler,AdaBoostClassifier(DecisionTreeClassifier))
+        # Create a flow name, which contains a hash of the parameters as part of the name
+        # This is done in order to ensure that we are not exceeding the 1024 character limit
+        # of the API, since NNs can become quite large
         class_name = model.__module__ + "." + model.__class__.__name__
         class_name += '.' + format(
             hash(frozenset(sorted(parameters.items()))) & 0xffffffffffffffff,
@@ -396,14 +398,58 @@ class KerasExtension(Extension):
                 external_versions.add(external_version)
         return ','.join(list(sorted(external_versions)))
 
+    def _from_parameters(self, parameters: 'OrderedDict[str, Any]') -> Any:
+        config = {}
+        for k, v in parameters.items():
+            if not LAYER_PATTERN.match(k):
+                config[k] = self._deserialize_keras(v)
+
+        config['config']['layers'] = []
+        for k, v in parameters.items():
+            if LAYER_PATTERN.match(k):
+                v = self._deserialize_keras(v)
+                config['config']['layers'].append(v)
+
+        config_str = json.dumps(config)
+
+        model = keras.models.model_from_json(config_str)
+
+        if parameters['optimizer']:
+            training_config = self._deserialize_keras(parameters['optimizer'])
+            optimizer_config = training_config['optimizer_config']
+            optimizer = keras.optimizers.deserialize(optimizer_config)
+
+            # Recover loss functions and metrics.
+            loss = training_config['loss']
+            metrics = training_config['metrics']
+            sample_weight_mode = training_config['sample_weight_mode']
+            loss_weights = training_config['loss_weights']
+
+            # Compile model.
+            model.compile(optimizer=optimizer,
+                          loss=loss,
+                          metrics=metrics,
+                          loss_weights=loss_weights,
+                          sample_weight_mode=sample_weight_mode)
+        else:
+            warnings.warn('No training configuration found in save file: '
+                          'the model was *not* compiled. '
+                          'Compile it manually.')
+
+        return model
+
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         parameters = OrderedDict()  # type: OrderedDict[str, Any]
 
-        config = model.get_config()
+        # Instead of attempting to decompose each component manually, use the provided
+        # configuration dictionary. This way ensures no data is lost due to breaking API
+        # changes (outside of 'layers' changes)
+        config_top = json.loads(model.to_json())
+        config = config_top['config']
         layers = config['layers']
         del config['layers']
 
-        for k, v in config.items():
+        for k, v in config_top.items():
             parameters[k] = self._serialize_keras(v, model)
 
         max_len = int(np.ceil(np.log10(len(layers))))
@@ -414,7 +460,18 @@ class KerasExtension(Extension):
             k = 'layer' + len_format.format(i) + "_" + layer['name']
             parameters[k] = self._serialize_keras(v, model)
 
-        parameters['backend'] = keras.backend.backend()
+        if model.optimizer:
+            parameters['optimizer'] = self._serialize_keras({
+                'optimizer_config': {
+                    'class_name': model.optimizer.__class__.__name__,
+                    'config': model.optimizer.get_config()
+                },
+                'loss': model.loss,
+                'metrics': model.metrics,
+                'weighted_metrics': model.weighted_metrics,
+                'sample_weight_mode': model.sample_weight_mode,
+                'loss_weights': model.loss_weights,
+            }, model)
 
         return parameters
 
@@ -565,12 +622,11 @@ class KerasExtension(Extension):
             recursion_depth: int,
     ) -> Any:
         logging.info('-%s deserialize %s' % ('-' * recursion_depth, flow.name))
-        model_name = flow.class_name
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
         components = flow.components
-        parameter_dict = OrderedDict()  # type: Dict[str, Any]
+        parameter_dict = OrderedDict()  # type: OrderedDict[str, Any]
 
         # Do a shallow copy of the components dictionary so we can remove the
         # components from this copy once we added them into the pipeline. This
@@ -605,11 +661,7 @@ class KerasExtension(Extension):
             )
             parameter_dict[name] = rval
 
-        module_name = model_name.rsplit('.', 1)
-        model_class = getattr(importlib.import_module(module_name[0]),
-                              module_name[1])
-
-        return model_class(**parameter_dict)
+        return self._from_parameters(parameter_dict)
 
     def _check_dependencies(self, dependencies: str) -> None:
         """
