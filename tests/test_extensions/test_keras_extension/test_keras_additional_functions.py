@@ -16,6 +16,8 @@ else:
 from openml.extensions.keras import KerasExtension
 from openml.extensions.sklearn import SklearnExtension
 
+from openml.setups.setup import OpenMLParameter
+
 class SklearnModel(sklearn.base.BaseEstimator):
     def __init__(self, boolean, integer, floating_point_value):
         self.boolean = boolean
@@ -45,6 +47,13 @@ class TestKerasExtensionAdditionalFunctions(unittest.TestCase):
 
         self.extension = KerasExtension()
 
+        self.keras_dummy_model = keras.models.Sequential([
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(units=256, activation=keras.activations.relu),
+            keras.layers.Dropout(rate=0.4),
+            keras.layers.Dense(units=2, activation=keras.activations.softmax),
+        ])
+
     def test_can_handle_model(self):
         is_keras = self.extension.can_handle_model(self.kerasModel)
         is_not_keras = self.extension.can_handle_model(self.sklearnModel)
@@ -70,13 +79,6 @@ class TestKerasExtensionAdditionalFunctions(unittest.TestCase):
         self.assertFalse(is_not_estimator)
 
     def test__is_keras_flow(self):
-        self.keras_dummy_model = keras.models.Sequential([
-            keras.layers.BatchNormalization(),
-            keras.layers.Dense(units=256, activation=keras.activations.relu),
-            keras.layers.Dropout(rate=0.4),
-            keras.layers.Dense(units=2, activation=keras.activations.softmax),
-        ])
-
         self.sklearn_dummy_model = pipeline.Pipeline(
             steps=[
                 ('imputer', Imputer()),
@@ -101,31 +103,14 @@ class TestKerasExtensionAdditionalFunctions(unittest.TestCase):
             self.assertRaises(ValueError, self.extension._check_dependencies, dependency)
 
     def test__openml_param_name_to_keras(self):
-        pass
+        openml_param_dummy = OpenMLParameter(1, 9763, " keras.engine.sequential.Sequential.B5679DFA264EC778",
+                                       "keras.engine.sequential.Sequential.B5679DFA264EC778",
+                                       "backend", "", "", "")
 
-    # TODO: Fix this
-    def test__get_fn_arguments_with_defaults(self):
-        fns = [
-            (keras.layers.Flatten.__init__, 1),
-            (keras.layers.Dense.__init__, 9),
-            (keras.layers.Activation.__init__, 0),
-            (keras.layers.Lambda.__init__, 3)
-        ]
+        self.keras_flow = self.extension.model_to_flow(self.keras_dummy_model)
 
-        for fn, num_params_with_defaults in fns:
-            defaults, defaultless = (
-                self.extension._get_fn_arguments_with_defaults(fn)
-            )
-            self.assertIsInstance(defaults, dict)
-            self.assertIsInstance(defaultless, set)
-            # check whether we have both defaults and defaultless params
-            self.assertEqual(len(defaults), num_params_with_defaults)
-            self.assertGreaterEqual(len(defaultless), 0)
-            # check no overlap
-            self.assertSetEqual(set(defaults.keys()),
-                                set(defaults.keys()) - defaultless)
-            self.assertSetEqual(defaultless,
-                                defaultless - set(defaults.keys()))
+        # Check if exception is thrown when OpenMLParam and Flow do not correspond
+        self.assertRaises(ValueError, self.extension._openml_param_name_to_keras, openml_param_dummy, self.keras_flow)
 
 
 if __name__ == '__main__':

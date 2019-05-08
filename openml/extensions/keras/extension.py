@@ -559,33 +559,6 @@ class KerasExtension(Extension):
 
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
 
-    def _get_fn_arguments_with_defaults(self, fn_name: Callable) -> Tuple[Dict, Set]:
-        """
-        Returns:
-            i) a dict with all parameter names that have a default value, and
-            ii) a set with all parameter names that do not have a default
-
-        Parameters
-        ----------
-        fn_name : callable
-            The function of which we want to obtain the defaults
-
-        Returns
-        -------
-        params_with_defaults: dict
-            a dict mapping parameter name to the default value
-        params_without_defaults: set
-            a set with all parameters that do not have a default value
-        """
-        # parameters with defaults are optional, all others are required.
-        signature = inspect.getfullargspec(fn_name)
-        if signature.defaults:
-            optional_params = dict(zip(reversed(signature.args), reversed(signature.defaults)))
-        else:
-            optional_params = dict()
-        required_params = {arg for arg in signature.args if arg not in optional_params}
-        return optional_params, required_params
-
     def _deserialize_model(
             self,
             flow: OpenMLFlow,
