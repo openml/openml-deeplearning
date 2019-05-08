@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pickle
 
 import keras
@@ -30,6 +31,7 @@ class TestKerasExtensionFlowFunctions(TestBase):
 
         :return: Nothing
         """
+
         sequential_orig = keras.models.Sequential([
             keras.layers.BatchNormalization(),
             keras.layers.Dense(units=1024, activation=keras.activations.relu),
@@ -117,6 +119,7 @@ class TestKerasExtensionFlowFunctions(TestBase):
             keras.layers.Dropout(rate=0.4),
             keras.layers.Dense(units=2, activation=keras.activations.softmax),
         ])
+
         params = self.extension._get_parameters(model)
         self.extension._from_parameters(params)
 
@@ -127,6 +130,7 @@ class TestKerasExtensionFlowFunctions(TestBase):
             keras.layers.Dropout(rate=0.4),
             keras.layers.Dense(units=2, activation=keras.activations.softmax),
         ])
+
         flow_uncompiled = self.extension.model_to_flow(model)
         model.compile(optimizer='adam',
                       loss='sparse_categorical_crossentropy',
