@@ -432,7 +432,7 @@ class KerasExtension(Extension):
                           loss_weights=loss_weights,
                           sample_weight_mode=sample_weight_mode)
         else:
-            warnings.warn('No training configuration found in save file: '
+            warnings.warn('No training configuration found inside the flow: '
                           'the model was *not* compiled. '
                           'Compile it manually.')
 
