@@ -68,7 +68,8 @@ setuptools.setup(name="openml",
                          'seaborn'
                      ],
                      'dlkeras': [
-                         'keras'
+                         'keras',
+                         'tensorflow'
                      ]
                  },
                  test_suite="pytest",

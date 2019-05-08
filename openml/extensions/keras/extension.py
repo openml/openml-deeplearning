@@ -2,13 +2,12 @@ from collections import OrderedDict  # noqa: F401
 import copy
 from distutils.version import LooseVersion
 import importlib
-import inspect
 import json
 import logging
 import re
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import pickle
 
@@ -46,14 +45,14 @@ SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
 
 
 class KerasExtension(Extension):
-    """Connect keras to OpenML-Python."""
+    """Connect Keras to OpenML-Python."""
 
     ################################################################################################
     # General setup
 
     @classmethod
     def can_handle_flow(cls, flow: 'OpenMLFlow') -> bool:
-        """Check whether a given describes a keras neural network.
+        """Check whether a given flow describes a Keras neural network.
 
         This is done by parsing the ``external_version`` field.
 
@@ -189,7 +188,7 @@ class KerasExtension(Extension):
             rval = o
         elif isinstance(o, OpenMLFlow):
             if not self._is_keras_flow(o):
-                raise ValueError('Only keras flows can be reinstantiated')
+                raise ValueError('Only Keras flows can be reinstantiated')
             rval = self._deserialize_model(
                 flow=o,
                 keep_defaults=initialize_with_defaults,
@@ -559,33 +558,6 @@ class KerasExtension(Extension):
 
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
 
-    def _get_fn_arguments_with_defaults(self, fn_name: Callable) -> Tuple[Dict, Set]:
-        """
-        Returns:
-            i) a dict with all parameter names that have a default value, and
-            ii) a set with all parameter names that do not have a default
-
-        Parameters
-        ----------
-        fn_name : callable
-            The function of which we want to obtain the defaults
-
-        Returns
-        -------
-        params_with_defaults: dict
-            a dict mapping parameter name to the default value
-        params_without_defaults: set
-            a set with all parameters that do not have a default value
-        """
-        # parameters with defaults are optional, all others are required.
-        signature = inspect.getfullargspec(fn_name)
-        if signature.defaults:
-            optional_params = dict(zip(reversed(signature.args), reversed(signature.defaults)))
-        else:
-            optional_params = dict()
-        required_params = {arg for arg in signature.args if arg not in optional_params}
-        return optional_params, required_params
-
     def _deserialize_model(
             self,
             flow: OpenMLFlow,
@@ -637,25 +609,21 @@ class KerasExtension(Extension):
         model_class = getattr(importlib.import_module(module_name[0]),
                               module_name[1])
 
-        if keep_defaults:
-            # obtain all params with a default
-            param_defaults, _ = \
-                self._get_fn_arguments_with_defaults(model_class.__init__)
-
-            # delete the params that have a default from the dict,
-            # so they get initialized with their default value
-            # except [...]
-            for param in param_defaults:
-                # [...] the ones that also have a key in the components dict.
-                # As OpenML stores different flows for ensembles with different
-                # (base-)components, in OpenML terms, these are not considered
-                # hyperparameters but rather constants (i.e., changing them would
-                # result in a different flow)
-                if param not in components.keys():
-                    del parameter_dict[param]
         return model_class(**parameter_dict)
 
     def _check_dependencies(self, dependencies: str) -> None:
+        """
+        Checks whether the dependencies required for the deserialization of an OpenMLFlow are met
+
+        Parameters
+        ----------
+        dependencies : str
+                       a string representing the required dependencies
+
+        Returns
+        -------
+        None
+        """
         if not dependencies:
             return
 
@@ -692,6 +660,19 @@ class KerasExtension(Extension):
             model_package_name: str,
             model_package_version_number: str,
     ) -> str:
+        """
+        Returns a formatted string representing the required dependencies for a flow
+
+        Parameters
+        ----------
+        model_package_name : str
+                           the name of the required package
+        model_package_version_number : str
+                           the version of the required package
+        Returns
+        -------
+        str
+        """
         return '%s==%s' % (model_package_name, model_package_version_number)
 
     def _can_measure_cputime(self, model: Any) -> bool:
@@ -734,7 +715,7 @@ class KerasExtension(Extension):
     # Methods for performing runs with extension modules
 
     def is_estimator(self, model: Any) -> bool:
-        """Check whether the given model is a keras neural network.
+        """Check whether the given model is a Keras neural network.
 
         This function is only required for backwards compatibility and will be removed in the
         near future.
