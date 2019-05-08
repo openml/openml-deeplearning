@@ -414,7 +414,7 @@ class KerasExtension(Extension):
 
         model = keras.models.model_from_json(config_str)
 
-        if parameters['optimizer']:
+        if 'optimizer' in parameters:
             training_config = self._deserialize_keras(parameters['optimizer'])
             optimizer_config = training_config['optimizer_config']
             optimizer = keras.optimizers.deserialize(optimizer_config)
