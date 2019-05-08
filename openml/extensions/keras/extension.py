@@ -2,13 +2,12 @@ from collections import OrderedDict  # noqa: F401
 import copy
 from distutils.version import LooseVersion
 import importlib
-import inspect
 import json
 import logging
 import re
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import pickle
 
@@ -610,26 +609,21 @@ class KerasExtension(Extension):
         model_class = getattr(importlib.import_module(module_name[0]),
                               module_name[1])
 
-        if keep_defaults:
-            # obtain all params with a default
-            param_defaults, _ = \
-                self._get_fn_arguments_with_defaults(model_class.__init__)
-
-            # delete the params that have a default from the dict,
-            # so they get initialized with their default value
-            # except [...]
-            for param in param_defaults:
-                # [...] the ones that also have a key in the components dict.
-                # As OpenML stores different flows for ensembles with different
-                # (base-)components, in OpenML terms, these are not considered
-                # hyperparameters but rather constants (i.e., changing them would
-                # result in a different flow)
-                if param not in components.keys():
-                    del parameter_dict[param]
         return model_class(**parameter_dict)
 
-    #TODO: WRITE DOCUMENTATION
     def _check_dependencies(self, dependencies: str) -> None:
+        """
+        Checks whether the dependencies required for the deserialization of an OpenMLFlow are met
+
+        Parameters
+        ----------
+        dependencies : str
+                       a string representing the required dependencies
+
+        Returns
+        -------
+        None
+        """
         if not dependencies:
             return
 
@@ -661,12 +655,24 @@ class KerasExtension(Extension):
                 raise ValueError('Trying to deserialize a model with dependency '
                                  '%s not satisfied.' % dependency_string)
 
-    #TODO: WRITE DOCUMENTATION
     def _format_external_version(
             self,
             model_package_name: str,
             model_package_version_number: str,
     ) -> str:
+        """
+        Returns a formatted string representing the required dependencies for a flow
+
+        Parameters
+        ----------
+        model_package_name : str
+                           the name of the required package
+        model_package_version_number : str
+                           the version of the required package
+        Returns
+        -------
+        str
+        """
         return '%s==%s' % (model_package_name, model_package_version_number)
 
     def _can_measure_cputime(self, model: Any) -> bool:

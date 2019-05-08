@@ -5,7 +5,7 @@ import keras
 
 model = keras.models.Sequential([
     keras.layers.BatchNormalization(),
-    keras.layers.Dense(units=256, activation=keras.activations.relu),
+    keras.layers.Dense(units=1024, activation=keras.activations.relu),
     keras.layers.Dropout(rate=0.4),
     keras.layers.Dense(units=2, activation=keras.activations.softmax),
 ])

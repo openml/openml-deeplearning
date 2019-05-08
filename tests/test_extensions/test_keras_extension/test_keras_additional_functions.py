@@ -33,9 +33,10 @@ class KerasModel(keras.models.Model):
     def predict(self, x, batch_size=None, verbose=0, steps=None):
         pass
 
-    def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, callbacks=None, validation_split=0.,
-            validation_data=None, shuffle=True, class_weight=None, sample_weight=None, initial_epoch=0,
-            steps_per_epoch=None, validation_steps=None, **kwargs):
+    def fit(self, x=None, y=None, batch_size=None, epochs=1, verbose=1, callbacks=None,
+            validation_split=0., validation_data=None, shuffle=True, class_weight=None,
+            sample_weight=None, initial_epoch=0, steps_per_epoch=None,
+            validation_steps=None, **kwargs):
         pass
 
 
@@ -103,11 +104,14 @@ class TestKerasExtensionAdditionalFunctions(unittest.TestCase):
             self.assertRaises(ValueError, self.extension._check_dependencies, dependency)
 
     def test__openml_param_name_to_keras(self):
-        openml_param_dummy = OpenMLParameter(1, 9763, " keras.engine.sequential.Sequential.B5679DFA264EC778",
+        openml_param_dummy = OpenMLParameter(1,
+                                             9763,
+                                             "keras.engine.sequential.Sequential",
                                              "keras.engine.sequential.Sequential.B5679DFA264EC778",
                                              "backend", "", "", "")
 
         self.keras_flow = self.extension.model_to_flow(self.keras_dummy_model)
 
         # Check if exception is thrown when OpenMLParam and Flow do not correspond
-        self.assertRaises(ValueError, self.extension._openml_param_name_to_keras, openml_param_dummy, self.keras_flow)
+        self.assertRaises(ValueError, self.extension._openml_param_name_to_keras,
+                          openml_param_dummy, self.keras_flow)
