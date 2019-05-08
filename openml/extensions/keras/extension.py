@@ -495,6 +495,16 @@ class KerasExtension(Extension):
 
         return parameters
 
+    def _get_model_from_parameters(self, parameters: 'OrderedDict[str, Optional[str]]') -> Any:
+
+
+
+        #config_str = json.dump(config)
+        #model = keras.models.load_from_json(config_str)
+
+        #return model
+        pass
+
     def _extract_information_from_model(
             self,
             model: Any,
