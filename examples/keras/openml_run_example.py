@@ -5,14 +5,20 @@ import keras
 from keras.layers import *
 from keras.models import Model
 
-# model = keras.models.Sequential([
-#     keras.layers.BatchNormalization(),
-#     keras.layers.Dense(units=1024, activation=keras.activations.relu),
-#     keras.layers.Dropout(rate=0.4),
-#     keras.layers.Dense(units=2, activation=keras.activations.softmax),
-# ])
-#
-#inputs = Input(shape=(15,))
+openml.config.start_using_configuration_for_example()
+openml.config.stop_using_configuration_for_example()
+
+task = openml.tasks.get_task(1)
+
+output_length = len(task.class_labels)
+
+model = keras.models.Sequential([
+        keras.layers.BatchNormalization(),
+        keras.layers.Dense(units=1024, activation=keras.activations.relu),
+        keras.layers.Dropout(rate=0.4),
+        keras.layers.Dense(units=output_length, activation=keras.activations.softmax),
+])
+# inputs = Input(shape=(15,))
 
 # a layer instance is callable on a tensor, and returns a tensor
 # x = BatchNormalization()(inputs)

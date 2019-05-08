@@ -31,9 +31,10 @@ class TestKerasExtensionRunFunctions(TestBase):
         super().setUp(n_levels=2)
 
         self.extension = KerasExtension()
+        # openml.config.apikey = os.environ["API_KEY"]
 
     def test_run_model_on_fold_classification_1(self):
-        task = openml.tasks.get_task(119)
+        task = openml.tasks.get_task(1)
 
         X, y = task.get_X_and_y()
         train_indices, test_indices = task.get_train_test_split_indices(
@@ -67,6 +68,7 @@ class TestKerasExtensionRunFunctions(TestBase):
 
         y_hat, y_hat_proba, user_defined_measures, trace = res
 
+        print("%s  \n" % str(y_hat_proba))
         # predictions
         self.assertIsInstance(y_hat, np.ndarray)
         self.assertEqual(y_hat.shape, y_test.shape)
