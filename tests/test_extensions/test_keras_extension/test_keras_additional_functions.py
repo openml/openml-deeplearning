@@ -1,22 +1,22 @@
-import unittest
 from distutils.version import LooseVersion
-from unittest import mock
-
-import keras
-import sklearn
+from openml.extensions.keras import KerasExtension
+from openml.extensions.sklearn import SklearnExtension
+from openml.setups.setup import OpenMLParameter
 
 from sklearn import pipeline
 from sklearn import tree
+
+from unittest import mock
+
+import unittest
+import keras
+import sklearn
 
 if LooseVersion(sklearn.__version__) < "0.20":
     from sklearn.preprocessing import Imputer
 else:
     from sklearn.impute import SimpleImputer as Imputer
 
-from openml.extensions.keras import KerasExtension
-from openml.extensions.sklearn import SklearnExtension
-
-from openml.setups.setup import OpenMLParameter
 
 class SklearnModel(sklearn.base.BaseEstimator):
     def __init__(self, boolean, integer, floating_point_value):
@@ -24,7 +24,7 @@ class SklearnModel(sklearn.base.BaseEstimator):
         self.integer = integer
         self.floating_point_value = floating_point_value
 
-    def fit(self, X, y):
+    def fit(self, x, y):
         pass
 
 
@@ -104,14 +104,10 @@ class TestKerasExtensionAdditionalFunctions(unittest.TestCase):
 
     def test__openml_param_name_to_keras(self):
         openml_param_dummy = OpenMLParameter(1, 9763, " keras.engine.sequential.Sequential.B5679DFA264EC778",
-                                       "keras.engine.sequential.Sequential.B5679DFA264EC778",
-                                       "backend", "", "", "")
+                                             "keras.engine.sequential.Sequential.B5679DFA264EC778",
+                                             "backend", "", "", "")
 
         self.keras_flow = self.extension.model_to_flow(self.keras_dummy_model)
 
         # Check if exception is thrown when OpenMLParam and Flow do not correspond
         self.assertRaises(ValueError, self.extension._openml_param_name_to_keras, openml_param_dummy, self.keras_flow)
-
-
-if __name__ == '__main__':
-    unittest.main()
