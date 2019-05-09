@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import re
 import pickle
+import zlib
+import hashlib
 
 import numpy as np
 import pandas as pd
@@ -322,10 +324,10 @@ class KerasExtension(Extension):
         # This is done in order to ensure that we are not exceeding the 1024 character limit
         # of the API, since NNs can become quite large
         class_name = model.__module__ + "." + model.__class__.__name__
-        class_name += '.' + format(
-            hash(frozenset(sorted(parameters.items()))) & 0xffffffffffffffff,
-            'X'
-        )
+        class_name += '.' + hashlib.blake2b(
+            json.dumps(parameters, sort_keys=True).encode('utf8'),
+            digest_size=8
+        ).hexdigest()
 
         # will be part of the name (in brackets)
         sub_components_names = ""
