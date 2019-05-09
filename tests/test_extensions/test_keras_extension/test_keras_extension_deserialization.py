@@ -1,19 +1,11 @@
 import os
 import sys
-import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
-import warnings
 import pickle
-
-import numpy as np
-import pandas as pd
-import scipy.sparse
 
 import keras
 from keras.layers import Input, Embedding, LSTM, Dense
 from keras.models import Model
 
-import openml
 from openml.extensions.keras import KerasExtension
 from openml.flows.functions import assert_flows_equal
 from openml.testing import TestBase
@@ -23,18 +15,21 @@ sys.path.append(this_directory)
 
 __version__ = 0.1
 
-class TestKerasExtensionFlowFunctions(TestBase):
 
+class TestKerasExtensionFlowFunctions(TestBase):
 
     def setUp(self):
         super().setUp(n_levels=2)
 
         self.extension = KerasExtension()
 
-    def test_deserialize_sequential_with_defaults(self):
-        # used the 'initialize_with_defaults' flag of the deserialization
-        # method to return a flow that contains default hyperparameter
-        # settings.
+    def test_deserialize_sequential(self):
+        """ Function test_deserialize_sequential_with_defaults
+        Test for Sequential Keras model deserialization
+        Depends on correct implementation of model_to_flow
+
+        :return: Nothing
+        """
         sequential_orig = keras.models.Sequential([
             keras.layers.BatchNormalization(),
             keras.layers.Dense(units=1024, activation=keras.activations.relu),
@@ -68,10 +63,13 @@ class TestKerasExtensionFlowFunctions(TestBase):
             self.extension.model_to_flow(sequential_deserialized),
         )
 
-    def test_deserialize_functional_with_defaults(self):
-        # used the 'initialize_with_defaults' flag of the deserialization
-        # method to return a flow that contains default hyperparameter
-        # settings.
+    def test_deserialize_functional(self):
+        """ Function test_deserialize_functional
+        Test for Functional Keras model deserialization
+
+        :return: Nothing
+        """
+        # Uses example functional model
         main_input = Input(shape=(100,), dtype='int32', name='main_input')
         x = Embedding(output_dim=512, input_dim=10000, input_length=100)(main_input)
         lstm_out = LSTM(32)(x)
@@ -82,7 +80,8 @@ class TestKerasExtensionFlowFunctions(TestBase):
         x = Dense(64, activation='relu')(x)
         x = Dense(64, activation='relu')(x)
         main_output = Dense(1, activation='sigmoid', name='main_output')(x)
-        functional_orig = Model(inputs=[main_input, auxiliary_input], outputs=[main_output, auxiliary_output])
+        functional_orig = Model(inputs=[main_input, auxiliary_input],
+                                outputs=[main_output, auxiliary_output])
 
         # This might look like a hack, and it is, but it maintains the compilation status,
         # in contrast to clone_model, and also is faster than using get_config + load_from_config
@@ -106,11 +105,36 @@ class TestKerasExtensionFlowFunctions(TestBase):
             self.extension.model_to_flow(functional_deserialized),
         )
 
-    def test_get_parameters(self):
+    def test_from_parameters(self):
+        """ Function test_from_parameters
+        Test the _from_parameters which gets a model from parameters
+
+        :return: Nothing
+        """
         model = keras.models.Sequential([
             keras.layers.BatchNormalization(),
             keras.layers.Dense(units=1024, activation=keras.activations.relu),
             keras.layers.Dropout(rate=0.4),
             keras.layers.Dense(units=2, activation=keras.activations.softmax),
         ])
-        self.extension._get_parameters(model)
+        params = self.extension._get_parameters(model)
+        self.extension._from_parameters(params)
+
+    def test_compile(self):
+        model = keras.models.Sequential([
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(units=1024, activation=keras.activations.relu),
+            keras.layers.Dropout(rate=0.4),
+            keras.layers.Dense(units=2, activation=keras.activations.softmax),
+        ])
+        flow_uncompiled = self.extension.model_to_flow(model)
+        model.compile(optimizer='adam',
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+        flow_compiled = self.extension.model_to_flow(model)
+        self.assertNotEqual(flow_compiled, flow_uncompiled)
+
+        deserialized = self.extension.flow_to_model(flow_compiled)
+        flow_deserialized = self.extension.model_to_flow(deserialized)
+
+        assert_flows_equal(flow_compiled, flow_deserialized)

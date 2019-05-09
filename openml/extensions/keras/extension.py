@@ -399,6 +399,9 @@ class KerasExtension(Extension):
         return ','.join(list(sorted(external_versions)))
 
     def _from_parameters(self, parameters: 'OrderedDict[str, Any]') -> Any:
+        # Get a Keras model from flow parameters
+        # Create a dict and recursively fill it with model components
+        # First do this for non-layer items, then layer items.
         config = {}
         # Add the expected configuration parameters back to the configuration dictionary,
         # as long as they are not layers, since they need to be deserialized separately
@@ -443,6 +446,7 @@ class KerasExtension(Extension):
         return model
 
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
+        # Get the parameters from a model in an OrderedDict
         parameters = OrderedDict()  # type: OrderedDict[str, Any]
 
         # Construct the configuration dictionary in the same manner as
@@ -490,16 +494,6 @@ class KerasExtension(Extension):
             }, model)
 
         return parameters
-
-    def _get_model_from_parameters(self, parameters: 'OrderedDict[str, Optional[str]]') -> Any:
-
-
-
-        #config_str = json.dump(config)
-        #model = keras.models.load_from_json(config_str)
-
-        #return model
-        pass
 
     def _extract_information_from_model(
             self,
