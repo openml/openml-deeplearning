@@ -1,4 +1,4 @@
-from keras.layers import *
+from keras.layers import Input, BatchNormalization, Dense, Dropout
 from keras.models import Model
 from openml.extensions.keras import KerasExtension
 from openml.testing import TestBase
@@ -8,6 +8,7 @@ import os
 import sys
 import openml
 import keras
+import numpy as np
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
