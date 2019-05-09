@@ -2,7 +2,7 @@
 Keras functional model example
 ==================
 
-An example of an functional (non-sequential) network used as an OpenML flow.
+An example of a functional (non-sequential) network used as an OpenML flow.
 """
 
 import openml
@@ -34,11 +34,11 @@ dropout1 = keras.layers.Dropout(rate=0.25)(dense3)
 # softmax activation.
 dense4 = keras.layers.Dense(units=2, activation='softmax')(dropout1)
 
-# We can now construct this model which uses our functional neural network
+# Construct this model which uses our functional neural network
 # with one input and one output.
 model = keras.models.Model(inputs=[inp], outputs=[dense4])
 
-# We will compile using the Adam optimizer while targeting accuracy.
+# Compile it using the Adam optimizer while targeting accuracy.
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
