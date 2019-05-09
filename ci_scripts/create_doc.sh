@@ -28,7 +28,7 @@ if ! [[ -z ${DOCPUSH+x} ]]; then
         mkdir $1
 
         # get previous documentation from github
-        git clone https://github.com/openml/openml-python.git --branch gh-pages --single-branch
+        git clone https://github.com/adriansmares/openml-deeplearning.git --branch gh-pages --single-branch
 
         # copy previous documentation
         cp -r openml-python/. $1
