@@ -1184,7 +1184,6 @@ class KerasExtension(Extension):
         name = openml_parameter.flow_name  # for PEP8
         return '__'.join(flow_structure[name] + [openml_parameter.parameter_name])
 
-    # TODO:implement
     def instantiate_model_from_hpo_class(
             self,
             model: Any,
@@ -1204,6 +1203,7 @@ class KerasExtension(Extension):
         -------
         Any
         """
+
         return model
 
 

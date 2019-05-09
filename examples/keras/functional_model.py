@@ -5,15 +5,14 @@ Keras functional model example
 An example of a functional (non-sequential) network used as an OpenML flow.
 """
 
-import openml
-import openml.extensions.keras
-
 import keras
+
+import openml.extensions.keras
 
 ############################################################################
 # Define an input layer for the network. In this example we are using the
-# credit-g dataset, which contains 20 features, and as such the input shape
-# will be (20,).
+# german credit dataset, which contains 20 features, and as such the input
+# shape will be (20,).
 inp = keras.layers.Input(shape=(20,))
 
 # Normalize the input data in order to speed up the training process
@@ -48,8 +47,8 @@ model.compile(optimizer='adam',
 # Download the OpenML task for the german credit card dataset.
 task = openml.tasks.get_task(31)
 ############################################################################
-# Run the Keras model on the task.
-run = openml.runs.run_model_on_task(model, task)
+# Run the Keras model on the task (requires an API key).
+run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
 # Publish the experiment on OpenML (optional, requires an API key).
 run.publish()
 
