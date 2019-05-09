@@ -124,6 +124,11 @@ class TestKerasExtensionFlowFunctions(TestBase):
         self.extension._from_parameters(params)
 
     def test_compile(self):
+        """ Function test_compile
+        Tests if the compilation of the Keras model is kept after deserialization
+
+        :return: Nothing
+        """
         model = keras.models.Sequential([
             keras.layers.BatchNormalization(),
             keras.layers.Dense(units=1024, activation=keras.activations.relu),
