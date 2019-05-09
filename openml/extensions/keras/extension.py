@@ -730,16 +730,9 @@ class KerasExtension(Extension):
         """
         return isinstance(model, keras.models.Model)
 
-    # TODO: implement
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
-        """Set the random state of all the unseeded components of a model and return the seeded
-        model.
-
-        Required so that all seed information can be uploaded to OpenML for reproducible results.
-
-        Models that are already seeded will maintain the seed. In this case,
-        only integer seeds are allowed (An exception is raised when a RandomState was used as
-        seed).
+        """
+        Not applied for Keras, since there are no random states in Keras.
 
         Parameters
         ----------
@@ -753,6 +746,7 @@ class KerasExtension(Extension):
         -------
         Any
         """
+
         return model
 
     def _run_model_on_fold(
