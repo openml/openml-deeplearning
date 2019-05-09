@@ -51,7 +51,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                 # Basic Sequential model
                 model = keras.models.Sequential([
                     keras.layers.BatchNormalization(),
-                    keras.layers.Dense(units=1024, activation=keras.activations.relu),
+                    keras.layers.Dense(units=64, activation=keras.activations.relu),
                     keras.layers.Dropout(rate=0.4),
                     keras.layers.Dense(units=output_length, activation=keras.activations.softmax),
                 ])
@@ -121,7 +121,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                 # Basic Functional Model
                 # a layer instance is callable on a tensor, and returns a tensor
                 x = BatchNormalization()(inputs)
-                x = Dense(1024, activation=keras.activations.relu)(x)
+                x = Dense(64, activation=keras.activations.relu)(x)
                 x = Dropout(rate=0.4)(x)
                 predictions = Dense(output_length, activation=keras.activations.softmax)(x)
 
@@ -179,7 +179,7 @@ class TestKerasExtensionRunFunctions(TestBase):
 
                 model = keras.models.Sequential([
                     keras.layers.BatchNormalization(),
-                    keras.layers.Dense(units=1024, activation=keras.activations.relu),
+                    keras.layers.Dense(units=64, activation=keras.activations.relu),
                     keras.layers.Dropout(rate=0.4),
                     keras.layers.Dense(units=1, activation=keras.activations.softmax),
                 ])
@@ -240,7 +240,7 @@ class TestKerasExtensionRunFunctions(TestBase):
 
                 # Basic Functional Model
                 x = BatchNormalization()(inputs)
-                x = Dense(1024, activation=keras.activations.relu)(x)
+                x = Dense(64, activation=keras.activations.relu)(x)
                 x = Dropout(rate=0.4)(x)
                 predictions = Dense(1, activation=keras.activations.softmax)(x)
 
