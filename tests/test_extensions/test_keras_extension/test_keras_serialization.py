@@ -40,7 +40,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
                           loss='sparse_categorical_crossentropy',
                           metrics=['accuracy'])
 
-            fixture_name = 'keras.engine.sequential.Sequential.ef8334f1d3c49c4f'
+            fixture_name = 'keras.engine.sequential.Sequential.d192b34c'
             fixture_description = 'Automatically created keras flow.'
             version_fixture = 'keras==%s\nnumpy>=1.6.1\nscipy>=0.9' \
                               % keras.__version__
@@ -91,7 +91,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
                               '0.8999999761581421, "beta_2": 0.9990000128746033, "decay": 0.0, '
                               '"epsilon": 1e-07, "lr": 0.0010000000474974513}}, '
                               '"sample_weight_mode": null, "weighted_metrics": null}')])
-            structure_fixture = {'keras.engine.sequential.Sequential.ef8334f1d3c49c4f': []}
+            structure_fixture = {'keras.engine.sequential.Sequential.d192b34c': []}
 
             serialization = self.extension.model_to_flow(model)
             structure = serialization.get_structure('name')
@@ -134,7 +134,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
                           loss='sparse_categorical_crossentropy',
                           metrics=['accuracy'])
 
-            fixture_name = 'keras.engine.training.Model.e070b50a21e68237'
+            fixture_name = 'keras.engine.training.Model.ed033752'
             fixture_description = 'Automatically created keras flow.'
             version_fixture = 'keras==%s\nnumpy>=1.6.1\nscipy>=0.9' \
                               % keras.__version__
@@ -195,7 +195,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
                               '0.8999999761581421, "beta_2": 0.9990000128746033, "decay": 0.0, '
                               '"epsilon": 1e-07, "lr": 0.0010000000474974513}}, '
                               '"sample_weight_mode": null, "weighted_metrics": null}')])
-            structure_fixture = {'keras.engine.training.Model.e070b50a21e68237': []}
+            structure_fixture = {'keras.engine.training.Model.ed033752': []}
 
             serialization = self.extension.model_to_flow(model)
             structure = serialization.get_structure('name')

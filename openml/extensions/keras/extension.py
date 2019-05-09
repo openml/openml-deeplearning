@@ -1,5 +1,4 @@
 import copy
-import hashlib
 import importlib
 import json
 import logging
@@ -8,6 +7,7 @@ import re
 import sys
 import time
 import warnings
+import zlib
 from collections import OrderedDict  # noqa: F401
 from distutils.version import LooseVersion
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -322,10 +322,10 @@ class KerasExtension(Extension):
         # This is done in order to ensure that we are not exceeding the 1024 character limit
         # of the API, since NNs can become quite large
         class_name = model.__module__ + "." + model.__class__.__name__
-        class_name += '.' + hashlib.blake2b(
-            json.dumps(parameters, sort_keys=True).encode('utf8'),
-            digest_size=8
-        ).hexdigest()
+        class_name += '.' + format(
+            zlib.crc32(json.dumps(parameters, sort_keys=True).encode('utf8')),
+            'x'
+        )
 
         # will be part of the name (in brackets)
         sub_components_names = ""
