@@ -545,8 +545,7 @@ class KerasExtension(Extension):
 
             if is_non_empty_list_of_lists_with_same_type and not nested_list_of_simple_types:
                 # If a list of lists is identified that include 'non-simple' types (e.g. objects),
-                # we assume they are steps in a pipeline, feature union, or base classifiers in
-                # a voting classifier.
+                # we assume they are sub networks or custom layers
                 parameter_value = list()  # type: List
                 reserved_keywords = set(self._get_parameters(model).keys())
 
@@ -555,9 +554,6 @@ class KerasExtension(Extension):
                     sub_component = sub_component_tuple[1]
                     sub_component_type = type(sub_component_tuple)
                     if not 2 <= len(sub_component_tuple) <= 3:
-                        # length 2 is for {VotingClassifier.estimators,
-                        # Pipeline.steps, FeatureUnion.transformer_list}
-                        # length 3 is for ColumnTransformer
                         msg = 'Length of tuple does not match assumptions'
                         raise ValueError(msg)
                     if not isinstance(sub_component, (OpenMLFlow, type(None))):
@@ -611,8 +607,6 @@ class KerasExtension(Extension):
 
             elif isinstance(rval, OpenMLFlow):
 
-                # A subcomponent, for example the base model in
-                # AdaBoostClassifier
                 sub_components[k] = rval
                 sub_components_explicit.add(k)
                 component_reference = OrderedDict()
@@ -650,7 +644,7 @@ class KerasExtension(Extension):
         parameter_dict = OrderedDict()  # type: OrderedDict[str, Any]
 
         # Do a shallow copy of the components dictionary so we can remove the
-        # components from this copy once we added them into the pipeline. This
+        # components from this copy once we added them into the layer list. This
         # allows us to not consider them any more when looping over the
         # components, but keeping the dictionary of components untouched in the
         # original components dictionary.
@@ -1009,7 +1003,6 @@ class KerasExtension(Extension):
 
         elif isinstance(task, OpenMLRegressionTask):
             proba_y = None
-
         else:
             raise TypeError(type(task))
 
@@ -1056,10 +1049,9 @@ class KerasExtension(Extension):
                                _main_call=False, main_id=None):
             def is_subcomponent_specification(values):
                 # checks whether the current value can be a specification of
-                # subcomponents, as for example the value for steps parameter
-                # (in Pipeline) or transformers parameter (in
-                # ColumnTransformer). These are always lists/tuples of lists/
-                # tuples, size bigger than 2 and an OpenMLFlow item involved.
+                # subcomponents, as for example the value for steps parameter.
+                # These are always lists/tuples of lists/tuples, size bigger
+                # than 2 and an OpenMLFlow item involved.
                 if not isinstance(values, (tuple, list)):
                     return False
                 for item in values:
