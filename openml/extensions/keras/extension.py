@@ -688,7 +688,7 @@ class KerasExtension(Extension):
         Returns:
         --------
         bool:
-            True
+            False
         """
 
         return False
@@ -706,10 +706,10 @@ class KerasExtension(Extension):
         Returns:
         --------
         bool:
-            True
+            False
         """
 
-        return True
+        return False
 
     ################################################################################################
     # Methods for performing runs with extension modules
