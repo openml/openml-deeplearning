@@ -1,7 +1,6 @@
 import os
-import sys
-
 import pickle
+import sys
 
 import keras
 from keras.layers import Input, Embedding, LSTM, Dense

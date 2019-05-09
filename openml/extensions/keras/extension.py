@@ -1,22 +1,21 @@
-from collections import OrderedDict  # noqa: F401
 import copy
-from distutils.version import LooseVersion
+import hashlib
 import importlib
 import json
 import logging
+import pickle
+import re
 import sys
 import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
-import re
-import pickle
-import hashlib
+from collections import OrderedDict  # noqa: F401
+from distutils.version import LooseVersion
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+import keras
 import numpy as np
 import pandas as pd
 import scipy.sparse
-
-import keras
 
 import openml
 from openml.exceptions import PyOpenMLError

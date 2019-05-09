@@ -1,14 +1,14 @@
 import os
 import sys
-from unittest import mock
 from collections import OrderedDict
+from unittest import mock
 
 import keras
 
+from openml import config
+from openml.datasets.functions import get_dataset
 from openml.extensions.keras import KerasExtension
 from openml.testing import TestBase
-from openml.datasets.functions import get_dataset
-from openml import config
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)

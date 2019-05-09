@@ -1,14 +1,15 @@
-from keras.layers import Input, BatchNormalization, Dense, Dropout
-from keras.models import Model
-from openml.extensions.keras import KerasExtension
-from openml.testing import TestBase
-
 import collections
 import os
 import sys
-import openml
+
 import keras
 import numpy as np
+from keras.layers import Input, BatchNormalization, Dense, Dropout
+from keras.models import Model
+
+import openml
+from openml.extensions.keras import KerasExtension
+from openml.testing import TestBase
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
