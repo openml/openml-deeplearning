@@ -1,5 +1,9 @@
 :orphan:
 
+
+
+.. _sphx_glr_examples:
+
 Introductory Examples
 =====================
 
@@ -9,7 +13,7 @@ General examples for OpenML usage.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="An introduction to OpenML, followed up by a simple example. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="An introduction to OpenML, followed up by a simple example.">
 
 .. only:: html
 
@@ -29,27 +33,7 @@ General examples for OpenML usage.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="How to list and download datasets. ">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_datasets_tutorial_thumb.png
-
-        :ref:`sphx_glr_examples_datasets_tutorial.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/datasets_tutorial
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="A tutorial on how to list and download tasks. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="A tutorial on how to list and download tasks.">
 
 .. only:: html
 
@@ -69,13 +53,13 @@ General examples for OpenML usage.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="How to train/run a model and how to upload the results. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="How to list and download datasets.">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_flows_and_runs_tutorial_thumb.png
+    .. figure:: /examples/images/thumb/sphx_glr_datasets_tutorial_thumb.png
 
-        :ref:`sphx_glr_examples_flows_and_runs_tutorial.py`
+        :ref:`sphx_glr_examples_datasets_tutorial.py`
 
 .. raw:: html
 
@@ -85,7 +69,7 @@ General examples for OpenML usage.
 .. toctree::
    :hidden:
 
-   /examples/flows_and_runs_tutorial
+   /examples/datasets_tutorial
 
 .. raw:: html
 
@@ -109,7 +93,27 @@ General examples for OpenML usage.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="A tutorial on how to create and upload a dataset to OpenML. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="How to train/run a model and how to upload the results.">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_flows_and_runs_tutorial_thumb.png
+
+        :ref:`sphx_glr_examples_flows_and_runs_tutorial.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/flows_and_runs_tutorial
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A tutorial on how to create and upload a dataset to OpenML.">
 
 .. only:: html
 
@@ -130,6 +134,10 @@ General examples for OpenML usage.
 
     <div style='clear:both'></div>
 
+
+
+.. _sphx_glr_examples_sklearn:
+
 Experiment Examples
 ===================
 
@@ -139,7 +147,7 @@ OpenML experiment examples using a sklearn classifier/pipeline.
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="An example of an automated machine learning experiment. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of an automated machine learning experiment.">
 
 .. only:: html
 
@@ -170,13 +178,13 @@ OpenML experiment examples using a sklearn classifier/pipeline.
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: examples_python.zip <//home/travis/build/openml/openml-python/doc/examples/examples_python.zip>`
+    :download:`Download all examples in Python source code: examples_python.zip <//home/travis/build/adriansmares/openml-deeplearning/doc/examples/examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/travis/build/openml/openml-python/doc/examples/examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/travis/build/adriansmares/openml-deeplearning/doc/examples/examples_jupyter.zip>`
 
 
 .. only:: html

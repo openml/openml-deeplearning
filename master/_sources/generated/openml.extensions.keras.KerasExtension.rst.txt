@@ -1,0 +1,6 @@
+:mod:`openml.extensions.keras`.KerasExtension
+====================================================
+
+.. currentmodule:: openml.extensions.keras
+
+.. autoclass:: KerasExtension
