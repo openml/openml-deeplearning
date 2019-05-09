@@ -33,6 +33,7 @@ Extensions
 
    Extension
    sklearn.SklearnExtension
+   keras.KerasExtension
 
 .. currentmodule:: openml.extensions
 
