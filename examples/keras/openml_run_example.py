@@ -14,7 +14,7 @@ model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-task = openml.tasks.get_task(189051)
+task = openml.tasks.get_task(1793)
 
 run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
 run.publish()

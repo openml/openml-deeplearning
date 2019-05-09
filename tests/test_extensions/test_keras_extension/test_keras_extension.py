@@ -18,7 +18,9 @@ class TestKerasExtensionRunFunctions(TestBase):
 
     def setUp(self):
         super().setUp(n_levels=2)
+        # Test server has out of date data sets, so production server is used
         openml.config.server = self.production_server
+
         self.extension = KerasExtension()
 
     def test_run_model_on_fold_classification_1(self):
@@ -87,14 +89,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 # Trace comparison (Assert to None)
                 self.assertIsNone(trace)
 
-                self._check_fold_timing_evaluations(
-                    fold_evaluations,
-                    num_repeats=1,
-                    num_folds=1,
-                    task_type=task.task_type_id,
-                    check_scores=False,
-                )
-
     def test_run_model_on_fold_classification_2(self):
         """ Function testing run_model_on_fold
         Classification task and Functional Model.
@@ -102,8 +96,10 @@ class TestKerasExtensionRunFunctions(TestBase):
         :return: Nothing
         """
 
+        # Test tasks
         task_lst = [10101, 9914, 145804, 146065, 146064]
 
+        # Subtests, q for each task
         for i in range(len(task_lst)):
             with self.subTest(i=i):
                 task = openml.tasks.get_task(task_lst[i])
@@ -160,14 +156,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 # trace should assert to None
                 self.assertIsNone(trace)
 
-                self._check_fold_timing_evaluations(
-                    fold_evaluations,
-                    num_repeats=1,
-                    num_folds=1,
-                    task_type=task.task_type_id,
-                    check_scores=False,
-                )
-
     def test_run_model_on_fold_regression_1(self):
         """ Function testing run_model_on_fold
         Regression task and Sequential Model.
@@ -223,14 +211,6 @@ class TestKerasExtensionRunFunctions(TestBase):
 
                 # trace. SGD does not produce any
                 self.assertIsNone(trace)
-
-                self._check_fold_timing_evaluations(
-                    fold_evaluations,
-                    num_repeats=1,
-                    num_folds=1,
-                    task_type=task.task_type_id,
-                    check_scores=False,
-                )
 
     def test_run_model_on_fold_regression_2(self):
         """ Function testing run_model_on_fold
@@ -291,11 +271,3 @@ class TestKerasExtensionRunFunctions(TestBase):
 
                 # Trace should assert to None
                 self.assertIsNone(trace)
-
-                self._check_fold_timing_evaluations(
-                    fold_evaluations,
-                    num_repeats=1,
-                    num_folds=1,
-                    task_type=task.task_type_id,
-                    check_scores=False,
-                )
