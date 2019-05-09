@@ -31,8 +31,8 @@ if ! [[ -z ${DOCPUSH+x} ]]; then
         git clone https://github.com/adriansmares/openml-deeplearning.git --branch gh-pages --single-branch
 
         # copy previous documentation
-        cp -r openml-python/. $1
-        rm -rf openml-python
+        cp -r openml-deeplearning/. $1
+        rm -rf openml-deeplearning
 
         # if the documentation for the branch exists, remove it
         if [ -d $1/$1 ]; then
