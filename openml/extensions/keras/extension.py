@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import re
 import pickle
-import zlib
 import hashlib
 
 import numpy as np

@@ -14,8 +14,6 @@ from openml.testing import TestBase
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
-__version__ = 0.1
-
 
 class TestKerasExtensionFlowDeserialization(TestBase):
 
