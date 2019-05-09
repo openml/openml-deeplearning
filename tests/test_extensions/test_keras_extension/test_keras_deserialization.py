@@ -17,7 +17,7 @@ sys.path.append(this_directory)
 __version__ = 0.1
 
 
-class TestKerasExtensionFlowFunctions(TestBase):
+class TestKerasExtensionFlowDeserialization(TestBase):
 
     def setUp(self):
         super().setUp(n_levels=2)
@@ -39,13 +39,7 @@ class TestKerasExtensionFlowFunctions(TestBase):
             keras.layers.Dense(units=2, activation=keras.activations.softmax),
         ])
 
-        # sequential_orig.compile(optimizer='adam',
-        #               loss='sparse_categorical_crossentropy',
-        #               metrics=['accuracy'])
-
-        # This might look like a hack, and it is, but it maintains the compilation status,
-        # in contrast to clone_model, and also is faster than using get_config + load_from_config
-        # since it avoids string parsing
+        # Use pickle in order to maintain compilation status
         sequential_adjusted = pickle.loads(pickle.dumps(sequential_orig))
 
         # we want to confirm that sequential_adjusted and sequential_orig are the same.
