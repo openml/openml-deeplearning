@@ -709,7 +709,7 @@ class KerasExtension(Extension):
             False
         """
 
-        return True
+        return False
 
     ################################################################################################
     # Methods for performing runs with extension modules
