@@ -1,5 +1,5 @@
 """
-Keras functional model example
+Keras sequential model example
 ==================
 
 An example of a sequential network used as an OpenML flow.
