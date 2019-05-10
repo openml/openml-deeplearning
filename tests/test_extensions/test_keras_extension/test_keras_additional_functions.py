@@ -1,16 +1,15 @@
+import unittest
 from distutils.version import LooseVersion
-from openml.extensions.keras import KerasExtension
-from openml.extensions.sklearn import SklearnExtension
-from openml.setups.setup import OpenMLParameter
+from unittest import mock
 
+import keras
+import sklearn
 from sklearn import pipeline
 from sklearn import tree
 
-from unittest import mock
-
-import unittest
-import keras
-import sklearn
+from openml.extensions.keras import KerasExtension
+from openml.extensions.sklearn import SklearnExtension
+from openml.setups.setup import OpenMLParameter
 
 if LooseVersion(sklearn.__version__) < "0.20":
     from sklearn.preprocessing import Imputer
