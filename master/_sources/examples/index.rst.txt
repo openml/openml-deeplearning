@@ -138,7 +138,7 @@ General examples for OpenML usage.
 
 .. _sphx_glr_examples_keras:
 
-Experiment Examples
+Keras Examples
 ===================
 
 OpenML experiment examples using Keras sequential and functional networks.
@@ -192,7 +192,7 @@ OpenML experiment examples using Keras sequential and functional networks.
 
 .. _sphx_glr_examples_sklearn:
 
-Experiment Examples
+scikit-learn Examples
 ===================
 
 OpenML experiment examples using a sklearn classifier/pipeline.
