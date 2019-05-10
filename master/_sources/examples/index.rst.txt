@@ -136,6 +136,60 @@ General examples for OpenML usage.
 
 
 
+.. _sphx_glr_examples_keras:
+
+Experiment Examples
+===================
+
+OpenML experiment examples using Keras sequential and functional networks.
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a sequential network used as an OpenML flow.">
+
+.. only:: html
+
+    .. figure:: /examples/keras/images/thumb/sphx_glr_sequential_model_thumb.png
+
+        :ref:`sphx_glr_examples_keras_sequential_model.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/keras/sequential_model
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a functional (non-sequential) network used as an OpenML flow.">
+
+.. only:: html
+
+    .. figure:: /examples/keras/images/thumb/sphx_glr_functional_model_thumb.png
+
+        :ref:`sphx_glr_examples_keras_functional_model.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/keras/functional_model
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+
+
 .. _sphx_glr_examples_sklearn:
 
 Experiment Examples
