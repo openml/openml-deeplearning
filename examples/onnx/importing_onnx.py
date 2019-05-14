@@ -29,7 +29,7 @@ else:
 
 # Define trainer
 trainer = gluon.Trainer(model_mx.collect_params(), 'adam',
-                        {'learning_rate': 0.1})
+                        {'learning_rate': 0.001})
 
 # Convert training data
 input = nd.array(X_train)
@@ -51,4 +51,3 @@ output = mx.nd.argmax(output, -1)
 
 pred_y = output.asnumpy()
 print(pred_y)
-pass

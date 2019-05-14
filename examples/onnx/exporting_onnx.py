@@ -61,4 +61,3 @@ onnx_mxnet.export_model(
     'model-0001.params',
     input_shape=[(1024, input_length)],
     onnx_file_path='model.onnx')
-

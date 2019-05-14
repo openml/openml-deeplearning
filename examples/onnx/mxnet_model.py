@@ -1,14 +1,7 @@
-import onnx
-import onnxmltools
 import openml
 import mxnet as mx
-import numpy as np
-import pandas as pd
-import scipy.sparse
 from mxnet.contrib.onnx import onnx2mx
-from mxnet import nd, gluon, autograd
-from keras.layers import Input, Dense, Add
-from keras.models import Model
+from mxnet import gluon, autograd
 from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 from mxnet.test_utils import download
 
