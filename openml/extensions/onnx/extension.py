@@ -2,7 +2,6 @@ import copy
 import importlib
 import json
 import logging
-import pickle
 import re
 import sys
 import time
@@ -16,6 +15,9 @@ import onnx
 import numpy as np
 import pandas as pd
 import scipy.sparse
+import mxnet as mx
+import mxnet.contrib.onnx as onnx_mxnet
+from mxnet import nd, gluon, autograd
 
 import openml
 from openml.exceptions import PyOpenMLError
@@ -912,14 +914,14 @@ class OnnxExtension(Extension):
         # in case of custom experimentation,
         # but not desirable if we want to upload to OpenML).
 
-        # This might look like a hack, and it is, but it maintains the compilation status,
-        # in contrast to clone_model, and also is faster than using get_config + load_from_config
-        # since it avoids string parsing
-        model_copy = pickle.loads(pickle.dumps(model))
+        # Save model to file and import it as MXNet model
+        # TODO: Constant CPU context?
+        onnx.save(model, 'model.onnx')
+        model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=mx.cpu())
 
         # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_copy)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
+        can_measure_cputime = self._can_measure_cputime(model_mx)
+        can_measure_wallclocktime = self._can_measure_wallclocktime(model_mx)
 
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
@@ -929,7 +931,28 @@ class OnnxExtension(Extension):
             modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
-                model_copy.fit(X_train, y_train)
+                # TODO: Extract to different function?
+                if isinstance(task, OpenMLClassificationTask):
+                    loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
+                elif isinstance(task, OpenMLRegressionTask):
+                    loss_fn = gluon.loss.L2Loss()
+                else:
+                    raise TypeError('Task not supported')
+
+                # Define trainer
+                trainer = gluon.Trainer(model_mx.collect_params(), 'adam')
+
+                # Convert training data
+                input = nd.array(X_train)
+                labels = nd.array(y_train)
+
+                # Train the model
+                with autograd.record():
+                    output = model_mx(input)
+                    loss = loss_fn(output, labels)
+
+                loss.backward()
+                trainer.step(input.shape[0])
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -944,7 +967,8 @@ class OnnxExtension(Extension):
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
-            model_classes = keras.backend.argmax(y_train, axis=-1)
+            # TODO: Check if needs to be changed
+            model_classes = mx.nd.argmax(nd.array(y_train), axis=-1)
 
         modelpredict_start_cputime = time.process_time()
         modelpredict_start_walltime = time.time()
@@ -952,9 +976,9 @@ class OnnxExtension(Extension):
         # In supervised learning this returns the predictions for Y, in clustering
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
-            pred_y = model_copy.predict(X_test)
-            pred_y = keras.backend.argmax(pred_y)
-            pred_y = keras.backend.eval(pred_y)
+            pred_y = model_mx(nd.array(X_test))
+            pred_y = mx.nd.argmax(pred_y, -1)
+            pred_y = pred_y.asnumpy()
         else:
             raise ValueError(task)
 
@@ -973,7 +997,7 @@ class OnnxExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
 
             try:
-                proba_y = model_copy.predict(X_test)
+                proba_y = model_mx(nd.array(X_test))
             except AttributeError:
                 if task.class_labels is not None:
                     proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
