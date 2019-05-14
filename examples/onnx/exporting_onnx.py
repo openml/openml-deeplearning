@@ -1,7 +1,7 @@
 import openml
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-from mxnet import nd, gluon, autograd
+from mxnet import nd, gluon, autograd, sym
 from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 # Obtain task with training data
@@ -38,8 +38,7 @@ else:
     raise TypeError('Task not supported')
 
 # Define trainer
-trainer = gluon.Trainer(net.collect_params(), 'adam',
-                        {'learning_rate': 0.1})
+trainer = gluon.Trainer(net.collect_params(), 'adam')
 
 # Convert training data
 input = nd.array(X_train)
@@ -55,9 +54,8 @@ with autograd.record():
 # trainer.step(input.shape[0])
 
 # Export model
-net.export('model', epoch=1)
 onnx_mxnet.export_model(
-    'model-symbol.json',
-    'model-0001.params',
+    sym=net(sym.var('data')),
+    params={k: v._reduce() for k, v in net.collect_params().items()},
     input_shape=[(1024, input_length)],
     onnx_file_path='model.onnx')
