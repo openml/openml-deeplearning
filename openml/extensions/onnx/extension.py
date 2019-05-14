@@ -12,7 +12,7 @@ from collections import OrderedDict  # noqa: F401
 from distutils.version import LooseVersion
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-import keras
+import onnx
 import numpy as np
 import pandas as pd
 import scipy.sparse
@@ -82,7 +82,7 @@ class OnnxExtension(Extension):
         -------
         bool
         """
-        return isinstance(model, keras.models.Model)
+        return isinstance(model, onnx.ModelProto)
 
     ################################################################################################
     # Methods for flow serialization and de-serialization
@@ -347,14 +347,14 @@ class OnnxExtension(Extension):
 
         dependencies = '\n'.join([
             self._format_external_version(
-                'keras',
-                keras.__version__,
+                'onnx',
+                onnx.__version__,
             ),
             'numpy>=1.6.1',
             'scipy>=0.9',
         ])
 
-        keras_version = self._format_external_version('keras', keras.__version__)
+        keras_version = self._format_external_version('onnx', onnx.__version__)
         keras_version_formatted = keras_version.replace('==', '_')
         flow = OpenMLFlow(name=name,
                           class_name=class_name,
@@ -364,7 +364,7 @@ class OnnxExtension(Extension):
                           parameters=parameters,
                           parameters_meta_info=parameters_meta_info,
                           external_version=external_version,
-                          tags=['openml-python', 'keras',
+                          tags=['openml-python', 'onnx',
                                 'python', keras_version_formatted,
 
                                 ],
@@ -795,7 +795,7 @@ class OnnxExtension(Extension):
         -------
         bool
         """
-        return isinstance(model, keras.models.Model)
+        return isinstance(model, onnx.ModelProto)
 
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
         """
