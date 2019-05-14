@@ -16,8 +16,6 @@ y_test = y[test_indices]
 
 # Load model from onnx file, initialize it and optimize it
 model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=mx.cpu())
-# model_mx.initialize(mx.init.Xavier(), ctx=mx.cpu(), force_reinit=True)
-# model_mx.hybridize()
 
 # Decide loss function from task type
 if isinstance(task, OpenMLClassificationTask):
@@ -28,8 +26,7 @@ else:
     raise TypeError('Task not supported')
 
 # Define trainer
-trainer = gluon.Trainer(model_mx.collect_params(), 'adam',
-                        {'learning_rate': 0.001})
+trainer = gluon.Trainer(model_mx.collect_params(), 'adam')
 
 # Convert training data
 input = nd.array(X_train)
@@ -48,6 +45,4 @@ trainer.step(input.shape[0])
 output = model_mx(nd.array(X_test))
 print(output.asnumpy())
 output = mx.nd.argmax(output, -1)
-
 pred_y = output.asnumpy()
-print(pred_y)
