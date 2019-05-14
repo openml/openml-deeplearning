@@ -75,8 +75,8 @@ setuptools.setup(name="openml",
                          'torch==1.0.1',
                      ],
                      'dlonnix': [
-                        'mxnet',
-                        'onnx'
+                         'mxnet',
+                         'onnx'
                      ]
                  },
                  test_suite="pytest",
