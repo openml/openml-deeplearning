@@ -72,7 +72,7 @@ class OnnxExtension(Extension):
     @classmethod
     def can_handle_model(cls, model: Any) -> bool:
         # TODO: Fix instance
-        """Check whether a model is an instance of ``keras.models.Model``.
+        """Check whether a model is an instance of ``onnx.ModelProto``.
 
         Parameters
         ----------
@@ -266,18 +266,18 @@ class OnnxExtension(Extension):
 
         # This can possibly be done by a package such as pyxb, but I could not get
         # it to work properly.
-        import keras
+        import onnx
         import scipy
         import numpy
 
         major, minor, micro, _, _ = sys.version_info
         python_version = 'Python_{}.'.format(
             ".".join([str(major), str(minor), str(micro)]))
-        keras_version = 'Keras_{}.'.format(keras.__version__)
+        onnx_version = 'Onnx_{}.'.format(onnx.__version__)
         numpy_version = 'NumPy_{}.'.format(numpy.__version__)
         scipy_version = 'SciPy_{}.'.format(scipy.__version__)
 
-        return [python_version, keras_version, numpy_version, scipy_version]
+        return [python_version, onnx_version, numpy_version, scipy_version]
 
     def create_setup_string(self, model: Any) -> str:
         """Create a string which can be used to reinstantiate the given model.
@@ -354,8 +354,8 @@ class OnnxExtension(Extension):
             'scipy>=0.9',
         ])
 
-        keras_version = self._format_external_version('onnx', onnx.__version__)
-        keras_version_formatted = keras_version.replace('==', '_')
+        onnx_version = self._format_external_version('onnx', onnx.__version__)
+        onnx_version_formatted = onnx_version.replace('==', '_')
         flow = OpenMLFlow(name=name,
                           class_name=class_name,
                           description='Automatically created ONNX flow.',
@@ -365,7 +365,7 @@ class OnnxExtension(Extension):
                           parameters_meta_info=parameters_meta_info,
                           external_version=external_version,
                           tags=['openml-python', 'onnx',
-                                'python', keras_version_formatted,
+                                'python', onnx_version_formatted,
 
                                 ],
                           language='English',
