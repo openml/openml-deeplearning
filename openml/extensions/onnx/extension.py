@@ -17,6 +17,7 @@ import pandas as pd
 import scipy.sparse
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
+# import mxnet.gluon.estimator as est
 from mxnet import nd, gluon, autograd
 
 import openml
@@ -73,7 +74,6 @@ class OnnxExtension(Extension):
 
     @classmethod
     def can_handle_model(cls, model: Any) -> bool:
-        # TODO: Fix instance
         """Check whether a model is an instance of ``onnx.ModelProto``.
 
         Parameters
@@ -941,18 +941,25 @@ class OnnxExtension(Extension):
 
                 # Define trainer
                 trainer = gluon.Trainer(model_mx.collect_params(), 'adam')
+                # estimator = est(model_mx, lossfn=loss_fn)
+                batches = 32
 
                 # Convert training data
-                input = nd.array(X_train)
-                labels = nd.array(y_train)
+                X_train_batches = np.array_split(X_train, batches)
+                y_train_batches = np.array_split(y_train, batches)
 
-                # Train the model
-                with autograd.record():
-                    output = model_mx(input)
-                    loss = loss_fn(output, labels)
+                for i in range(batches):
+                    input = nd.array(X_train_batches[i])
+                    labels = nd.array(y_train_batches[i])
 
-                loss.backward()
-                trainer.step(input.shape[0])
+                    # Train the model
+                    with autograd.record():
+                        output = model_mx(input)
+                        loss = loss_fn(output, labels)
+
+                    loss.backward()
+                    trainer.step(input.shape[0])
+                # estimator.fit(input, labels, 1, [trainer], mx.cpu())
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -997,7 +1004,7 @@ class OnnxExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
 
             try:
-                proba_y = model_mx(nd.array(X_test))
+                proba_y = model_mx(nd.array(X_test)).asnumpy()
             except AttributeError:
                 if task.class_labels is not None:
                     proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
