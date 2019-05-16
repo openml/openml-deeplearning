@@ -1168,20 +1168,23 @@ class PytorchExtension(Extension):
                         inputs = torch.autograd.Variable(X_batch)
                         labels = torch.autograd.Variable(y_batch)
 
+                        def _optimizer_step():
+                            optimizer.zero_grad()
+                            outputs = model_copy(inputs)
+                            loss = criterion(outputs, labels)
+                            loss.backward()
+                            return loss
+
+                        loss_opt = optimizer.step(_optimizer_step)
+
                         outputs = model_copy(inputs)
-                        optimizer.zero_grad()
-                        loss = criterion(outputs, labels)
-                        loss.backward()
-
-                        optimizer.step()
-
                         predicted = torch.argmax(outputs, dim=outputs.dim() - 1)
+
                         correct += (predicted == labels).sum()
                         incorrect += (predicted != labels).sum()
-
                         accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
 
-                        progress_callback(epoch, batch_idx, loss, accuracy)
+                        progress_callback(epoch, batch_idx, loss_opt, accuracy)
 
                     scheduler.step()
 
