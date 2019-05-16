@@ -446,7 +446,7 @@ class PytorchExtension(Extension):
         model_children = dict((k, v) for (k, v) in model.named_children())
         model_parameters = dict((k, v) for (k, v) in model.named_parameters())
 
-        separated_parameters = dict()
+        separated_parameters = dict()  # type: Dict[str, Any]
 
         if 'container' not in model.__module__:
             signature = inspect.signature(model.__init__)
@@ -1272,7 +1272,7 @@ class PytorchExtension(Extension):
                         proba_y.shape[1], len(task.class_labels),
                     )
                     warnings.warn(message)
-                    openml.extensions.pytorch.logger.warning(message)
+                    openml.extensions.pytorch.config.logger.warning(message)
             else:
                 raise ValueError('The task has no class labels')
 
