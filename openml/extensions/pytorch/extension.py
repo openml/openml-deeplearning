@@ -1211,7 +1211,6 @@ class PytorchExtension(Extension):
             from .config import predict
 
             inputs = torch.from_numpy(X_test)
-
             if torch.cuda.is_available():
                 inputs = inputs.cuda()
 
@@ -1240,9 +1239,8 @@ class PytorchExtension(Extension):
                 from .config import predict_proba
 
                 inputs = torch.from_numpy(X_test)
-
                 if torch.cuda.is_available():
-                    inputs = torch.cuda()
+                    inputs = inputs.cuda()
 
                 proba_y = model_copy(inputs)
                 proba_y = predict_proba(proba_y)
