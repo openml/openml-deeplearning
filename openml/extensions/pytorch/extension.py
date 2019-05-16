@@ -25,6 +25,7 @@ import torch.nn
 import torch.optim
 import torch.utils.data
 import torch.autograd
+import torch.cuda
 
 import openml
 from openml.exceptions import PyOpenMLError
@@ -1145,25 +1146,40 @@ class PytorchExtension(Extension):
                 scheduler = scheduler_gen(optimizer)
 
                 torch_X_train = torch.from_numpy(X_train)
-                torch_y_train = torch.from_numpy(y_train)
+                torch_y_train = torch.from_numpy(y_train).long()
+
+                if torch.cuda.is_available():
+                    model_copy = model_copy.cuda()
+
+                    torch_X_train = torch_X_train.cuda()
+                    torch_y_train = torch_y_train.cuda()
 
                 train = torch.utils.data.TensorDataset(torch_X_train, torch_y_train)
-                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size)
+                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
+                                                           shuffle=True)
 
                 for epoch in range(epoch_count):
+                    correct = 0
+                    incorrect = 0
                     for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
                         inputs = torch.autograd.Variable(X_batch)
                         labels = torch.autograd.Variable(y_batch)
 
-                        def _closure():
-                            optimizer.zero_grad()
-                            outputs = model(inputs)
-                            loss = criterion(outputs, labels.type(torch.LongTensor))
-                            loss.backward()
-                            return loss
+                        outputs = model(inputs)
+                        optimizer.zero_grad()
+                        loss = criterion(outputs, labels)
+                        loss.backward()
 
-                        opt_loss = optimizer.step(_closure)
-                        progress_callback(epoch, batch_idx, opt_loss)
+                        optimizer.step()
+
+                        predicted = torch.argmax(outputs, dim=outputs.dim() - 1)
+                        correct += (predicted == labels).sum()
+                        incorrect += (predicted != labels).sum()
+
+                        accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
+
+                        progress_callback(epoch, batch_idx, loss, accuracy)
+
                     scheduler.step()
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
@@ -1192,6 +1208,10 @@ class PytorchExtension(Extension):
             from .config import predict
 
             inputs = torch.from_numpy(X_test)
+
+            if torch.cuda.is_available():
+                inputs = inputs.cuda()
+
             pred_y = model_copy(inputs)
             pred_y = predict(pred_y)
         else:
@@ -1217,6 +1237,10 @@ class PytorchExtension(Extension):
                 from .config import predict_proba
 
                 inputs = torch.from_numpy(X_test)
+
+                if torch.cuda.is_available():
+                    inputs = torch.cuda()
+
                 proba_y = model_copy(inputs)
                 proba_y = predict_proba(proba_y)
             except AttributeError:
@@ -1247,7 +1271,7 @@ class PytorchExtension(Extension):
                         proba_y.shape[1], len(task.class_labels),
                     )
                     warnings.warn(message)
-                    openml.extensions.pytorch.logger.warn(message)
+                    openml.extensions.pytorch.logger.warning(message)
             else:
                 raise ValueError('The task has no class labels')
 
