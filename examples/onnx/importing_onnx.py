@@ -5,7 +5,7 @@ from mxnet import nd, gluon, autograd
 from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 # Obtain task
-task = openml.tasks.get_task(145804)
+task = openml.tasks.get_task(3573)
 X, y = task.get_X_and_y()
 train_indices, test_indices = task.get_train_test_split_indices(
     repeat=0, fold=0, sample=0)
@@ -34,7 +34,6 @@ labels = nd.array(y_train)
 
 # Train the model
 with autograd.record():
-    # Forward propagation must be executed at least once before export
     output = model_mx(input)
     loss = loss_fn(output, labels)
 
