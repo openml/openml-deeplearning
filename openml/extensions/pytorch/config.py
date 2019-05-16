@@ -44,7 +44,7 @@ epoch_count = 8
 # and then returns the item with the highest probability
 def _default_predict(output: torch.Tensor) -> numpy.ndarray:
     output_axis = output.dim() - 1
-    output = output.log_softmax(axis=output_axis)
+    output = output.log_softmax(dim=output_axis)
     output = torch.argmax(output, dim=output_axis)
     return output.detach().numpy()
 
@@ -56,7 +56,7 @@ predict = _default_predict
 # _default_predict_proba turns the outputs into probabilities using scipy.special.softmax
 def _default_predict_proba(output: torch.Tensor) -> numpy.ndarray:
     output_axis = output.ndim - 1
-    output = output.log_softmax(axis=output_axis)
+    output = output.log_softmax(dim=output_axis)
     return output.detach().numpy()
 
 

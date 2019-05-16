@@ -1151,8 +1151,10 @@ class PytorchExtension(Extension):
 
                 if torch.cuda.is_available():
                     model_copy = model_copy.cuda()
-
                     criterion = criterion.cuda()
+
+                    torch_X_train = torch_X_train.cuda()
+                    torch_y_train = torch_y_train.cuda()
 
                 train = torch.utils.data.TensorDataset(torch_X_train, torch_y_train)
                 train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
@@ -1165,10 +1167,6 @@ class PytorchExtension(Extension):
                     for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
                         inputs = torch.autograd.Variable(X_batch)
                         labels = torch.autograd.Variable(y_batch)
-
-                        if torch.cuda.is_available():
-                            inputs = inputs.cuda()
-                            labels = labels.cuda()
 
                         outputs = model_copy(inputs)
                         optimizer.zero_grad()
