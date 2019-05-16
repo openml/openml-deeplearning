@@ -9,8 +9,6 @@ import logging
 openml.config.logger.setLevel(logging.DEBUG)
 openml.extensions.pytorch.config.logger.setLevel(logging.DEBUG)
 
-openml.extensions.pytorch.config.epoch_count = 0
-
 CarNet = torch.nn.Sequential(
     openml.extensions.pytorch.layers.Reshape((-1, 1, 28, 28)),
     torch.nn.BatchNorm2d(num_features=1)

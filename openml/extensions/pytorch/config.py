@@ -46,7 +46,7 @@ def _default_predict(output: torch.Tensor) -> numpy.ndarray:
     output_axis = output.dim() - 1
     output = output.log_softmax(dim=output_axis)
     output = torch.argmax(output, dim=output_axis)
-    return output.detach().numpy()
+    return output.cpu().detach().numpy()
 
 
 # predict turns the outputs of the model into actual predictions
@@ -57,7 +57,7 @@ predict = _default_predict
 def _default_predict_proba(output: torch.Tensor) -> numpy.ndarray:
     output_axis = output.ndim - 1
     output = output.log_softmax(dim=output_axis)
-    return output.detach().numpy()
+    return output.cpu().detach().numpy()
 
 
 # predict_proba turns the outputs of the model into probabilities for each class
