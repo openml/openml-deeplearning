@@ -442,24 +442,53 @@ class PytorchExtension(Extension):
                 known_sub_components.add(visitee.name)
                 to_visit_stack.extend(visitee.components.values())
 
+    def _is_container_module(self, module: torch.nn.Module) -> bool:
+        return isinstance(module, (torch.nn.Sequential, torch.nn.ModuleDict, torch.nn.ModuleList))
+
+    def _find_hyper_parameters(self, module: torch.nn.Module,
+                               parameters: Dict[str, torch.nn.Parameter]) -> Dict[str, Any]:
+        main_signature = inspect.signature(module.__init__)
+        params = dict()  # type: Dict[str, Any]
+
+        check_bases = False  # type: bool
+        for param_name, param in main_signature.parameters.items():
+            if param_name in parameters.keys():
+                continue
+
+            if param.kind in (inspect.Parameter.VAR_POSITIONAL,
+                              inspect.Parameter.VAR_KEYWORD):
+                check_bases = True
+                continue
+
+            if hasattr(module, param_name):
+                params[param_name] = getattr(module, param_name)
+
+        if check_bases:
+            for base in module.__class__.__bases__:
+                base_signature = inspect.signature(base.__init__)
+
+                for param_name, param in base_signature.parameters.items():
+                    if param_name in parameters.keys():
+                        continue
+
+                    if param.kind in (inspect.Parameter.VAR_POSITIONAL,
+                                      inspect.Parameter.VAR_KEYWORD):
+                        continue
+
+                    if hasattr(module, param_name):
+                        params[param_name] = getattr(module, param_name)
+
+        return params
+
     def _get_model_descriptors(self, model: Any):
         model_children = dict((k, v) for (k, v) in model.named_children())
         model_parameters = dict((k, v) for (k, v) in model.named_parameters())
 
         separated_parameters = dict()  # type: Dict[str, Any]
 
-        if 'container' not in model.__module__:
-            signature = inspect.signature(model.__init__)
-
-            new_params = dict()
-
-            for param in signature.parameters:
-                if param in model_parameters.keys():
-                    continue
-
-                new_params[param] = getattr(model, param)
-
-            separated_parameters = {**separated_parameters, **new_params}
+        if not self._is_container_module(model):
+            init_params = self._find_hyper_parameters(model, model_parameters)
+            separated_parameters = {**separated_parameters, **init_params}
 
         model_parameters = {**separated_parameters, **model_children}
 

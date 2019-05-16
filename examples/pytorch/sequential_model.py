@@ -9,6 +9,8 @@ import logging
 openml.config.logger.setLevel(logging.DEBUG)
 openml.extensions.pytorch.config.logger.setLevel(logging.DEBUG)
 
+openml.extensions.pytorch.config.batch_size = 2048
+
 CarNet = torch.nn.Sequential(
     openml.extensions.pytorch.layers.Reshape((-1, 1, 28, 28)),
     torch.nn.BatchNorm2d(num_features=1)
@@ -38,9 +40,20 @@ AmaNet = torch.nn.Sequential(
     TuNet
 )
 
-task = openml.tasks.get_task(3573)
+TrasNet = torch.nn.Sequential(
+    torch.nn.Linear(in_features=10, out_features=256),
+    torch.nn.ReLU(),
+    torch.nn.Dropout(),
+    torch.nn.Linear(in_features=256, out_features=256),
+    torch.nn.ReLU(),
+    torch.nn.Dropout(),
+    torch.nn.Linear(in_features=256, out_features=2),
+    torch.nn.ReLU()
+)
 
-run = openml.runs.run_model_on_task(AmaNet, task)
+task = openml.tasks.get_task(3954)
+
+run = openml.runs.run_model_on_task(TrasNet, task)
 run.publish()
 
 print('URL for run: %s/run/%d' % (openml.config.server, run.run_id))
