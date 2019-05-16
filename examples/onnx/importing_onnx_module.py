@@ -1,7 +1,8 @@
 import openml
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-from mxnet import nd
+from mxnet import nd, gluon, autograd
+from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 # Obtain task
 task = openml.tasks.get_task(3573)

@@ -1,11 +1,12 @@
 import openml
+import onnx
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
 from mxnet import nd, gluon, autograd, sym
 from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 # Obtain task with training data
-task = openml.tasks.get_task(145804)
+task = openml.tasks.get_task(3573)
 X, y = task.get_X_and_y()
 train_indices, test_indices = task.get_train_test_split_indices(
     repeat=0, fold=0, sample=0)
@@ -20,7 +21,7 @@ input_length = X_train.shape[1]
 # Create simple sequential model
 net = gluon.nn.HybridSequential()
 with net.name_scope():
-    net.add(gluon.nn.Dense(1024, activation="relu"))
+    net.add(gluon.nn.Dense(64, activation="relu"))
     net.add(gluon.nn.Dropout(0.4))
     net.add(gluon.nn.Dense(output_length, activation="softrelu"))
 
@@ -57,5 +58,8 @@ with autograd.record():
 onnx_mxnet.export_model(
     sym=net(sym.var('data')),
     params={k: v._reduce() for k, v in net.collect_params().items()},
-    input_shape=[(1024, input_length)],
+    input_shape=[(64, input_length)],
     onnx_file_path='model.onnx')
+
+model = onnx.load('model.onnx')
+print('The model is:\n{}'.format(model))
