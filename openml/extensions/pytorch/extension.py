@@ -1120,6 +1120,7 @@ class PytorchExtension(Extension):
         # but not desirable if we want to upload to OpenML).
 
         model_copy = copy.deepcopy(model)
+
         # sanity check: prohibit users from optimizing n_jobs
         self._prevent_optimize_n_jobs(model_copy)
         # Runtime can be measured if the model is run sequentially
@@ -1169,7 +1170,7 @@ class PytorchExtension(Extension):
                             inputs = inputs.cuda()
                             labels = labels.cuda()
 
-                        outputs = model(inputs)
+                        outputs = model_copy(inputs)
                         optimizer.zero_grad()
                         loss = criterion(outputs, labels)
                         loss.backward()
