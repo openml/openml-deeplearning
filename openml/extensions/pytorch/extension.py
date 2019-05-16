@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 import scipy.sparse
+import scipy.special
 import sklearn.base
 import sklearn.model_selection
 import sklearn.pipeline
@@ -22,6 +23,8 @@ import sklearn.pipeline
 import torch
 import torch.nn
 import torch.optim
+import torch.utils.data
+import torch.autograd
 
 import openml
 from openml.exceptions import PyOpenMLError
@@ -32,11 +35,10 @@ from openml.tasks import (
     OpenMLTask,
     OpenMLSupervisedTask,
     OpenMLClassificationTask,
-    OpenMLLearningCurveTask,
-    OpenMLClusteringTask,
     OpenMLRegressionTask,
 )
 
+import openml.extensions.pytorch.config
 
 if sys.version_info >= (3, 5):
     from json.decoder import JSONDecodeError
@@ -322,7 +324,6 @@ class PytorchExtension(Extension):
         # fixme str(model) might contain (...)
         return run_environment + " " + str(model)
 
-
     @classmethod
     def _is_pytorch_flow(cls, flow: OpenMLFlow) -> bool:
         return (
@@ -359,30 +360,14 @@ class PytorchExtension(Extension):
         # StandardScaler,AdaBoostClassifier(DecisionTreeClassifier))
 
         import zlib
-        import io
-
-        model_io = io.BytesIO()
-        torch.save(model, model_io)
+        import os
 
         class_name = model.__module__ + "." + model.__class__.__name__
-        class_name += '.' + format(
-            zlib.crc32(model_io.getbuffer()),
-            'x'
-        )
+        class_name += '.'
+        class_name += format(zlib.crc32(bytearray(os.urandom(32))), 'x')
+        class_name += format(zlib.crc32(bytearray(os.urandom(32))), 'x')
 
-        # will be part of the name (in brackets)
-        sub_components_names = ""
-        for key in subcomponents:
-            if key in subcomponents_explicit:
-                sub_components_names += "," + key + "=" + subcomponents[key].name
-            else:
-                sub_components_names += "," + subcomponents[key].name
-
-        if sub_components_names:
-            # slice operation on string in order to get rid of leading comma
-            name = '%s(%s)' % (class_name, sub_components_names[1:])
-        else:
-            name = class_name
+        name = class_name
 
         # Get the external versions of all sub-components
         external_version = self._get_external_version_string(model, subcomponents)
@@ -1148,34 +1133,38 @@ class PytorchExtension(Extension):
             modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
-                criterion = torch.nn.CrossEntropyLoss()
-                optimizer = torch.optim.Adam(model.parameters())
+                model_copy.train()
 
-                running_loss = 0.0
-                for i in range(X_train.shape[0]):
-                    # get the inputs
-                    inputs = torch.from_numpy(X_train[i])
-                    labels = torch.tensor([np.long(y_train[i])])
+                from .config import \
+                    criterion, \
+                    optimizer_gen, scheduler_gen, \
+                    progress_callback, epoch_count, \
+                    batch_size
 
-                    # zero the parameter gradients
-                    optimizer.zero_grad()
+                optimizer = optimizer_gen(model_copy)
+                scheduler = scheduler_gen(optimizer)
 
-                    # forward + backward + optimize
-                    outputs = model(inputs)
-                    # outputs = torch.argmax(outputs)
-                    outputs = outputs.view(1, 2)
-                    loss = criterion(outputs, labels)
-                    loss.backward()
-                    optimizer.step()
+                torch_X_train = torch.from_numpy(X_train)
+                torch_y_train = torch.from_numpy(y_train)
 
-                    # print statistics
-                    running_loss += loss.item()
-                    if i % 20 == 19:  # print every 20 mini-batches
-                        print('[%d, %5d] loss: %.3f' %
-                              (1, i + 1, running_loss / 20))
-                        running_loss = 0.0
+                train = torch.utils.data.TensorDataset(torch_X_train, torch_y_train)
+                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size)
 
-                # model_copy.fit(X_train, y_train)
+                for epoch in range(epoch_count):
+                    for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
+                        inputs = torch.autograd.Variable(X_batch)
+                        labels = torch.autograd.Variable(y_batch)
+
+                        def _closure():
+                            optimizer.zero_grad()
+                            outputs = model(inputs)
+                            loss = criterion(outputs, labels.type(torch.LongTensor))
+                            loss.backward()
+                            return loss
+
+                        opt_loss = optimizer.step(_closure)
+                        progress_callback(epoch, batch_idx, opt_loss)
+                    scheduler.step()
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -1198,10 +1187,13 @@ class PytorchExtension(Extension):
         # In supervised learning this returns the predictions for Y, in clustering
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
+            model_copy.eval()
+
+            from .config import predict
+
             inputs = torch.from_numpy(X_test)
             pred_y = model_copy(inputs)
-            pred_y = pred_y.detach().numpy()
-            pred_y = pred_y.argmax(1)
+            pred_y = predict(pred_y)
         else:
             raise ValueError(task)
 
@@ -1220,9 +1212,13 @@ class PytorchExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
 
             try:
+                model_copy.eval()
+
+                from .config import predict_proba
+
                 inputs = torch.from_numpy(X_test)
                 proba_y = model_copy(inputs)
-                proba_y = proba_y.detach().numpy()
+                proba_y = predict_proba(proba_y)
             except AttributeError:
                 if task.class_labels is not None:
                     proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))
@@ -1251,14 +1247,11 @@ class PytorchExtension(Extension):
                         proba_y.shape[1], len(task.class_labels),
                     )
                     warnings.warn(message)
-                    openml.config.logger.warn(message)
+                    openml.extensions.pytorch.logger.warn(message)
             else:
                 raise ValueError('The task has no class labels')
 
         elif isinstance(task, OpenMLRegressionTask):
-            proba_y = None
-
-        elif isinstance(task, OpenMLClusteringTask):
             proba_y = None
 
         else:
@@ -1348,7 +1341,8 @@ class PytorchExtension(Extension):
                 _current = OrderedDict()
                 _current['oml:name'] = _param_name
 
-                current_param_values = self.model_to_flow(self._get_model_descriptors(component_model)[_param_name])
+                current_param_values = self.model_to_flow(
+                    self._get_model_descriptors(component_model)[_param_name])
 
                 # Try to filter out components (a.k.a. subflows) which are
                 # handled further down in the code (by recursively calling
