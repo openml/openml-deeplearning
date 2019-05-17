@@ -1155,6 +1155,14 @@ class PytorchExtension(Extension):
         can_measure_cputime = self._can_measure_cputime(model_copy)
         can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
 
+        from .config import \
+            criterion_gen, \
+            optimizer_gen, scheduler_gen, \
+            progress_callback, epoch_count, \
+            batch_size, \
+            predict, predict_proba, \
+            sanitize, retype_labels
+
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
         try:
@@ -1165,16 +1173,9 @@ class PytorchExtension(Extension):
             if isinstance(task, OpenMLSupervisedTask):
                 model_copy.train()
 
-                from .config import \
-                    criterion, \
-                    optimizer_gen, scheduler_gen, \
-                    progress_callback, epoch_count, \
-                    batch_size, \
-                    predict, \
-                    sanitize, retype_labels
-
-                optimizer = optimizer_gen(model_copy)
-                scheduler = scheduler_gen(optimizer)
+                criterion = criterion_gen(task)
+                optimizer = optimizer_gen(model_copy, task)
+                scheduler = scheduler_gen(optimizer, task)
 
                 torch_X_train = torch.from_numpy(X_train)
                 torch_X_train = sanitize(torch_X_train)
@@ -1211,13 +1212,17 @@ class PytorchExtension(Extension):
                         outputs = model_copy(inputs)
                         predicted = predict(outputs, task)
 
-                        correct += (predicted == labels).sum()
-                        incorrect += (predicted != labels).sum()
-                        accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
+                        accuracy = float('nan')
+                        if isinstance(task, OpenMLClassificationTask):
+                            correct += (predicted == labels).sum()
+                            incorrect += (predicted != labels).sum()
+                            accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
 
                         progress_callback(epoch, batch_idx, loss_opt, accuracy)
 
-                    scheduler.step()
+                    outputs = model_copy(torch_X_train)
+                    loss = criterion(outputs, torch_y_train)
+                    scheduler.step(loss)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -1241,8 +1246,6 @@ class PytorchExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             model_copy.eval()
-
-            from .config import predict, sanitize
 
             inputs = torch.from_numpy(X_test)
             inputs = sanitize(inputs)
@@ -1271,8 +1274,6 @@ class PytorchExtension(Extension):
 
             try:
                 model_copy.eval()
-
-                from .config import predict_proba, sanitize
 
                 inputs = torch.from_numpy(X_test)
                 inputs = sanitize(inputs)
