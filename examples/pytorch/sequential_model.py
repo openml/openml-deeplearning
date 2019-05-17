@@ -1,4 +1,5 @@
 import torch.nn
+import torch.optim
 
 import openml
 import openml.extensions.pytorch
@@ -9,7 +10,10 @@ import logging
 openml.config.logger.setLevel(logging.DEBUG)
 openml.extensions.pytorch.config.logger.setLevel(logging.DEBUG)
 
-openml.extensions.pytorch.config.batch_size = 2048
+openml.extensions.pytorch.config.epoch_count = 8
+openml.extensions.pytorch.config.batch_size = 512
+#openml.extensions.pytorch.config.criterion = torch.nn.SmoothL1Loss()
+#openml.extensions.pytorch.config.optimizer_gen = lambda x: torch.optim.RMSprop(x.parameters())
 
 CarNet = torch.nn.Sequential(
     openml.extensions.pytorch.layers.Reshape((-1, 1, 28, 28)),
@@ -41,19 +45,25 @@ AmaNet = torch.nn.Sequential(
 )
 
 TrasNet = torch.nn.Sequential(
-    torch.nn.Linear(in_features=10, out_features=256),
-    torch.nn.ReLU(),
+    torch.nn.BatchNorm1d(num_features=5),
+    torch.nn.Linear(in_features=5, out_features=256),
+    torch.nn.LeakyReLU(),
     torch.nn.Dropout(),
-    torch.nn.Linear(in_features=256, out_features=256),
-    torch.nn.ReLU(),
+    torch.nn.Linear(in_features=256, out_features=128),
+    torch.nn.LeakyReLU(),
     torch.nn.Dropout(),
-    torch.nn.Linear(in_features=256, out_features=2),
-    torch.nn.ReLU()
+    torch.nn.Linear(in_features=128, out_features=64),
+    torch.nn.LeakyReLU(),
+    torch.nn.Dropout(),
+    torch.nn.Linear(in_features=64, out_features=32),
+    torch.nn.LeakyReLU(),
+    torch.nn.Dropout(),
+    torch.nn.Linear(in_features=32, out_features=1)
 )
 
-task = openml.tasks.get_task(3954)
+task = openml.tasks.get_task(3573)
 
-run = openml.runs.run_model_on_task(TrasNet, task)
+run = openml.runs.run_model_on_task(AmaNet, task)
 run.publish()
 
 print('URL for run: %s/run/%d' % (openml.config.server, run.run_id))

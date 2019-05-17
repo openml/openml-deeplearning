@@ -1144,11 +1144,10 @@ class PytorchExtension(Extension):
             if X_test is None:
                 raise TypeError('argument X_test must not be of type None')
 
-        # TODO: if possible, give a warning if model is already fitted (acceptable
-        # in case of custom experimentation,
-        # but not desirable if we want to upload to OpenML).
-
         model_copy = copy.deepcopy(model)
+
+        if torch.cuda.is_available():
+            model_copy = model_copy.cuda()
 
         # sanity check: prohibit users from optimizing n_jobs
         self._prevent_optimize_n_jobs(model_copy)
@@ -1170,16 +1169,19 @@ class PytorchExtension(Extension):
                     criterion, \
                     optimizer_gen, scheduler_gen, \
                     progress_callback, epoch_count, \
-                    batch_size
+                    batch_size, \
+                    predict, \
+                    sanitize, retype_labels
 
                 optimizer = optimizer_gen(model_copy)
                 scheduler = scheduler_gen(optimizer)
 
                 torch_X_train = torch.from_numpy(X_train)
-                torch_y_train = torch.from_numpy(y_train).long()
+                torch_X_train = sanitize(torch_X_train)
+                torch_y_train = torch.from_numpy(y_train)
+                torch_y_train = retype_labels(torch_y_train, task)
 
                 if torch.cuda.is_available():
-                    model_copy = model_copy.cuda()
                     criterion = criterion.cuda()
 
                     torch_X_train = torch_X_train.cuda()
@@ -1207,7 +1209,7 @@ class PytorchExtension(Extension):
                         loss_opt = optimizer.step(_optimizer_step)
 
                         outputs = model_copy(inputs)
-                        predicted = torch.argmax(outputs, dim=outputs.dim() - 1)
+                        predicted = predict(outputs, task)
 
                         correct += (predicted == labels).sum()
                         incorrect += (predicted != labels).sum()
@@ -1240,14 +1242,16 @@ class PytorchExtension(Extension):
         if isinstance(task, OpenMLSupervisedTask):
             model_copy.eval()
 
-            from .config import predict
+            from .config import predict, sanitize
 
             inputs = torch.from_numpy(X_test)
+            inputs = sanitize(inputs)
             if torch.cuda.is_available():
                 inputs = inputs.cuda()
 
             pred_y = model_copy(inputs)
-            pred_y = predict(pred_y)
+            pred_y = predict(pred_y, task)
+            pred_y = pred_y.cpu().detach().numpy()
         else:
             raise ValueError(task)
 
@@ -1268,14 +1272,16 @@ class PytorchExtension(Extension):
             try:
                 model_copy.eval()
 
-                from .config import predict_proba
+                from .config import predict_proba, sanitize
 
                 inputs = torch.from_numpy(X_test)
+                inputs = sanitize(inputs)
                 if torch.cuda.is_available():
                     inputs = inputs.cuda()
 
                 proba_y = model_copy(inputs)
                 proba_y = predict_proba(proba_y)
+                proba_y = proba_y.cpu().detach().numpy()
             except AttributeError:
                 if task.class_labels is not None:
                     proba_y = _prediction_to_probabilities(pred_y, list(task.class_labels))

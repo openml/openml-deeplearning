@@ -4,7 +4,7 @@ import torch.nn
 import torch.nn.functional
 import torch.optim
 
-import numpy
+from openml import OpenMLTask, OpenMLClassificationTask, OpenMLRegressionTask
 
 from typing import Any, Callable
 
@@ -27,7 +27,7 @@ optimizer_gen = _default_optimizer_gen  # type: Callable[[torch.nn.Module], torc
 # _default_scheduler_gen returns the torch.optim.lr_scheduler.ExponentialLR
 # scheduler for the given optimizer
 def _default_scheduler_gen(optim: torch.optim.Optimizer) -> Any:
-    return torch.optim.lr_scheduler.StepLR(optimizer=optim, step_size=4, gamma=1e-1)
+    return torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=1e-1)
 
 
 # scheduler_gen the scheduler to be used for a given torch.optim.Optimizer
@@ -40,24 +40,29 @@ batch_size = 64
 epoch_count = 8
 
 
-# _default_predict turns the outputs into probabilities using scipy.special.softmax
+# _default_predict turns the outputs into probabilities using log_softmax
 # and then returns the item with the highest probability
-def _default_predict(output: torch.Tensor) -> numpy.ndarray:
+def _default_predict(output: torch.Tensor, task: OpenMLTask) -> torch.Tensor:
     output_axis = output.dim() - 1
-    output = output.log_softmax(dim=output_axis)
-    output = torch.argmax(output, dim=output_axis)
-    return output.cpu().detach().numpy()
+    if isinstance(task, OpenMLClassificationTask):
+        output = output.log_softmax(dim=output_axis)
+        output = torch.argmax(output, dim=output_axis)
+    elif isinstance(task, OpenMLRegressionTask):
+        output = output.view(-1)
+    else:
+        raise ValueError(task)
+    return output
 
 
 # predict turns the outputs of the model into actual predictions
 predict = _default_predict
 
 
-# _default_predict_proba turns the outputs into probabilities using scipy.special.softmax
-def _default_predict_proba(output: torch.Tensor) -> numpy.ndarray:
+# _default_predict_proba turns the outputs into probabilities using log_softmax
+def _default_predict_proba(output: torch.Tensor) -> torch.Tensor:
     output_axis = output.ndim - 1
     output = output.log_softmax(dim=output_axis)
-    return output.cpu().detach().numpy()
+    return output
 
 
 # predict_proba turns the outputs of the model into probabilities for each class
@@ -69,6 +74,33 @@ predict_proba = _default_predict_proba
 def _default_progress_callback(epoch: int, step: int, loss: float, accuracy: float):
     logger.info('[%d, %5d] loss: %.4f, accuracy: %.4f' %
                 (epoch, step, loss, accuracy))
+
+
+# _default sanitizer replaces NaNs and Infs with 1e-6
+def _default_sanitize(tensor: torch.Tensor) -> torch.Tensor:
+    tensor = torch.where(torch.isnan(tensor), torch.ones_like(tensor) * torch.tensor(1e-6), tensor)
+    tensor = torch.where(torch.isinf(tensor), torch.ones_like(tensor) * torch.tensor(1e-6), tensor)
+    return tensor
+
+
+# sanitize sanitizes the input data in order to ensure that models can be
+# trained safely
+sanitize = _default_sanitize
+
+
+# _default_retype_labels turns the labels into torch.(cuda)LongTensor if the task is classification
+# or torch.(cuda)FloatTensor if the task is regression
+def _default_retype_labels(tensor: torch.Tensor, task: OpenMLTask) -> torch.Tensor:
+    if isinstance(task, OpenMLClassificationTask):
+        return tensor.long()
+    elif isinstance(task, OpenMLRegressionTask):
+        return tensor.float()
+    else:
+        raise ValueError(task)
+
+
+# retype_labels changes the types of the labels in order to ensure type compatibility
+retype_labels = _default_retype_labels
 
 
 # progress_callback is called when a training step is finished, in order to
@@ -85,6 +117,8 @@ def _setup():
     global epoch_count
     global predict
     global predict_proba
+    global sanitize
+    global retype_labels
     global progress_callback
 
 
