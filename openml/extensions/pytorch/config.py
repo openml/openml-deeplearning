@@ -54,12 +54,11 @@ batch_size = 64  # type: int
 epoch_count = 32  # type: int
 
 
-# _default_predict turns the outputs into probabilities using log_softmax
-# and then returns the item with the highest probability
+# _default_predict turns the outputs into predictions by returning the argmax of the output tensor
+# for classification tasks, and by flattening the prediction in case of the regression
 def _default_predict(output: torch.Tensor, task: OpenMLTask) -> torch.Tensor:
     output_axis = output.dim() - 1
     if isinstance(task, OpenMLClassificationTask):
-        output = output.log_softmax(dim=output_axis)
         output = torch.argmax(output, dim=output_axis)
     elif isinstance(task, OpenMLRegressionTask):
         output = output.view(-1)
@@ -72,10 +71,10 @@ def _default_predict(output: torch.Tensor, task: OpenMLTask) -> torch.Tensor:
 predict = _default_predict  # type: Callable[[torch.Tensor, OpenMLTask], torch.Tensor]
 
 
-# _default_predict_proba turns the outputs into probabilities using log_softmax
+# _default_predict_proba turns the outputs into probabilities using softmax
 def _default_predict_proba(output: torch.Tensor) -> torch.Tensor:
     output_axis = output.dim() - 1
-    output = output.log_softmax(dim=output_axis)
+    output = output.softmax(dim=output_axis)
     return output
 
 
