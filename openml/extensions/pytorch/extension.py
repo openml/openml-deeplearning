@@ -1189,17 +1189,13 @@ class PytorchExtension(Extension):
                     torch_y_train = torch_y_train.cuda()
 
                 train = torch.utils.data.TensorDataset(torch_X_train, torch_y_train)
-                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
-                                                           shuffle=True)
+                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size)
 
                 for epoch in range(epoch_count):
                     correct = 0
                     incorrect = 0
 
-                    for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
-                        inputs = torch.autograd.Variable(X_batch)
-                        labels = torch.autograd.Variable(y_batch)
-
+                    for batch_idx, (inputs, labels) in enumerate(train_loader):
                         def _optimizer_step():
                             optimizer.zero_grad()
                             outputs = model_copy(inputs)
@@ -1208,9 +1204,10 @@ class PytorchExtension(Extension):
                             return loss
 
                         loss_opt = optimizer.step(_optimizer_step)
+                        scheduler.step(loss_opt)
 
-                        outputs = model_copy(inputs)
-                        predicted = predict(outputs, task)
+                        predicted = model_copy(inputs)
+                        predicted = predict(predicted, task)
 
                         accuracy = float('nan')
                         if isinstance(task, OpenMLClassificationTask):
@@ -1219,10 +1216,6 @@ class PytorchExtension(Extension):
                             accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
 
                         progress_callback(epoch, batch_idx, loss_opt, accuracy)
-
-                    outputs = model_copy(torch_X_train)
-                    loss = criterion(outputs, torch_y_train)
-                    scheduler.step(loss)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
