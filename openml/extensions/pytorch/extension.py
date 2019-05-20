@@ -1210,13 +1210,15 @@ class PytorchExtension(Extension):
                         predicted = model_copy(inputs)
                         predicted = predict(predicted, task)
 
-                        accuracy = float('nan')
+                        accuracy = float('nan')  # type: Union[torch.Tensor, float]
                         if isinstance(task, OpenMLClassificationTask):
                             correct += (predicted == labels).sum()
                             incorrect += (predicted != labels).sum()
                             accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
+                            accuracy = accuracy.item()
 
-                        progress_callback(fold_no, rep_no, epoch, batch_idx, loss_opt, accuracy)
+                        progress_callback(fold_no, rep_no, epoch, batch_idx,
+                                          loss_opt.item(), accuracy)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
