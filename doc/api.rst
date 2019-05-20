@@ -34,6 +34,7 @@ Extensions
    Extension
    sklearn.SklearnExtension
    keras.KerasExtension
+   pytorch.PytorchExtension
 
 .. currentmodule:: openml.extensions
 
