@@ -108,16 +108,17 @@ def _default_retype_labels(tensor: torch.Tensor, task: OpenMLTask) -> torch.Tens
 retype_labels = _default_retype_labels  # type: Callable[[torch.Tensor, OpenMLTask], torch.Tensor]
 
 
-# _default_progress_callback reports the current epoch, step and loss for every
+# _default_progress_callback reports the current fold, rep, epoch, step and loss for every
 # training iteration to the default logger
-def _default_progress_callback(epoch: int, step: int, loss: float, accuracy: float):
+def _default_progress_callback(_: int, __: int, epoch: int, step: int, loss: float, accuracy: float):
     logger.info('[%d, %5d] loss: %.4f, accuracy: %.4f' %
                 (epoch, step, loss, accuracy))
 
 
 # progress_callback is called when a training step is finished, in order to
 # report the current progress
-progress_callback = _default_progress_callback  # type: Callable[[int, int, float, float], None]
+progress_callback = _default_progress_callback  \
+    # type: Callable[[int, int, int, int, float, float], None]
 
 
 def _setup():

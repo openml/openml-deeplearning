@@ -1215,7 +1215,7 @@ class PytorchExtension(Extension):
                             incorrect += (predicted != labels).sum()
                             accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
 
-                        progress_callback(epoch, batch_idx, loss_opt, accuracy)
+                        progress_callback(fold_no, rep_no, epoch, batch_idx, loss_opt, accuracy)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
