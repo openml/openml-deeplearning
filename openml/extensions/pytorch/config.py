@@ -110,9 +110,10 @@ retype_labels = _default_retype_labels  # type: Callable[[torch.Tensor, OpenMLTa
 
 # _default_progress_callback reports the current fold, rep, epoch, step and loss for every
 # training iteration to the default logger
-def _default_progress_callback(_: int, __: int, epoch: int, step: int, loss: float, accuracy: float):
-    logger.info('[%d, %5d] loss: %.4f, accuracy: %.4f' %
-                (epoch, step, loss, accuracy))
+def _default_progress_callback(fold: int, rep: int, epoch: int,
+                               step: int, loss: float, accuracy: float):
+    logger.info('[%d, %d, %d, %d] loss: %.4f, accuracy: %.4f' %
+                (fold, rep, epoch, step, loss, accuracy))
 
 
 # progress_callback is called when a training step is finished, in order to

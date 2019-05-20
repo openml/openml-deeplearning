@@ -66,7 +66,6 @@ class TestPytorchExtensionFlowSerialization(TestBase):
                                  'torch.nn.modules.normalization.LayerNorm': ['0']}
 
             serialization = self.extension.model_to_flow(model)
-
             structure = serialization.get_structure('name')
 
             self.assertIn(fixture_name, serialization.name)
@@ -86,3 +85,5 @@ class TestPytorchExtensionFlowSerialization(TestBase):
                     structure_modified[new_key + str(value)] = value
 
             self.assertDictEqual(structure_fixture, structure_modified)
+
+            self.assertEqual(check_dependencies_mock.call_count, 0)
