@@ -1189,7 +1189,7 @@ class PytorchExtension(Extension):
                     torch_y_train = torch_y_train.cuda()
 
                 train = torch.utils.data.TensorDataset(torch_X_train, torch_y_train)
-                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size)
+                train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
 
                 for epoch in range(epoch_count):
                     correct = 0
