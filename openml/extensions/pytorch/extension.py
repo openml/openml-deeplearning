@@ -16,9 +16,6 @@ import pandas as pd
 import scipy.stats
 import scipy.sparse
 import scipy.special
-import sklearn.base
-import sklearn.model_selection
-import sklearn.pipeline
 
 import torch
 import torch.nn
@@ -150,7 +147,7 @@ class PytorchExtension(Extension):
         mixed
         """
 
-        logging.info('-%s flow_to_sklearn START o=%s, components=%s, '
+        logging.info('-%s flow_to_pytorch START o=%s, components=%s, '
                      'init_defaults=%s' % ('-' * recursion_depth, o, components,
                                            initialize_with_defaults))
         depth_pp = recursion_depth + 1  # shortcut var, depth plus plus
@@ -177,6 +174,28 @@ class PytorchExtension(Extension):
                     rval = self._deserialize_type(value)
                 elif serialized_type == 'function':
                     rval = self._deserialize_function(value)
+                elif serialized_type == 'component_reference':
+                    assert components is not None  # Necessary for mypy
+                    value = self._deserialize_pytorch(value, recursion_depth=depth_pp)
+                    step_name = value['step_name']
+                    key = value['key']
+                    if key not in components:
+                        key = str(key)
+                    component = self._deserialize_pytorch(
+                        components[key],
+                        initialize_with_defaults=initialize_with_defaults,
+                        recursion_depth=depth_pp
+                    )
+                    # The component is now added to where it should be used
+                    # later. It should not be passed to the constructor of the
+                    # main flow object.
+                    del components[key]
+                    if step_name is None:
+                        rval = component
+                    elif 'argument_1' not in value:
+                        rval = (step_name, component)
+                    else:
+                        rval = (step_name, component, value['argument_1'])
                 else:
                     raise ValueError('Cannot flow_to_pytorch %s' % serialized_type)
 
@@ -222,7 +241,7 @@ class PytorchExtension(Extension):
             )
         else:
             raise TypeError(o)
-        logging.info('-%s flow_to_sklearn END   o=%s, rval=%s'
+        logging.info('-%s flow_to_pytorch END   o=%s, rval=%s'
                      % ('-' * recursion_depth, o, rval))
         return rval
 
@@ -443,7 +462,16 @@ class PytorchExtension(Extension):
                 to_visit_stack.extend(visitee.components.values())
 
     def _is_container_module(self, module: torch.nn.Module) -> bool:
-        return isinstance(module, (torch.nn.Sequential, torch.nn.ModuleDict, torch.nn.ModuleList))
+        if isinstance(module,
+                      (torch.nn.Sequential,
+                       torch.nn.ModuleDict,
+                       torch.nn.ModuleList)):
+            return True
+        if module in (torch.nn.modules.container.Sequential,
+                      torch.nn.modules.container.ModuleDict,
+                      torch.nn.modules.container.ModuleList):
+            return True
+        return False
 
     def _find_hyper_parameters(self, module: torch.nn.Module,
                                parameters: Dict[str, torch.nn.Parameter]) -> Dict[str, Any]:
@@ -480,19 +508,22 @@ class PytorchExtension(Extension):
 
         return params
 
-    def _get_model_descriptors(self, model: Any):
-        model_children = dict((k, v) for (k, v) in model.named_children())
+    def _get_model_descriptors(self, model: torch.nn.Module, deep=True):
+        named_children = list((k, v) for (k, v) in model.named_children())
         model_parameters = dict((k, v) for (k, v) in model.named_parameters())
 
-        separated_parameters = dict()  # type: Dict[str, Any]
+        parameters = dict()  # type: Dict[str, Any]
 
         if not self._is_container_module(model):
-            init_params = self._find_hyper_parameters(model, model_parameters)
-            separated_parameters = {**separated_parameters, **init_params}
+            parameters = self._find_hyper_parameters(model, model_parameters)
+        else:
+            parameters['children'] = named_children
 
-        model_parameters = {**separated_parameters, **model_children}
+        if deep:
+            named_children_dict = dict(named_children)
+            parameters = {**parameters, **named_children_dict}
 
-        return model_parameters
+        return parameters
 
     def _extract_information_from_model(
         self,
@@ -516,8 +547,7 @@ class PytorchExtension(Extension):
         parameters = OrderedDict()  # type: OrderedDict[str, Optional[str]]
         parameters_meta_info = OrderedDict()  # type: OrderedDict[str, Optional[Dict]]
 
-        model_parameters = self._get_model_descriptors(model)
-
+        model_parameters = self._get_model_descriptors(model, deep=False)
         for k, v in sorted(model_parameters.items(), key=lambda t: t[0]):
             rval = self._serialize_pytorch(v, model)
 
@@ -529,11 +559,6 @@ class PytorchExtension(Extension):
                     else:
                         yield el
 
-            # In case rval is a list of lists (or tuples), we need to identify two situations:
-            # - sklearn pipeline steps, feature union or base classifiers in voting classifier.
-            #   They look like e.g. [("imputer", Imputer()), ("classifier", SVC())]
-            # - a list of lists with simple types (e.g. int or str), such as for an OrdinalEncoder
-            #   where all possible values for each feature are described: [[0,1,2], [1,2,5]]
             is_non_empty_list_of_lists_with_same_type = (
                 isinstance(rval, (list, tuple))
                 and len(rval) > 0
@@ -552,7 +577,7 @@ class PytorchExtension(Extension):
                 # we assume they are steps in a pipeline, feature union, or base classifiers in
                 # a voting classifier.
                 parameter_value = list()  # type: List
-                reserved_keywords = set(model.get_params(deep=False).keys())
+                reserved_keywords = set(self._get_model_descriptors(model, deep=False).keys())
 
                 for sub_component_tuple in rval:
                     identifier = sub_component_tuple[0]
@@ -714,6 +739,9 @@ class PytorchExtension(Extension):
             )
             parameter_dict[name] = rval
 
+        # Remove the unique identifier
+        model_name = model_name.rsplit('.', 1)[0]
+
         module_name = model_name.rsplit('.', 1)
         model_class = getattr(importlib.import_module(module_name[0]),
                               module_name[1])
@@ -734,6 +762,13 @@ class PytorchExtension(Extension):
                 # result in a different flow)
                 if param not in components.keys():
                     del parameter_dict[param]
+
+        if self._is_container_module(model_class):
+            children = parameter_dict['children']
+            children = list((str(k), v) for (k, v) in children)
+            children = OrderedDict(children)
+            return model_class(children)
+
         return model_class(**parameter_dict)
 
     def _check_dependencies(self, dependencies: str) -> None:
@@ -838,66 +873,6 @@ class PytorchExtension(Extension):
         function_handle = getattr(importlib.import_module(module_name[0]), module_name[1])
         return function_handle
 
-    def _serialize_cross_validator(self, o: Any) -> 'OrderedDict[str, Union[str, Dict]]':
-        ret = OrderedDict()  # type: 'OrderedDict[str, Union[str, Dict]]'
-
-        parameters = OrderedDict()  # type: 'OrderedDict[str, Any]'
-
-        # XXX this is copied from sklearn.model_selection._split
-        cls = o.__class__
-        init = getattr(cls.__init__, 'deprecated_original', cls.__init__)
-        # Ignore varargs, kw and default values and pop self
-        init_signature = inspect.signature(init)
-        # Consider the constructor parameters excluding 'self'
-        if init is object.__init__:
-            args = []  # type: List
-        else:
-            args = sorted([p.name for p in init_signature.parameters.values()
-                           if p.name != 'self' and p.kind != p.VAR_KEYWORD])
-
-        for key in args:
-            # We need deprecation warnings to always be on in order to
-            # catch deprecated param values.
-            # This is set in utils/__init__.py but it gets overwritten
-            # when running under python3 somehow.
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always", DeprecationWarning)
-                value = getattr(o, key, None)
-                if w is not None and len(w) and w[0].category == DeprecationWarning:
-                    # if the parameter is deprecated, don't show it
-                    continue
-
-            if not (hasattr(value, '__len__') and len(value) == 0):
-                value = json.dumps(value)
-                parameters[key] = value
-            else:
-                parameters[key] = None
-
-        ret['oml-python:serialized_object'] = 'cv_object'
-        name = o.__module__ + "." + o.__class__.__name__
-        value = OrderedDict([('name', name), ('parameters', parameters)])
-        ret['value'] = value
-
-        return ret
-
-    def _deserialize_cross_validator(
-        self,
-        value: 'OrderedDict[str, Any]',
-        recursion_depth: int,
-    ) -> Any:
-        model_name = value['name']
-        parameters = value['parameters']
-
-        module_name = model_name.rsplit('.', 1)
-        model_class = getattr(importlib.import_module(module_name[0]),
-                              module_name[1])
-        for parameter in parameters:
-            parameters[parameter] = self._deserialize_pytorch(
-                parameters[parameter],
-                recursion_depth=recursion_depth + 1,
-            )
-        return model_class(**parameters)
-
     def _format_external_version(
         self,
         model_package_name: str,
@@ -943,37 +918,6 @@ class PytorchExtension(Extension):
         else:
             raise ValueError('Param_grid should either be a dict or list of dicts')
 
-    def _prevent_optimize_n_jobs(self, model):
-        """
-        Ensures that HPO classes will not optimize the n_jobs hyperparameter
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-        """
-        if self._is_hpo_class(model):
-            if isinstance(model, sklearn.model_selection.GridSearchCV):
-                param_distributions = model.param_grid
-            elif isinstance(model, sklearn.model_selection.RandomizedSearchCV):
-                param_distributions = model.param_distributions
-            else:
-                if hasattr(model, 'param_distributions'):
-                    param_distributions = model.param_distributions
-                else:
-                    raise AttributeError('Using subclass BaseSearchCV other than '
-                                         '{GridSearchCV, RandomizedSearchCV}. '
-                                         'Could not find attribute '
-                                         'param_distributions.')
-                print('Warning! Using subclass BaseSearchCV other than '
-                      '{GridSearchCV, RandomizedSearchCV}. '
-                      'Should implement param check. ')
-            n_jobs_vals = PytorchExtension._get_parameter_values_recursive(param_distributions,
-                                                                           'n_jobs')
-            if len(n_jobs_vals) > 0:
-                raise PyOpenMLError('openml-python should not be used to '
-                                    'optimize the n_jobs parameter.')
-
     def _can_measure_cputime(self, model: Any) -> bool:
         """
         Returns True if the parameter settings of model are chosen s.t. the model
@@ -1007,7 +951,7 @@ class PytorchExtension(Extension):
         bool:
             True if no n_jobs parameters is set to -1, False otherwise
         """
-        return False
+        return True
 
     ################################################################################################
     # Methods for performing runs with extension modules
@@ -1040,7 +984,7 @@ class PytorchExtension(Extension):
 
         Parameters
         ----------
-        model : sklearn model
+        model : pytorch model
             The model to be seeded
         seed : int
             The seed to initialize the RandomState with. Unseeded subcomponents
@@ -1128,7 +1072,7 @@ class PytorchExtension(Extension):
             np.ndarray
             """
             # y: list or numpy array of predictions
-            # model_classes: sklearn classifier mapping from original array id to
+            # model_classes: mapping from original array id to
             # prediction index id
             if not isinstance(classes, list):
                 raise ValueError('please convert model classes to list prior to '
@@ -1149,8 +1093,6 @@ class PytorchExtension(Extension):
         if torch.cuda.is_available():
             model_copy = model_copy.cuda()
 
-        # sanity check: prohibit users from optimizing n_jobs
-        self._prevent_optimize_n_jobs(model_copy)
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_copy)
         can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
@@ -1317,11 +1259,7 @@ class PytorchExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        if self._is_hpo_class(model_copy):
-            trace_data = self._extract_trace_data(model_copy, rep_no, fold_no)
-            trace = self._obtain_arff_trace(model_copy, trace_data)  # type: Optional[OpenMLRunTrace]  # noqa E501
-        else:
-            trace = None
+        trace = None
 
         return pred_y, proba_y, user_defined_measures, trace
 
@@ -1468,7 +1406,7 @@ class PytorchExtension(Extension):
 
         return parameters
 
-    def _openml_param_name_to_sklearn(
+    def _openml_param_name_to_pytorch(
         self,
         openml_parameter: openml.setups.OpenMLParameter,
         flow: OpenMLFlow,
@@ -1486,7 +1424,7 @@ class PytorchExtension(Extension):
 
         Returns
         -------
-        sklearn_parameter_name: str
+        pytorch_parameter_name: str
             The name the parameter will have once used in scikit-learn
         """
         if not isinstance(openml_parameter, openml.setups.OpenMLParameter):
@@ -1502,22 +1440,6 @@ class PytorchExtension(Extension):
 
     ################################################################################################
     # Methods for hyperparameter optimization
-
-    def _is_hpo_class(self, model: Any) -> bool:
-        """Check whether the model performs hyperparameter optimization.
-
-        Used to check whether an optimization trace can be extracted from the model after
-        running it.
-
-        Parameters
-        ----------
-        model : Any
-
-        Returns
-        -------
-        bool
-        """
-        return isinstance(model, sklearn.model_selection._search.BaseSearchCV)
 
     def instantiate_model_from_hpo_class(
         self,
@@ -1538,99 +1460,8 @@ class PytorchExtension(Extension):
         -------
         Any
         """
-        if not self._is_hpo_class(model):
-            raise AssertionError(
-                'Flow model %s is not an instance of sklearn.model_selection._search.BaseSearchCV'
-                % model
-            )
-        base_estimator = model.estimator
-        base_estimator.set_params(**trace_iteration.get_parameters())
-        return base_estimator
 
-    def _extract_trace_data(self, model, rep_no, fold_no):
-        arff_tracecontent = []
-        for itt_no in range(0, len(model.cv_results_['mean_test_score'])):
-            # we use the string values for True and False, as it is defined in
-            # this way by the OpenML server
-            selected = 'false'
-            if itt_no == model.best_index_:
-                selected = 'true'
-            test_score = model.cv_results_['mean_test_score'][itt_no]
-            arff_line = [rep_no, fold_no, itt_no, test_score, selected]
-            for key in model.cv_results_:
-                if key.startswith('param_'):
-                    value = model.cv_results_[key][itt_no]
-                    if value is not np.ma.masked:
-                        serialized_value = json.dumps(value)
-                    else:
-                        serialized_value = np.nan
-                    arff_line.append(serialized_value)
-            arff_tracecontent.append(arff_line)
-        return arff_tracecontent
-
-    def _obtain_arff_trace(
-        self,
-        model: Any,
-        trace_content: List,
-    ) -> 'OpenMLRunTrace':
-        """Create arff trace object from a fitted model and the trace content obtained by
-        repeatedly calling ``run_model_on_task``.
-
-        Parameters
-        ----------
-        model : Any
-            A fitted hyperparameter optimization model.
-
-        trace_content : List[List]
-            Trace content obtained by ``openml.runs.run_flow_on_task``.
-
-        Returns
-        -------
-        OpenMLRunTrace
-        """
-        if not self._is_hpo_class(model):
-            raise AssertionError(
-                'Flow model %s is not an instance of sklearn.model_selection._search.BaseSearchCV'
-                % model
-            )
-        if not hasattr(model, 'cv_results_'):
-            raise ValueError('model should contain `cv_results_`')
-
-        # attributes that will be in trace arff, regardless of the model
-        trace_attributes = [('repeat', 'NUMERIC'),
-                            ('fold', 'NUMERIC'),
-                            ('iteration', 'NUMERIC'),
-                            ('evaluation', 'NUMERIC'),
-                            ('selected', ['true', 'false'])]
-
-        # model dependent attributes for trace arff
-        for key in model.cv_results_:
-            if key.startswith('param_'):
-                # supported types should include all types, including bool,
-                # int float
-                supported_basic_types = (bool, int, float, str)
-                for param_value in model.cv_results_[key]:
-                    if isinstance(param_value, supported_basic_types) or \
-                            param_value is None or param_value is np.ma.masked:
-                        # basic string values
-                        type = 'STRING'
-                    elif isinstance(param_value, list) and \
-                            all(isinstance(i, int) for i in param_value):
-                        # list of integers
-                        type = 'STRING'
-                    else:
-                        raise TypeError('Unsupported param type in param grid: %s' % key)
-
-                # renamed the attribute param to parameter, as this is a required
-                # OpenML convention - this also guards against name collisions
-                # with the required trace attributes
-                attribute = (PREFIX + key[6:], type)
-                trace_attributes.append(attribute)
-
-        return OpenMLRunTrace.generate(
-            trace_attributes,
-            trace_content,
-        )
+        return model
 
 
 register_extension(PytorchExtension)
