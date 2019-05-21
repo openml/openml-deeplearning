@@ -7,6 +7,7 @@ import sys
 import time
 import warnings
 import zlib
+import math
 from collections import OrderedDict  # noqa: F401
 from distutils.version import LooseVersion
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -941,16 +942,14 @@ class OnnxExtension(Extension):
 
                 # Define trainer
                 trainer = gluon.Trainer(model_mx.collect_params(), 'adam')
-                # estimator = est(model_mx, lossfn=loss_fn)
-                batches = 32
+                batch_size = 32
+                nr_of_batches = math.ceil(X_train.shape[0] / batch_size)
 
-                # Convert training data
-                X_train_batches = np.array_split(X_train, batches)
-                y_train_batches = np.array_split(y_train, batches)
+                for i in range(nr_of_batches):
+                    input = nd.array(X_train[i*batch_size:(i+1)*batch_size, :])
+                    labels = nd.array(y_train[i*batch_size:(i+1)*batch_size, :])
 
-                for i in range(batches):
-                    input = nd.array(X_train_batches[i])
-                    labels = nd.array(y_train_batches[i])
+                    np.array_split()
 
                     # Train the model
                     with autograd.record():
@@ -959,7 +958,6 @@ class OnnxExtension(Extension):
 
                     loss.backward()
                     trainer.step(input.shape[0])
-                # estimator.fit(input, labels, 1, [trainer], mx.cpu())
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -984,8 +982,12 @@ class OnnxExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             pred_y = model_mx(nd.array(X_test))
-            pred_y = mx.nd.argmax(pred_y, -1)
-            pred_y = pred_y.asnumpy()
+            if isinstance(task, OpenMLClassificationTask):
+                pred_y = mx.nd.argmax(pred_y, -1)
+                pred_y = pred_y.asnumpy()
+            if isinstance(task, OpenMLRegressionTask):
+                pred_y = pred_y.asnumpy()
+                pred_y = pred_y.reshape((-1))
         else:
             raise ValueError(task)
 
