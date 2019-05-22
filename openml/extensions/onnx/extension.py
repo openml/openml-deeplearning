@@ -18,7 +18,6 @@ import pandas as pd
 import scipy.sparse
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-# import mxnet.gluon.estimator as est
 from mxnet import nd, gluon, autograd
 
 import openml
@@ -920,6 +919,10 @@ class OnnxExtension(Extension):
         onnx.save(model, 'model.onnx')
         model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=mx.cpu())
 
+        # Sanitize train and test data
+        X_train[np.isnan(X_train)] = 1.0e-12
+        X_test[np.isnan(X_test)] = 1.0e-12
+
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_mx)
         can_measure_wallclocktime = self._can_measure_wallclocktime(model_mx)
@@ -941,23 +944,24 @@ class OnnxExtension(Extension):
                     raise TypeError('Task not supported')
 
                 # Define trainer
-                trainer = gluon.Trainer(model_mx.collect_params(), 'adam')
+                # TODO: Enable user to configure those
+                trainer = gluon.Trainer(model_mx.collect_params(), 'sgd')
                 batch_size = 32
+                epochs = 20
                 nr_of_batches = math.ceil(X_train.shape[0] / batch_size)
 
-                for i in range(nr_of_batches):
-                    input = nd.array(X_train[i*batch_size:(i+1)*batch_size, :])
-                    labels = nd.array(y_train[i*batch_size:(i+1)*batch_size, :])
+                for j in range(epochs):
+                    for i in range(nr_of_batches):
+                        input = nd.array(X_train[i*batch_size:(i+1)*batch_size])
+                        labels = nd.array(y_train[i*batch_size:(i+1)*batch_size])
 
-                    np.array_split()
+                        # Train the model
+                        with autograd.record():
+                            output = model_mx(input)
+                            loss = loss_fn(output, labels)
 
-                    # Train the model
-                    with autograd.record():
-                        output = model_mx(input)
-                        loss = loss_fn(output, labels)
-
-                    loss.backward()
-                    trainer.step(input.shape[0])
+                        loss.backward()
+                        trainer.step(input.shape[0])
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
