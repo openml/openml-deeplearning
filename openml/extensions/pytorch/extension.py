@@ -515,6 +515,11 @@ class PytorchExtension(Extension):
                     if hasattr(module, param_name):
                         params[param_name] = getattr(module, param_name)
 
+        from .layers import Functional
+        if isinstance(module, Functional):
+            params['args'] = getattr(module, 'args')
+            params['kwargs'] = getattr(module, 'kwargs')
+
         return params
 
     def _get_module_descriptors(self, model: torch.nn.Module, deep=True) -> Dict[str, Any]:
@@ -666,11 +671,8 @@ class PytorchExtension(Extension):
 
             else:
                 # a regular hyperparameter
-                if not (hasattr(rval, '__len__') and len(rval) == 0):
-                    rval = json.dumps(rval)
-                    parameters[k] = rval
-                else:
-                    parameters[k] = None
+                rval = json.dumps(rval)
+                parameters[k] = rval
 
             parameters_meta_info[k] = OrderedDict((('description', None), ('data_type', None)))
 
@@ -779,6 +781,12 @@ class PytorchExtension(Extension):
             children = list((str(k), v) for (k, v) in children)
             children = OrderedDict(children)
             return model_class(children)
+
+        from .layers import Functional
+        if model_class is Functional:
+            return model_class(function=parameter_dict['function'],
+                               *parameter_dict['args'],
+                               **parameter_dict['kwargs'])
 
         return model_class(**parameter_dict)
 
