@@ -1,4 +1,3 @@
-import collections
 import os
 import sys
 
@@ -6,8 +5,6 @@ import onnx
 import numpy as np
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-
-from mxnet import nd, gluon, autograd, sym
 
 import openml
 from openml.extensions.onnx import OnnxExtension
@@ -27,35 +24,44 @@ class TestOnnxExtensionRunFunctions(TestBase):
 
         self.extension = OnnxExtension()
 
-    def test_run_model_on_fold_classification_1(self):
+    def tearDown(self):
+        self._remove_mxnet_files()
+        self._remove_onnx_file()
+
+    def test_run_model_on_fold_classification(self):
         """ Function testing run_model_on_fold
-        Classification task and Sequential Model.
+        Classification task.
 
         :return: Nothing
         """
 
         # Test tasks
-        task_lst = [3573, 4278, 146825]
+        task_lst = [10101, 9914, 145804, 146065, 146064]
 
         # Subtests, q for each task
         for i in range(len(task_lst)):
             with self.subTest(i=i):
                 task = openml.tasks.get_task(task_lst[i])
 
+                # Obtain train and test data
                 X, y = task.get_X_and_y()
                 train_indices, test_indices = task.get_train_test_split_indices(
                     repeat=0, fold=0, sample=0)
-                X_train = X[train_indices] / 255
+                X_train = X[train_indices]
                 y_train = y[train_indices]
-                X_test = X[test_indices] / 255
+                X_test = X[test_indices]
                 y_test = y[test_indices]
 
-                print(y_test)
-
+                # Calculate input and output shapes
                 input_length = X_train.shape[1]
                 output_length = len(task.class_labels)
-                self.create_onnx(input_length, output_length, X_train)
+
+                # Create an ONNX file from an MXNet model
+                self._create_onnx_file(input_length, output_length, X_train, task)
+
+                # Load the ONNX model from the file and remove the file
                 model = onnx.load('model.onnx')
+                self._remove_onnx_file()
 
                 # Call tested functions with given model and parameters
                 res = self.extension._run_model_on_fold(
@@ -70,7 +76,7 @@ class TestOnnxExtensionRunFunctions(TestBase):
 
                 y_hat, y_hat_proba, user_defined_measures, trace = res
 
-                # predictions
+                # Predictions
                 self.assertIsInstance(y_hat, np.ndarray)
                 self.assertEqual(y_hat.shape, y_test.shape)
                 self.assertIsInstance(y_hat_proba, np.ndarray)
@@ -78,17 +84,12 @@ class TestOnnxExtensionRunFunctions(TestBase):
                 np.testing.assert_array_almost_equal(np.sum(y_hat_proba, axis=1),
                                                      np.ones(y_test.shape))
 
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
-
                 # Trace comparison (Assert to None)
                 self.assertIsNone(trace)
 
-    def test_run_model_on_fold_regression_1(self):
+    def test_run_model_on_fold_regression(self):
         """ Function testing run_model_on_fold
-        Regression task and Sequential Model.
+        Regression task.
 
         :return: Nothing
         """
@@ -99,19 +100,28 @@ class TestOnnxExtensionRunFunctions(TestBase):
             with self.subTest(i=i):
                 task = openml.tasks.get_task(task_lst[i])
 
+                # Obtain train and test data
                 X, y = task.get_X_and_y()
+
                 train_indices, test_indices = task.get_train_test_split_indices(
                     repeat=0, fold=0, sample=0)
-                X_train = X[train_indices] / 255
+                X_train = X[train_indices]
                 y_train = y[train_indices]
-                X_test = X[test_indices] / 255
+                X_test = X[test_indices]
                 y_test = y[test_indices]
 
+                # Calculate input and output shapes
                 input_length = X_train.shape[1]
                 output_length = 1
-                self.create_onnx(input_length, output_length, X_train)
-                model = onnx.load('model.onnx')
 
+                # Create an ONNX file from an MXNet model
+                self._create_onnx_file(input_length, output_length, X_train, task)
+
+                # Load the ONNX model from the file and remove the file
+                model = onnx.load('model.onnx')
+                self._remove_onnx_file()
+
+                # Call tested functions with given model and parameters
                 res = self.extension._run_model_on_fold(
                     model=model,
                     task=task,
@@ -124,47 +134,56 @@ class TestOnnxExtensionRunFunctions(TestBase):
 
                 y_hat, y_hat_proba, user_defined_measures, trace = res
 
-                # predictions
+                # Predictions
                 self.assertIsInstance(y_hat, np.ndarray)
                 self.assertEqual(y_hat.shape, y_test.shape)
                 self.assertIsNone(y_hat_proba)
 
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
-
-                # trace. SGD does not produce any
+                # Trace comparison (Assert to None)
                 self.assertIsNone(trace)
 
-    def create_onnx(self, input_len, output_len, X_train):
-        # Create simple sequential model
-        net = gluon.nn.HybridSequential()
-        with net.name_scope():
-            net.add(gluon.nn.Dense(1024, activation="relu"))
-            net.add(gluon.nn.Dropout(0.4))
-            net.add(gluon.nn.Dense(output_len, activation="softrelu"))
+    def _create_onnx_file(self, input_len, output_len, X_train, task):
+        data = mx.sym.var('data')
+        bnorm = mx.sym.BatchNorm(data=data)
+        fc1 = mx.sym.FullyConnected(data=bnorm, num_hidden=1024)
+        act1 = mx.sym.Activation(data=fc1, act_type="relu")
+        drop1 = mx.sym.Dropout(data=act1, p=0.1)
+        fc2 = mx.sym.FullyConnected(data=drop1, num_hidden=1024)
+        act2 = mx.sym.Activation(data=fc2, act_type="relu")
+        drop2 = mx.sym.Dropout(data=act2, p=0.2)
+        fc2 = mx.sym.FullyConnected(data=drop2, num_hidden=output_len)
 
-        # Initialize and optimize the model
-        # TODO: Initializer?
-        net.initialize(mx.init.Xavier(), ctx=mx.cpu())
-        net.hybridize()
+        if isinstance(task, OpenMLClassificationTask):
+            mlp = mx.sym.SoftmaxOutput(data=fc2, name='softmax')
+        elif isinstance(task, OpenMLRegressionTask):
+            mlp = fc2
 
-        # Convert training data
-        input = nd.array(X_train)
+        mlp_model = mx.mod.Module(symbol=mlp, data_names=['data'], context=mx.cpu())
 
-        # Train the model
-        with autograd.record():
-            # Forward propagation must be executed at least once before export
-            output = net(input)
+        data_shapes = [('data', X_train.shape)]
 
-        # Export model
+        mlp_model.bind(data_shapes=data_shapes)
+        init = mx.init.Xavier()
+        mlp_model.init_params(initializer=init)
+
+        mlp_model.save_params('./model-0001.params')
+        mlp.save('./model-symbol.json')
+
         onnx_mxnet.export_model(
-            sym=net(sym.var('data')),
-            params={k: v._reduce() for k, v in net.collect_params().items()},
+            sym='./model-symbol.json',
+            params='./model-0001.params',
             input_shape=[(1024, input_len)],
             onnx_file_path='model.onnx')
 
-    def remove_onnx(self):
+        self._remove_mxnet_files()
+
+    def _remove_mxnet_files(self):
+        if os.path.exists("model-0001.params"):
+            os.remove("model-0001.params")
+
+        if os.path.exists("model-symbol.json"):
+            os.remove("model-symbol.json")
+
+    def _remove_onnx_file(self):
         if os.path.exists("model.onnx"):
             os.remove("model.onnx")
