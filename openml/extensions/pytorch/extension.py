@@ -378,10 +378,6 @@ class PytorchExtension(Extension):
         # is not supported by OpenML
         self._check_multiple_occurence_of_component_in_flow(model, subcomponents)
 
-        # Create a flow name, which contains all components in brackets, e.g.:
-        # RandomizedSearchCV(Pipeline(StandardScaler,AdaBoostClassifier(DecisionTreeClassifier)),
-        # StandardScaler,AdaBoostClassifier(DecisionTreeClassifier))
-
         import zlib
         import os
 
@@ -478,52 +474,66 @@ class PytorchExtension(Extension):
             return True
         return False
 
-    def _find_hyper_parameters(self, module: torch.nn.Module,
-                               parameters: Dict[str, torch.nn.Parameter]) -> Dict[str, Any]:
+    def _get_module_hyperparameters(self, module: torch.nn.Module,
+                                    parameters: Dict[str, torch.nn.Parameter]) -> Dict[str, Any]:
+        # Extract the signature of the module constructor
         main_signature = inspect.signature(module.__init__)
         params = dict()  # type: Dict[str, Any]
 
         check_bases = False  # type: bool
         for param_name, param in main_signature.parameters.items():
+            # Skip hyper-parameters which are actually parameters.
             if param_name in parameters.keys():
                 continue
 
+            # Skip *args and **kwargs, and check the base classes instead.
             if param.kind in (inspect.Parameter.VAR_POSITIONAL,
                               inspect.Parameter.VAR_KEYWORD):
                 check_bases = True
                 continue
 
+            # Extract the hyperparameter from the module.
             if hasattr(module, param_name):
                 params[param_name] = getattr(module, param_name)
 
         if check_bases:
             for base in module.__class__.__bases__:
+                # Extract the signature  of the base constructor
                 base_signature = inspect.signature(base.__init__)
 
                 for param_name, param in base_signature.parameters.items():
+                    # Skip hyper-parameters which are actually parameters.
                     if param_name in parameters.keys():
                         continue
 
+                    # Skip *args and **kwargs since they are not relevant.
                     if param.kind in (inspect.Parameter.VAR_POSITIONAL,
                                       inspect.Parameter.VAR_KEYWORD):
                         continue
 
+                    # Extract the hyperparameter from the module.
                     if hasattr(module, param_name):
                         params[param_name] = getattr(module, param_name)
 
         return params
 
-    def _get_model_descriptors(self, model: torch.nn.Module, deep=True):
+    def _get_module_descriptors(self, model: torch.nn.Module, deep=True) -> Dict[str, Any]:
+        # The named children (modules) of the given module.
         named_children = list((k, v) for (k, v) in model.named_children())
+        # The parameters of the given module and its submodules.
         model_parameters = dict((k, v) for (k, v) in model.named_parameters())
 
         parameters = dict()  # type: Dict[str, Any]
-
         if not self._is_container_module(model):
-            parameters = self._find_hyper_parameters(model, model_parameters)
+            # For non-containers, we simply extract the hyperparameters.
+            parameters = self._get_module_hyperparameters(model, model_parameters)
         else:
+            # Otherwise we serialize their children as lists of pairs in order
+            # to maintain the order of the sub modules.
             parameters['children'] = named_children
 
+        # If a deep description is required, append the children to the dictionary of
+        # returned parameters.
         if deep:
             named_children_dict = dict(named_children)
             parameters = {**parameters, **named_children_dict}
@@ -552,7 +562,7 @@ class PytorchExtension(Extension):
         parameters = OrderedDict()  # type: OrderedDict[str, Optional[str]]
         parameters_meta_info = OrderedDict()  # type: OrderedDict[str, Optional[Dict]]
 
-        model_parameters = self._get_model_descriptors(model, deep=False)
+        model_parameters = self._get_module_descriptors(model, deep=False)
         for k, v in sorted(model_parameters.items(), key=lambda t: t[0]):
             rval = self._serialize_pytorch(v, model)
 
@@ -582,16 +592,13 @@ class PytorchExtension(Extension):
                 # we assume they are steps in a pipeline, feature union, or base classifiers in
                 # a voting classifier.
                 parameter_value = list()  # type: List
-                reserved_keywords = set(self._get_model_descriptors(model, deep=False).keys())
+                reserved_keywords = set(self._get_module_descriptors(model, deep=False).keys())
 
                 for sub_component_tuple in rval:
                     identifier = sub_component_tuple[0]
                     sub_component = sub_component_tuple[1]
                     sub_component_type = type(sub_component_tuple)
                     if not 2 <= len(sub_component_tuple) <= 3:
-                        # length 2 is for {VotingClassifier.estimators,
-                        # Pipeline.steps, FeatureUnion.transformer_list}
-                        # length 3 is for ColumnTransformer
                         msg = 'Length of tuple does not match assumptions'
                         raise ValueError(msg)
                     if not isinstance(sub_component, (OpenMLFlow, type(None))):
@@ -645,8 +652,7 @@ class PytorchExtension(Extension):
 
             elif isinstance(rval, OpenMLFlow):
 
-                # A subcomponent, for example the base model in
-                # AdaBoostClassifier
+                # A subcomponent, for example the layers in a sequential model
                 sub_components[k] = rval
                 sub_components_explicit.add(k)
                 component_reference = OrderedDict()
@@ -892,7 +898,6 @@ class PytorchExtension(Extension):
         if isinstance(param_grid, dict):
             result = list()
             for param, value in param_grid.items():
-                # n_jobs is scikit-learn parameter for parallelizing jobs
                 if param.split('__')[-1] == parameter_name:
                     result.append(value)
             return result
@@ -918,7 +923,7 @@ class PytorchExtension(Extension):
         Returns:
         --------
         bool:
-            True if all n_jobs parameters will be either set to None or 1, False otherwise
+            False
         """
 
         return False
@@ -936,15 +941,16 @@ class PytorchExtension(Extension):
         Returns:
         --------
         bool:
-            True if no n_jobs parameters is set to -1, False otherwise
+            True
         """
+
         return True
 
     ################################################################################################
     # Methods for performing runs with extension modules
 
     def is_estimator(self, model: Any) -> bool:
-        """Check whether the given model is a scikit-learn estimator.
+        """Check whether the given model is a pytorch estimator.
 
         This function is only required for backwards compatibility and will be removed in the
         near future.
@@ -1310,7 +1316,7 @@ class PytorchExtension(Extension):
             # not have to rely on _flow_dict
             exp_parameters = set(_flow.parameters)
             exp_components = set(_flow.components)
-            model_parameters = set([mp for mp in self._get_model_descriptors(component_model)
+            model_parameters = set([mp for mp in self._get_module_descriptors(component_model)
                                     if '__' not in mp])
             if len((exp_parameters | exp_components) ^ model_parameters) != 0:
                 flow_params = sorted(exp_parameters | exp_components)
@@ -1327,7 +1333,7 @@ class PytorchExtension(Extension):
                 _current['oml:name'] = _param_name
 
                 current_param_values = self.model_to_flow(
-                    self._get_model_descriptors(component_model)[_param_name])
+                    self._get_module_descriptors(component_model)[_param_name])
 
                 # Try to filter out components (a.k.a. subflows) which are
                 # handled further down in the code (by recursively calling
@@ -1339,10 +1345,6 @@ class PytorchExtension(Extension):
                     # complex parameter value, with subcomponents
                     parsed_values = list()
                     for subcomponent in current_param_values:
-                        # scikit-learn stores usually tuples in the form
-                        # (name (str), subcomponent (mixed), argument
-                        # (mixed)). OpenML replaces the subcomponent by an
-                        # OpenMLFlow object.
                         if len(subcomponent) < 2 or len(subcomponent) > 3:
                             raise ValueError('Component reference should be '
                                              'size {2,3}. ')
@@ -1382,7 +1384,7 @@ class PytorchExtension(Extension):
                 _params.append(_current)
 
             for _identifier in _flow.components:
-                subcomponent_model = self._get_model_descriptors(component_model)[_identifier]
+                subcomponent_model = self._get_module_descriptors(component_model)[_identifier]
                 _params.extend(extract_parameters(_flow.components[_identifier],
                                                   _flow_dict, subcomponent_model))
             return _params
@@ -1399,7 +1401,7 @@ class PytorchExtension(Extension):
         flow: OpenMLFlow,
     ) -> str:
         """
-        Converts the name of an OpenMLParameter into the sklean name, given a flow.
+        Converts the name of an OpenMLParameter into the pytorch name, given a flow.
 
         Parameters
         ----------
@@ -1412,7 +1414,7 @@ class PytorchExtension(Extension):
         Returns
         -------
         pytorch_parameter_name: str
-            The name the parameter will have once used in scikit-learn
+            The name the parameter will have once used in pytorch
         """
         if not isinstance(openml_parameter, openml.setups.OpenMLParameter):
             raise ValueError('openml_parameter should be an instance of OpenMLParameter')
