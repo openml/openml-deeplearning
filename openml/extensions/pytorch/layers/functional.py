@@ -8,5 +8,5 @@ class Functional(torch.nn.Module):
         self.args = args
         self.kwargs = kwargs
 
-    def forward(self, x):
-        return self.function(x, *self.args, **self.kwargs)
+    def forward(self, *inp):
+        return self.function(*inp, *self.args, **self.kwargs)
