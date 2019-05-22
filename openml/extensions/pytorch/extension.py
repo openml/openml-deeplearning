@@ -760,7 +760,7 @@ class PytorchExtension(Extension):
                 # (base-)components, in OpenML terms, these are not considered
                 # hyperparameters but rather constants (i.e., changing them would
                 # result in a different flow)
-                if param not in components.keys():
+                if param not in components.keys() and param in parameter_dict:
                     del parameter_dict[param]
 
         if self._is_container_module(model_class):
