@@ -73,7 +73,13 @@ class TestPytorchExtensionFlowSerialization(TestBase):
             # Remove identifier of each component
             structure_modified = {}
 
-            for key, value in structure.items():
+            def _cmp(kv):
+                k, v = kv
+                if len(v) == 0:
+                    return k
+                return v[0]
+
+            for key, value in sorted(structure.items(), key=_cmp):
                 new_key = key[:key.rfind('.')]
                 if new_key not in structure_modified.keys():
                     structure_modified[new_key] = value
