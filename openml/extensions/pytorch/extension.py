@@ -13,7 +13,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import scipy.stats
 import scipy.sparse
 import scipy.special
 
@@ -28,7 +27,7 @@ import openml
 from openml.exceptions import PyOpenMLError
 from openml.extensions import Extension, register_extension
 from openml.flows import OpenMLFlow
-from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration, PREFIX
+from openml.runs.trace import OpenMLRunTrace, OpenMLTraceIteration
 from openml.tasks import (
     OpenMLTask,
     OpenMLSupervisedTask,
@@ -174,6 +173,8 @@ class PytorchExtension(Extension):
                     rval = self._deserialize_type(value)
                 elif serialized_type == 'function':
                     rval = self._deserialize_function(value)
+                elif serialized_type == 'methoddescriptor':
+                    rval = self._deserialize_methoddescriptor(value)
                 elif serialized_type == 'component_reference':
                     assert components is not None  # Necessary for mypy
                     value = self._deserialize_pytorch(value, recursion_depth=depth_pp)
@@ -300,6 +301,8 @@ class PytorchExtension(Extension):
         elif inspect.isfunction(o):
             # TODO: explain what type of parameter is here
             rval = self._serialize_function(o)
+        elif inspect.ismethoddescriptor(o):
+            rval = self._serialize_methoddescriptor(o)
         else:
             raise TypeError(o, type(o))
 
@@ -840,6 +843,21 @@ class PytorchExtension(Extension):
     def _deserialize_function(self, name: str) -> Callable:
         module_name = name.rsplit('.', 1)
         function_handle = getattr(importlib.import_module(module_name[0]), module_name[1])
+        return function_handle
+
+    def _serialize_methoddescriptor(self, o: Any) -> 'OrderedDict[str, str]':
+        name = o.__objclass__.__module__ \
+            + '.' + o.__objclass__.__name__ \
+            + '.' + o.__name__
+        ret = OrderedDict()  # type: 'OrderedDict[str, str]'
+        ret['oml-python:serialized_object'] = 'methoddescriptor'
+        ret['value'] = name
+        return ret
+
+    def _deserialize_methoddescriptor(self, name: str) -> Any:
+        module_name = name.rsplit('.', 2)
+        object_handle = getattr(importlib.import_module(module_name[0]), module_name[1])
+        function_handle = getattr(object_handle, module_name[2])
         return function_handle
 
     def _format_external_version(

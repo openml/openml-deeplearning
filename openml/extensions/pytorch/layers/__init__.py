@@ -1,3 +1,3 @@
-from .reshape import Reshape
+from .functional import Functional
 
-__all__ = ['Reshape']
+__all__ = ['Functional']
