@@ -828,39 +828,6 @@ class PytorchExtension(Extension):
                    'np.int64': np.int64}
         return mapping[o]
 
-    def _serialize_rv_frozen(self, o: Any) -> 'OrderedDict[str, Union[str, Dict]]':
-        args = o.args
-        kwds = o.kwds
-        a = o.a
-        b = o.b
-        dist = o.dist.__class__.__module__ + '.' + o.dist.__class__.__name__
-        ret = OrderedDict()  # type: 'OrderedDict[str, Union[str, Dict]]'
-        ret['oml-python:serialized_object'] = 'rv_frozen'
-        ret['value'] = OrderedDict((('dist', dist), ('a', a), ('b', b),
-                                    ('args', args), ('kwds', kwds)))
-        return ret
-
-    def _deserialize_rv_frozen(self, o: 'OrderedDict[str, str]') -> Any:
-        args = o['args']
-        kwds = o['kwds']
-        a = o['a']
-        b = o['b']
-        dist_name = o['dist']
-
-        module_name = dist_name.rsplit('.', 1)
-        try:
-            rv_class = getattr(importlib.import_module(module_name[0]),
-                               module_name[1])
-        except AttributeError:
-            warnings.warn('Cannot create model %s for flow.' % dist_name)
-            return None
-
-        dist = scipy.stats.distributions.rv_frozen(rv_class(), *args, **kwds)
-        dist.a = a
-        dist.b = b
-
-        return dist
-
     def _serialize_function(self, o: Callable) -> 'OrderedDict[str, str]':
         name = o.__module__ + '.' + o.__name__
         ret = OrderedDict()  # type: 'OrderedDict[str, str]'
