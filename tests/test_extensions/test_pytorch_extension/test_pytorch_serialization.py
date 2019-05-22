@@ -11,6 +11,7 @@ from openml import config
 from openml.extensions.pytorch import PytorchExtension
 from openml.testing import TestBase
 
+
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
@@ -38,24 +39,19 @@ class TestPytorchExtensionFlowSerialization(TestBase):
             version_fixture = 'torch==%s\nnumpy>=1.6.1\nscipy>=0.9' \
                               % torch.__version__
             fixture_parameters = \
-                OrderedDict([('0',
+                OrderedDict([('children',
+                              '[{"oml-python:serialized_object": "component_reference", '
+                              '"value": {"key": "0", "step_name": "0"}}, '
                               '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "0", "step_name": null}}'),
-                             ('1',
+                              '"value": {"key": "1", "step_name": "1"}}, '
                               '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "1", "step_name": null}}'),
-                             ('2',
+                              '"value": {"key": "2", "step_name": "2"}}, '
                               '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "2", "step_name": null}}'),
-                             ('3',
+                              '"value": {"key": "3", "step_name": "3"}}, '
                               '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "3", "step_name": null}}'),
-                             ('4',
+                              '"value": {"key": "4", "step_name": "4"}}, '
                               '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "4", "step_name": null}}'),
-                             ('5',
-                              '{"oml-python:serialized_object": "component_reference", '
-                              '"value": {"key": "5", "step_name": null}}')])
+                              '"value": {"key": "5", "step_name": "5"}}]')])
 
             structure_fixture = {'torch.nn.modules.activation.ReLU': ['2'],
                                  'torch.nn.modules.activation.Softmax': ['5'],
@@ -86,4 +82,12 @@ class TestPytorchExtensionFlowSerialization(TestBase):
 
             self.assertDictEqual(structure_fixture, structure_modified)
 
-            self.assertEqual(check_dependencies_mock.call_count, 0)
+            new_model = self.extension.flow_to_model(serialization)
+            # compares string representations of the dict, as it potentially
+            # contains complex objects that can not be compared with == op
+            self.assertEqual(str(model), str(new_model))
+
+            self.assertEqual(type(new_model), type(model))
+            self.assertIsNot(new_model, model)
+
+            self.assertEqual(check_dependencies_mock.call_count, 7)
