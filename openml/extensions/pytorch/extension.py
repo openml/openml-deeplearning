@@ -436,9 +436,11 @@ class PytorchExtension(Extension):
             model_package_name, model_package_version_number,
         )
         openml_version = self._format_external_version('openml', openml.__version__)
+        torch_version = self._format_external_version('torch', torch.__version__)
         external_versions = set()
         external_versions.add(external_version)
         external_versions.add(openml_version)
+        external_versions.add(torch_version)
         for visitee in sub_components.values():
             for external_version in visitee.external_version.split(','):
                 external_versions.add(external_version)
