@@ -103,7 +103,7 @@ class TestPytorchExtensionFlowDeserialization(TestBase):
 
     def test_nested_sequential(self):
         processing_net = torch.nn.Sequential(
-            layers.Reshape((-1, 1, 28, 28)),
+            layers.Functional(function=torch.Tensor.view, shape=(-1, 1, 28, 28)),
             torch.nn.BatchNorm2d(num_features=1)
         )
         features_net = torch.nn.Sequential(
@@ -115,7 +115,7 @@ class TestPytorchExtensionFlowDeserialization(TestBase):
             torch.nn.MaxPool2d(kernel_size=2),
         )
         results_net = torch.nn.Sequential(
-            layers.Reshape((-1, 4 * 4 * 64)),
+            layers.Functional(function=torch.Tensor.view, shape=(-1, 4 * 4 * 64)),
             torch.nn.Linear(in_features=4 * 4 * 64, out_features=256),
             torch.nn.LeakyReLU(),
             torch.nn.Dropout(),
