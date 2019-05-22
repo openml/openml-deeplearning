@@ -101,24 +101,6 @@ class TestPytorchExtensionFlowDeserialization(TestBase):
             sequential_orig_flow,
         )
 
-    # def test_from_parameters(self):
-    #     """ Function test_from_parameters
-    #     Test the _from_parameters which gets a model from parameters
-    #
-    #     :return: Nothing
-    #     """
-    #     model = torch.nn.Sequential(
-    #         torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5),
-    #         torch.nn.LeakyReLU(),
-    #         torch.nn.MaxPool2d(kernel_size=2),
-    #         torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=5),
-    #         torch.nn.LeakyReLU(),
-    #         torch.nn.MaxPool2d(kernel_size=2),
-    #         )
-    #
-    #     params = self.extension._get_parameters(model)
-    #     self.extension._from_parameters(params)
-
     def test_nested_sequential(self):
         processing_net = torch.nn.Sequential(
             layers.Reshape((-1, 1, 28, 28)),
