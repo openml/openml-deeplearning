@@ -49,12 +49,8 @@ class TestKerasExtensionFlowDeserialization(TestBase):
         flow = self.extension.model_to_flow(sequential_adjusted)
         sequential_deserialized = self.extension.flow_to_model(flow, initialize_with_defaults=True)
 
-        # we want to compare sequential_deserialized and sequential_orig. We use the flow
-        # equals function for this
-        assert_flows_equal(
-            self.extension.model_to_flow(sequential_orig),
-            self.extension.model_to_flow(sequential_deserialized),
-        )
+        # we want to compare sequential_deserialized and sequential_orig.
+        self.assertDictEqual(sequential_deserialized.get_config(), sequential_orig.get_config())
 
     def test_deserialize_functional(self):
         """ Function test_deserialize_functional
@@ -91,12 +87,8 @@ class TestKerasExtensionFlowDeserialization(TestBase):
         flow = self.extension.model_to_flow(functional_adjusted)
         functional_deserialized = self.extension.flow_to_model(flow, initialize_with_defaults=True)
 
-        # we want to compare functional_deserialized and functional_orig. We use the flow
-        # equals function for this
-        assert_flows_equal(
-            self.extension.model_to_flow(functional_orig),
-            self.extension.model_to_flow(functional_deserialized),
-        )
+        # we want to compare functional_deserialized and functional_orig.
+        self.assertDictEqual(functional_deserialized.get_config(), functional_orig.get_config())
 
     def test_from_parameters(self):
         """ Function test_from_parameters
@@ -112,7 +104,9 @@ class TestKerasExtensionFlowDeserialization(TestBase):
         ])
 
         params = self.extension._get_parameters(model)
-        self.extension._from_parameters(params)
+        model_des = self.extension._from_parameters(params)
+
+        self.assertDictEqual(model.get_config(), model_des.get_config())
 
     def test_compile(self):
         """ Function test_compile
@@ -135,6 +129,5 @@ class TestKerasExtensionFlowDeserialization(TestBase):
         self.assertNotEqual(flow_compiled, flow_uncompiled)
 
         deserialized = self.extension.flow_to_model(flow_compiled)
-        flow_deserialized = self.extension.model_to_flow(deserialized)
 
-        assert_flows_equal(flow_compiled, flow_deserialized)
+        self.assertDictEqual(deserialized.get_config(), model.get_config())
