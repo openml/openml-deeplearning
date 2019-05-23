@@ -1,4 +1,3 @@
-import copy
 import importlib
 import json
 import logging
@@ -10,7 +9,7 @@ import zlib
 import math
 from collections import OrderedDict  # noqa: F401
 from distutils.version import LooseVersion
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import onnx
 import numpy as np
@@ -111,7 +110,7 @@ class OnnxExtension(Extension):
 
     def _deserialize_onnx(
             self,
-            flow: 'OpenMlFlow',
+            flow: 'OpenMLFlow',
             components: Optional[Dict] = None,
             initialize_with_defaults: bool = False,
             recursion_depth: int = 0,
@@ -720,8 +719,8 @@ class OnnxExtension(Extension):
 
                 for j in range(epochs):
                     for i in range(nr_of_batches):
-                        input = nd.array(X_train[i*batch_size:(i+1)*batch_size])
-                        labels = nd.array(y_train[i*batch_size:(i+1)*batch_size])
+                        input = nd.array(X_train[i * batch_size:(i + 1) * batch_size])
+                        labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
 
                         # Train the model
                         with autograd.record():

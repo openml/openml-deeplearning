@@ -41,8 +41,8 @@ nr_of_batches = math.ceil(X_train.shape[0] / batch_size)
 
 for j in range(epochs):
     for i in range(nr_of_batches):
-        input = nd.array(X_train[i*batch_size:(i+1)*batch_size])
-        labels = nd.array(y_train[i*batch_size:(i+1)*batch_size])
+        input = nd.array(X_train[i * batch_size:(i + 1) * batch_size])
+        labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
 
         # Train the model
         with autograd.record():
