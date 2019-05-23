@@ -192,8 +192,8 @@ class OnnxExtension(Extension):
         # Convert the protobuf to python dictionary
         model_dic = json_format.MessageToDict(model)
 
-        parameters = OrderedDict()
-        parameters_meta_info = OrderedDict()
+        parameters = {}
+        parameters_meta_info = {}
         parameters['backend'] = {}
         parameters_meta_info['backend'] = OrderedDict((('description', None), ('data_type', None)))
 
@@ -222,6 +222,9 @@ class OnnxExtension(Extension):
         del parameters['backend']['graph']
 
         parameters['backend'] = json.dumps(parameters['backend'])
+
+        parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        parameters_meta_info = OrderedDict(sorted(parameters_meta_info.items(), key=lambda x: x[0]))
 
         # Create a flow name, which contains a hash of the parameters as part of the name
         # This is done in order to ensure that we are not exceeding the 1024 character limit
