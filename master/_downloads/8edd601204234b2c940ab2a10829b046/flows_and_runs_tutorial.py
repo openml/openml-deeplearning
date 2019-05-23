@@ -133,7 +133,7 @@ clf = tree.ExtraTreeClassifier()
 extension = openml.extensions.get_extension_by_model(clf)
 flow = extension.model_to_flow(clf)
 
-run = openml.runs.run_flow_on_task(flow, task)
+run = openml.runs.run_flow_on_task(flow, task, avoid_duplicate_runs=False)
 
 ############################################################################
 # Challenge

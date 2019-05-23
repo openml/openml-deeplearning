@@ -34,6 +34,7 @@ Extensions
    Extension
    sklearn.SklearnExtension
    keras.KerasExtension
+   pytorch.PytorchExtension
 
 .. currentmodule:: openml.extensions
 
@@ -136,4 +137,3 @@ Modules
     get_task
     get_tasks
     list_tasks
-

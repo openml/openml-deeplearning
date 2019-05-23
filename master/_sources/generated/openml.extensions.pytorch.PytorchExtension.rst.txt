@@ -1,0 +1,6 @@
+:mod:`openml.extensions.pytorch`.PytorchExtension
+========================================================
+
+.. currentmodule:: openml.extensions.pytorch
+
+.. autoclass:: PytorchExtension
