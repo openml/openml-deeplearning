@@ -111,7 +111,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
             self.assertEqual(type(new_model), type(model))
             self.assertIsNot(new_model, model)
 
-            self.assertEqual(new_model.get_config(), model.get_config())
+            self.assertDictEqual(new_model.get_config(), model.get_config())
 
             X, y, _, _ = self.iris.get_data(
                 dataset_format='array',
@@ -215,7 +215,7 @@ class TestKerasExtensionFlowSerialization(TestBase):
             self.assertEqual(type(new_model), type(model))
             self.assertIsNot(new_model, model)
 
-            self.assertEqual(new_model.get_config(), model.get_config())
+            self.assertDictEqual(new_model.get_config(), model.get_config())
 
             X, y, _, _ = self.mnist_784.get_data(
                 dataset_format='array',
