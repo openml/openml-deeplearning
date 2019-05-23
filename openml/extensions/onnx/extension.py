@@ -193,11 +193,26 @@ class OnnxExtension(Extension):
         model_dic = json_format.MessageToDict(model)
 
         parameters = OrderedDict()
+        parameters_meta_info = OrderedDict()
         parameters['backend'] = {}
+        parameters_meta_info['backend'] = OrderedDict((('description', None), ('data_type', None)))
 
         # Add graph information to parameters dictionary
-        for key, value in model_dic['graph'].items():
-            parameters[key] = value
+        # for key, value in model_dic['graph'].items():
+        for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
+            if isinstance(value, list):
+                for (index, val) in enumerate(value):
+                    k = '{}_{}_{}'.format(key, str(index), val['name'])
+                    v = val
+                    if key == 'initializer':
+                        del v['floatData']
+                    parameters[k] = json.dumps(v)
+                    parameters_meta_info[k] = OrderedDict((('description', None),
+                                                           ('data_type', None)))
+            else:
+                parameters[key] = value
+                parameters_meta_info[key] = OrderedDict((('description', None),
+                                                         ('data_type', None)))
 
         # Add backend information to parameters dictionary
         for key, value in model_dic.items():
@@ -205,6 +220,8 @@ class OnnxExtension(Extension):
 
         # Remove redundant graph information
         del parameters['backend']['graph']
+
+        parameters['backend'] = json.dumps(parameters['backend'])
 
         # Create a flow name, which contains a hash of the parameters as part of the name
         # This is done in order to ensure that we are not exceeding the 1024 character limit
@@ -223,8 +240,12 @@ class OnnxExtension(Extension):
                 'onnx',
                 onnx.__version__,
             ),
-            'numpy>=1.6.1', # TODO: Fix version
-            'scipy>=0.9',
+            self._format_external_version(
+                'mxnet',
+                mx.__version__,
+            ),
+            'numpy>=1.6.1,<=1.14.6',
+            'scipy>=0.9,<=1.2.1',
         ])
 
         name = class_name
@@ -232,7 +253,6 @@ class OnnxExtension(Extension):
         # For ONNX, components and parameters_meta_info are empty so they are initialized with
         # empty ordered dictionaries
         components = OrderedDict()
-        parameters_meta_info = OrderedDict()
 
         onnx_version = self._format_external_version('onnx', onnx.__version__)
         onnx_version_formatted = onnx_version.replace('==', '_')
@@ -269,15 +289,17 @@ class OnnxExtension(Extension):
         import onnx
         import scipy
         import numpy
+        import mxnet
 
         major, minor, micro, _, _ = sys.version_info
         python_version = 'Python_{}.'.format(
             ".".join([str(major), str(minor), str(micro)]))
         onnx_version = 'Onnx_{}.'.format(onnx.__version__)
+        mxnet_version = 'MXNet_{}.'.format(mxnet.__version__)
         numpy_version = 'NumPy_{}.'.format(numpy.__version__)
         scipy_version = 'SciPy_{}.'.format(scipy.__version__)
 
-        return [python_version, onnx_version, numpy_version, scipy_version]
+        return [python_version, onnx_version, mxnet_version, numpy_version, scipy_version]
 
     def create_setup_string(self, model: Any) -> str:
         """Create a string which can be used to reinstantiate the given model.
@@ -309,7 +331,7 @@ class OnnxExtension(Extension):
         # version of all subcomponents, which themselves already contain all
         # requirements for their subcomponents. The external version string is a
         # sorted concatenation of all modules which are present in this run.
-        model_package_name = model.__module__.split('.')[0]
+        model_package_name = model.__module__.split('_')[0]
         module = importlib.import_module(model_package_name)
         model_package_version_number = module.__version__  # type: ignore
         external_version = self._format_external_version(
@@ -658,6 +680,10 @@ class OnnxExtension(Extension):
         onnx.save(model, 'model.onnx')
         model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=mx.cpu())
 
+        # Reinitialize weights and bias
+        # TODO: Find way to initialize using Xavier
+        model_mx.initialize(init=mx.init.Uniform(), force_reinit=True)
+
         # Sanitize train and test data
         X_train[np.isnan(X_train)] = 1.0e-12
         X_test[np.isnan(X_test)] = 1.0e-12
@@ -727,7 +753,7 @@ class OnnxExtension(Extension):
             pred_y = model_mx(nd.array(X_test))
             if isinstance(task, OpenMLClassificationTask):
                 pred_y = mx.nd.argmax(pred_y, -1)
-                pred_y = pred_y.asnumpy()
+                pred_y = (pred_y.asnumpy()).astype(np.int64)
             if isinstance(task, OpenMLRegressionTask):
                 pred_y = pred_y.asnumpy()
                 pred_y = pred_y.reshape((-1))
