@@ -70,7 +70,10 @@ setuptools.setup(name="openml",
                      'dlkeras': [
                          'keras',
                          'tensorflow'
-                     ]
+                     ],
+                     'dltorch': [
+                         'torch==1.0.1',
+                     ],
                  },
                  test_suite="pytest",
                  classifiers=['Intended Audience :: Science/Research',

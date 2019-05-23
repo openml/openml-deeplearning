@@ -1,4 +1,3 @@
-import collections
 import os
 import sys
 
@@ -82,11 +81,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 np.testing.assert_array_almost_equal(np.sum(y_hat_proba, axis=1),
                                                      np.ones(y_test.shape))
 
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
-
                 # Trace comparison (Assert to None)
                 self.assertIsNone(trace)
 
@@ -149,11 +143,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 self.assertIsInstance(y_hat_proba, np.ndarray)
                 self.assertEqual(y_hat_proba.shape, (y_test.shape[0], output_length))
 
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
-
                 # trace should assert to None
                 self.assertIsNone(trace)
 
@@ -204,11 +193,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 self.assertIsInstance(y_hat, np.ndarray)
                 self.assertEqual(y_hat.shape, y_test.shape)
                 self.assertIsNone(y_hat_proba)
-
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
 
                 # trace. SGD does not produce any
                 self.assertIsNone(trace)
@@ -264,11 +248,6 @@ class TestKerasExtensionRunFunctions(TestBase):
                 self.assertIsInstance(y_hat, np.ndarray)
                 self.assertEqual(y_hat.shape, y_test.shape)
                 self.assertIsNone(y_hat_proba)
-
-                # check user defined measures
-                fold_evaluations = collections.defaultdict(lambda: collections.defaultdict(dict))
-                for measure in user_defined_measures:
-                    fold_evaluations[measure][0][0] = user_defined_measures[measure]
 
                 # Trace should assert to None
                 self.assertIsNone(trace)
