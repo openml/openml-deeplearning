@@ -1,13 +1,11 @@
 import openml
-import onnx
 import numpy as np
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-from mxnet import nd, gluon, autograd, sym
-from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 # Obtain task with training data
-task = openml.tasks.get_task(10101) # 3573
+# 3573
+task = openml.tasks.get_task(10101)
 X, y = task.get_X_and_y()
 train_indices, test_indices = task.get_train_test_split_indices(
     repeat=0, fold=0, sample=0)
