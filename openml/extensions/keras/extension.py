@@ -951,7 +951,10 @@ class KerasExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             pred_y = model_copy.predict(X_test)
-            pred_y = keras.backend.argmax(pred_y)
+            if isinstance(task, OpenMLClassificationTask):
+                pred_y = keras.backend.argmax(pred_y)
+            elif isinstance(task, OpenMLRegressionTask):
+                pred_y = keras.backend.reshape(pred_y, (-1,))
             pred_y = keras.backend.eval(pred_y)
         else:
             raise ValueError(task)
