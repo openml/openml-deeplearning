@@ -115,16 +115,15 @@ class OnnxExtension(Extension):
             initialize_with_defaults: bool = False,
             recursion_depth: int = 0,
     ) -> Any:
-        """Recursive function to deserialize a onnx flow.
+        """Creates the ONNX representation of the OpenMLFlow.
 
-        This function delegates all work to the respective functions to deserialize special data
-        structures etc.
+        Deserializes the components, parameters, and parameters_meta_info dictionaries
+        of the OpenMLFlow to create the representing ONNX model.
 
         Parameters
         ----------
-        o : mixed
-            the object to deserialize (can be flow object, or any serialized
-            parameter value that is accepted by)
+        flow : OpenMlFlow
+            The flow from which the necessary deserialization information is extracted
 
         components : dict
 
@@ -139,23 +138,70 @@ class OnnxExtension(Extension):
 
         Returns
         -------
-        mixed
+        ModelProto
+            The ONNX model associated with the OpenMLFlow
         """
+        def _is_int(val: Any) -> bool:
+            """
+            Checks if the value can be parsed to a integer.
+
+            Parameters
+            ----------
+            val : Any
+                    the value to be checked if it is an integer
+
+            Returns
+            -------
+            bool :
+                True if the value can be parsed to an integer, False otherwise
+            """
+            try:
+                int(val)
+                return True
+            except ValueError:
+                return False
 
         logging.info('-%s deserialize %s' % ('-' * recursion_depth, flow.name))
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
-        graph = parameters['graph']
+        model_dic = {'graph': {}}
 
-        model_dic = {}
-        model_dic['graph'] = graph
+        # Construct the model dictionary by parsing
+        # the parameters and placing them correctly
+        # in the dictionary
+        for (param, value) in parameters.items():
+            param_split = param.split('_', 2)
+            if len(param_split) == 3 and _is_int(param_split[1]):
+                # The parameter is part of the graph representation
+                if param_split[0] not in model_dic['graph'].keys():
+                    model_dic['graph'][param_split[0]] = []
+                model_dic['graph'][param_split[0]].append((int(param_split[1]), json.loads(value)))
+            elif param == 'backend':
+                # The parameter is not part of the graph representation
+                for (key, val) in json.loads(value).items():
+                    model_dic[key] = val
+            else:
+                model_dic['graph'][param] = value
 
-        for key, value in parameters['backend'].items():
-            model_dic[key] = value
+        # Sort items in lists by their original index
+        # (represented by the first value in the value tuple)
+        # and remove index information
+        for (key, value) in model_dic['graph'].items():
+            if isinstance(value, list):
+                model_dic['graph'][key] = \
+                    [v for k, v in sorted(model_dic['graph'][key], key=lambda x: x[0])]
 
+        # Fill initializer layers data from the dimensions and data type
+        for item in model_dic['graph']['initializer']:
+            nr_values = 1
+            for dim in item['dims']:
+                nr_values *= int(dim)
+            data_key = item['dataType'].lower() + 'Data'
+            item[data_key] = [0] * nr_values
+
+        # Create an empty ModelProto and fill it by parsing the model dictionary
         model = onnx.ModelProto()
-
         json_format.ParseDict(model_dic, model)
 
         return model
@@ -177,7 +223,7 @@ class OnnxExtension(Extension):
     def _serialize_onnx(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
 
-        Serializes the protobuf to a python dictionary to create OpenMLFlow
+        Serializes the ONNX protobuf to a python dictionary and creates OpenMLFlow
 
         Parameters
         ----------
@@ -191,6 +237,7 @@ class OnnxExtension(Extension):
         # Convert the protobuf to python dictionary
         model_dic = json_format.MessageToDict(model)
 
+        # Initialize parameters and parameters_meta_info dictionaries
         parameters = {}
         parameters_meta_info = {}
         parameters['backend'] = {}
@@ -204,7 +251,10 @@ class OnnxExtension(Extension):
                     k = '{}_{}_{}'.format(key, str(index), val['name'])
                     v = val
                     if key == 'initializer':
-                        del v['floatData']
+                        # Remove data from initializer as the model
+                        # will be reinitialized after deserialization
+                        data_key = v['dataType'].lower() + 'Data'
+                        del v[data_key]
                     parameters[k] = json.dumps(v)
                     parameters_meta_info[k] = OrderedDict((('description', None),
                                                            ('data_type', None)))
@@ -222,6 +272,8 @@ class OnnxExtension(Extension):
 
         parameters['backend'] = json.dumps(parameters['backend'])
 
+        # Sort the parameters and parameters_meta_info dictionaries
+        # as expected by OpenML
         parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
         parameters_meta_info = OrderedDict(sorted(parameters_meta_info.items(), key=lambda x: x[0]))
 
@@ -357,7 +409,8 @@ class OnnxExtension(Extension):
         # as long as they are not layers, since they need to be deserialized separately
         for k, v in parameters.items():
             if not LAYER_PATTERN.match(k):
-                config[k] = self._deserialize_onnx(v)
+                config[k] = self.\
+                    erialize_onnx(v)
 
         # Recreate the layers list and start to deserialize them back to the correct location
         config['config']['layers'] = []
