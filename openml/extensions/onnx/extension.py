@@ -234,47 +234,17 @@ class OnnxExtension(Extension):
         OpenMLFlow
 
         """
-        # Convert the protobuf to python dictionary
-        model_dic = json_format.MessageToDict(model)
 
         # Initialize parameters and parameters_meta_info dictionaries
-        parameters = {}
-        parameters_meta_info = {}
-        parameters['backend'] = {}
-        parameters_meta_info['backend'] = OrderedDict((('description', None), ('data_type', None)))
+        parameters = self._get_parameters(model)
+        parameters_meta_info = OrderedDict()
 
-        # Add graph information to parameters dictionary
-        # for key, value in model_dic['graph'].items():
-        for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
-            if isinstance(value, list):
-                for (index, val) in enumerate(value):
-                    k = '{}_{}_{}'.format(key, str(index), val['name'])
-                    v = val
-                    if key == 'initializer':
-                        # Remove data from initializer as the model
-                        # will be reinitialized after deserialization
-                        data_key = v['dataType'].lower() + 'Data'
-                        del v[data_key]
-                    parameters[k] = json.dumps(v)
-                    parameters_meta_info[k] = OrderedDict((('description', None),
-                                                           ('data_type', None)))
-            else:
-                parameters[key] = value
-                parameters_meta_info[key] = OrderedDict((('description', None),
-                                                         ('data_type', None)))
+        # Add all parameters to parameters_meta_info dictionary
+        for (key, value) in parameters.items():
+            parameters_meta_info[key] = OrderedDict((('description', None),
+                                                     ('data_type', None)))
 
-        # Add backend information to parameters dictionary
-        for key, value in model_dic.items():
-            parameters['backend'][key] = value
-
-        # Remove redundant graph information
-        del parameters['backend']['graph']
-
-        parameters['backend'] = json.dumps(parameters['backend'])
-
-        # Sort the parameters and parameters_meta_info dictionaries
-        # as expected by OpenML
-        parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        # Ensure items are sorted alphabetically by the key as expected by OpenML
         parameters_meta_info = OrderedDict(sorted(parameters_meta_info.items(), key=lambda x: x[0]))
 
         # Create a flow name, which contains a hash of the parameters as part of the name
@@ -331,7 +301,7 @@ class OnnxExtension(Extension):
     def get_version_information(self) -> List[str]:
         """List versions of libraries required by the flow.
 
-        Libraries listed are ``Python``, ``onnx``, ``numpy`` and ``scipy``.
+        Libraries listed are ``Python``, ``onnx``, ``numpy``, ``mxnet`` and ``scipy``.
 
         Returns
         -------
@@ -400,99 +370,41 @@ class OnnxExtension(Extension):
                 external_versions.add(external_version)
         return ','.join(list(sorted(external_versions)))
 
-    def _from_parameters(self, parameters: 'OrderedDict[str, Any]') -> Any:
-        # Get an ONNX model representation from flow parameters
-        # Create a dict and recursively fill it with model components
-        # First do this for non-layer items, then layer items.
-        config = {}
-        # Add the expected configuration parameters back to the configuration dictionary,
-        # as long as they are not layers, since they need to be deserialized separately
-        for k, v in parameters.items():
-            if not LAYER_PATTERN.match(k):
-                config[k] = self.\
-                    erialize_onnx(v)
-
-        # Recreate the layers list and start to deserialize them back to the correct location
-        config['config']['layers'] = []
-        for k, v in parameters.items():
-            if LAYER_PATTERN.match(k):
-                v = self._deserialize_onnx(v)
-                config['config']['layers'].append(v)
-
-        # Deserialize the model from the configuration dictionary
-        model = keras.layers.deserialize(config)
-
-        # Attempt to recompile the model if compilation parameters were present
-        # during serialization
-        if 'optimizer' in parameters:
-            training_config = self._deserialize_onnx(parameters['optimizer'])
-            optimizer_config = training_config['optimizer_config']
-            optimizer = keras.optimizers.deserialize(optimizer_config)
-
-            # Recover loss functions and metrics
-            loss = training_config['loss']
-            metrics = training_config['metrics']
-            sample_weight_mode = training_config['sample_weight_mode']
-            loss_weights = training_config['loss_weights']
-
-            # Compile model
-            model.compile(optimizer=optimizer,
-                          loss=loss,
-                          metrics=metrics,
-                          loss_weights=loss_weights,
-                          sample_weight_mode=sample_weight_mode)
-        else:
-            warnings.warn('No training configuration found inside the flow: '
-                          'the model was *not* compiled. '
-                          'Compile it manually.')
-
-        return model
-
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
-        # Get the parameters from a model in an OrderedDict
-        parameters = OrderedDict()  # type: OrderedDict[str, Any]
+        # Convert the protobuf to python dictionary
+        model_dic = json_format.MessageToDict(model)
 
-        # Construct the configuration dictionary in the same manner as
-        # keras.engine.Network.to_json does
-        model_config = {
-            'class_name': model.__class__.__name__,
-            'config': model.get_config()
-        }
+        # Initialize parameters dictionary
+        parameters = {}
+        parameters['backend'] = {}
 
-        # Remove the layers from the configuration in order to allow them to be
-        # pretty printed as model parameters
-        layers = model_config['config']['layers']
-        del model_config['config']['layers']
+        # Add graph information to parameters dictionary
+        # for key, value in model_dic['graph'].items():
+        for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
+            if isinstance(value, list):
+                for (index, val) in enumerate(value):
+                    k = '{}_{}_{}'.format(key, str(index), val['name'])
+                    v = val
+                    if key == 'initializer':
+                        # Remove data from initializer as the model
+                        # will be reinitialized after deserialization
+                        data_key = v['dataType'].lower() + 'Data'
+                        del v[data_key]
+                    parameters[k] = json.dumps(v)
+            else:
+                parameters[key] = value
 
-        # Add the rest of the model configuration entries to the parameter list
-        for k, v in model_config.items():
-            parameters[k] = self._serialize_onnx(v, model)
+        # Add backend information to parameters dictionary
+        for key, value in model_dic.items():
+            parameters['backend'][key] = value
 
-        # Compute the format of the layer numbering. This pads the layer numbers with 0s in
-        # order to ensure that the layers are printed in a human-friendly order, instead of
-        # having weird orderings
-        max_len = int(np.ceil(np.log10(len(layers))))
-        len_format = '{0:0>' + str(max_len) + '}'
+        # Remove redundant graph information
+        del parameters['backend']['graph']
 
-        # Add the layers as hyper-parameters
-        for i, v in enumerate(layers):
-            layer = v['config']
-            k = 'layer' + len_format.format(i) + "_" + layer['name']
-            parameters[k] = self._serialize_onnx(v, model)
+        parameters['backend'] = json.dumps(parameters['backend'])
 
-        # Introduce the optimizer settings as hyper-parameters, if the model has been compiled
-        if model.optimizer:
-            parameters['optimizer'] = self._serialize_onnx({
-                'optimizer_config': {
-                    'class_name': model.optimizer.__class__.__name__,
-                    'config': model.optimizer.get_config()
-                },
-                'loss': model.loss,
-                'metrics': model.metrics,
-                'weighted_metrics': model.weighted_metrics,
-                'sample_weight_mode': model.sample_weight_mode,
-                'loss_weights': model.loss_weights,
-            }, model)
+        # Sort the parameters dictionary as expected by OpenML
+        parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
 
         return parameters
 
@@ -897,119 +809,19 @@ class OnnxExtension(Extension):
         """
         openml.flows.functions._check_flow_for_server_id(flow)
 
-        def get_flow_dict(_flow):
-            flow_map = {_flow.name: _flow.flow_id}
-            for subflow in _flow.components:
-                flow_map.update(get_flow_dict(_flow.components[subflow]))
-            return flow_map
-
-        def extract_parameters(_flow, _flow_dict, component_model,
-                               _main_call=False, main_id=None):
-            def is_subcomponent_specification(values):
-                # checks whether the current value can be a specification of
-                # subcomponents, as for example the value for steps parameter.
-                # These are always lists/tuples of lists/tuples, size bigger
-                # than 2 and an OpenMLFlow item involved.
-                if not isinstance(values, (tuple, list)):
-                    return False
-                for item in values:
-                    if not isinstance(item, (tuple, list)):
-                        return False
-                    if len(item) < 2:
-                        return False
-                    if not isinstance(item[1], openml.flows.OpenMLFlow):
-                        return False
-                return True
-
-            # _flow is openml flow object, _param dict maps from flow name to flow
-            # id for the main call, the param dict can be overridden (useful for
-            # unit tests / sentinels) this way, for flows without subflows we do
-            # not have to rely on _flow_dict
-            exp_parameters = set(_flow.parameters)
-            exp_components = set(_flow.components)
-
-            _model_parameters = self._get_parameters(component_model)
-
-            model_parameters = set(_model_parameters.keys())
-            if len((exp_parameters | exp_components) ^ model_parameters) != 0:
-                flow_params = sorted(exp_parameters | exp_components)
-                model_params = sorted(model_parameters)
-                raise ValueError('Parameters of the model do not match the '
-                                 'parameters expected by the '
-                                 'flow:\nexpected flow parameters: '
-                                 '%s\nmodel parameters: %s' % (flow_params,
-                                                               model_params))
-
-            _params = []
-            for _param_name in _flow.parameters:
-                _current = OrderedDict()
-                _current['oml:name'] = _param_name
-
-                current_param_values = self.model_to_flow(_model_parameters[_param_name])
-
-                # Try to filter out components (a.k.a. subflows) which are
-                # handled further down in the code (by recursively calling
-                # this function)!
-                if isinstance(current_param_values, openml.flows.OpenMLFlow):
-                    continue
-
-                if is_subcomponent_specification(current_param_values):
-                    # complex parameter value, with subcomponents
-                    parsed_values = list()
-                    for subcomponent in current_param_values:
-                        # keras stores usually tuples in the form
-                        # (name (str), subcomponent (mixed), argument
-                        # (mixed)). OpenML replaces the subcomponent by an
-                        # OpenMLFlow object.
-                        if len(subcomponent) < 2 or len(subcomponent) > 3:
-                            raise ValueError('Component reference should be '
-                                             'size {2,3}. ')
-
-                        subcomponent_identifier = subcomponent[0]
-                        subcomponent_flow = subcomponent[1]
-                        if not isinstance(subcomponent_identifier, str):
-                            raise TypeError('Subcomponent identifier should be '
-                                            'string')
-                        if not isinstance(subcomponent_flow,
-                                          openml.flows.OpenMLFlow):
-                            raise TypeError('Subcomponent flow should be string')
-
-                        current = {
-                            "oml-python:serialized_object": "component_reference",
-                            "value": {
-                                "key": subcomponent_identifier,
-                                "step_name": subcomponent_identifier
-                            }
-                        }
-                        if len(subcomponent) == 3:
-                            if not isinstance(subcomponent[2], list):
-                                raise TypeError('Subcomponent argument should be'
-                                                'list')
-                            current['value']['argument_1'] = subcomponent[2]
-                        parsed_values.append(current)
-                    parsed_values = json.dumps(parsed_values)
-                else:
-                    # vanilla parameter value
-                    parsed_values = json.dumps(current_param_values)
-
-                _current['oml:value'] = parsed_values
-                if _main_call:
-                    _current['oml:component'] = main_id
-                else:
-                    _current['oml:component'] = _flow_dict[_flow.name]
-                _params.append(_current)
-
-            for _identifier in _flow.components:
-                subcomponent_model = self._get_parameters(component_model)[_identifier]
-                _params.extend(extract_parameters(_flow.components[_identifier],
-                                                  _flow_dict, subcomponent_model))
-            return _params
-
-        flow_dict = get_flow_dict(flow)
         model = model if model is not None else flow.model
-        parameters = extract_parameters(flow, flow_dict, model, True, flow.flow_id)
 
-        return parameters
+        # Extract the parameters from the ONNX model
+        parameters = self._get_parameters(model)
+        parameter_settings = []
+
+        # Format the parameters as expected in the output
+        for (key, value) in parameters.items():
+            parameter_settings.append(OrderedDict((('oml:name', key),
+                                                   ('oml:value', value),
+                                                   ('oml:component', flow.flow_id))))
+
+        return parameter_settings
 
     def instantiate_model_from_hpo_class(
             self,
