@@ -1,16 +1,14 @@
 import os
 import sys
+import onnx
 import numpy as np
+from collections import OrderedDict
+
+from .onnx_model_utils import create_onnx_file, remove_onnx_file, remove_mxnet_files
 
 import openml
 from openml.extensions.onnx import OnnxExtension
-from openml import config
 from openml.testing import TestBase
-
-import onnx
-from .onnx_model_utils import create_onnx_file, remove_onnx_file
-
-from collections import OrderedDict
 
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
@@ -21,9 +19,14 @@ class TestONNXExtensionSerialization(TestBase):
 
     def setUp(self, n_levels: int = 1):
         super().setUp(n_levels=2)
+        # Test server has out of date data sets, so production server is used
+        openml.config.server = self.production_server
 
         self.extension = OnnxExtension()
-        config.server = self.production_server
+
+    def tearDown(self):
+        remove_mxnet_files()
+        remove_onnx_file()
 
     def test_serialize_onnx_model(self):
 
@@ -119,15 +122,16 @@ class TestONNXExtensionSerialization(TestBase):
                           ' {"tensorType": {"elemType": "FLOAT", "shape":'
                           ' {"dim": [{"dimValue": "2"}, {"dimValue": "1024"}]}}}}'),
                          ('name', 'mxnet_converted_model'),
-                         ('node_0_batchnorm0','{"input": ["data", "batchnorm0_gamma",'
-                                              ' "batchnorm0_beta", "batchnorm0_moving_mean",'
-                                              ' "batchnorm0_moving_var"], "output": ["batchnorm0"],'
-                                              ' "name": "batchnorm0", "opType":'
-                                              ' "BatchNormalization", "attribute":'
-                                              ' [{"name": "epsilon", "f": 0.0010000000474974513,'
-                                              ' "type": "FLOAT"}, {"name": "momentum",'
-                                              ' "f": 0.8999999761581421, "type": "FLOAT"},'
-                                              ' {"name": "spatial", "i": "0", "type": "INT"}]}'),
+                         ('node_0_batchnorm0', '{"input": ["data", "batchnorm0_gamma",'
+                                               ' "batchnorm0_beta", "batchnorm0_moving_mean",'
+                                               ' "batchnorm0_moving_var"],'
+                                               ' "output": ["batchnorm0"],'
+                                               ' "name": "batchnorm0", "opType":'
+                                               ' "BatchNormalization", "attribute":'
+                                               ' [{"name": "epsilon", "f": 0.0010000000474974513,'
+                                               ' "type": "FLOAT"}, {"name": "momentum",'
+                                               ' "f": 0.8999999761581421, "type": "FLOAT"},'
+                                               ' {"name": "spatial", "i": "0", "type": "INT"}]}'),
                          ('node_1_fullyconnected0',
                           '{"input": ["batchnorm0", "fullyconnected0_weight",'
                           ' "fullyconnected0_bias"], "output": ["fullyconnected0"],'
@@ -180,4 +184,3 @@ class TestONNXExtensionSerialization(TestBase):
         self.assertEqual(flow.parameters, fixed_params)
         self.assertEqual(flow.dependencies, fixed_dependencies)
         self.assertEqual(flow.external_version, fixed_version)
-

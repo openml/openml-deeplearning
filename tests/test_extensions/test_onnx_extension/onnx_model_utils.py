@@ -1,24 +1,20 @@
-import mxnet as mx
 import os
 import onnx
-from openml.extensions.onnx import OnnxExtension
-import openml
-import openml.extensions.onnx.extension as ex
 import numpy as np
+import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask, OpenMLSupervisedTask
+
+import openml
+from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 
 def explicit_model():
-    extension = OnnxExtension()
     task = openml.tasks.get_task(10101)
     X, y = task.get_X_and_y()
     train_indices, test_indices = task.get_train_test_split_indices(
         repeat=0, fold=0, sample=0)
     X_train = X[train_indices]
-    y_train = y[train_indices]
     X_test = X[test_indices]
-    y_test = y[test_indices]
 
     X_train[np.isnan(X_train)] = 1.0e-12
     X_test[np.isnan(X_test)] = 1.0e-12
@@ -28,9 +24,7 @@ def explicit_model():
 
     create_onnx_file(input_length, output_length, X_train, task)
     model = onnx.load_model("model.onnx")
-    flow = extension.model_to_flow(model)
-    x = flow
-    pass
+    return model
 
 
 def create_onnx_file(input_len, output_len, X_train, task):
@@ -66,10 +60,10 @@ def create_onnx_file(input_len, output_len, X_train, task):
         input_shape=[(1024, input_len)],
         onnx_file_path='model.onnx')
 
-    _remove_mxnet_files()
+    remove_mxnet_files()
 
 
-def _remove_mxnet_files():
+def remove_mxnet_files():
     if os.path.exists("model-0001.params"):
         os.remove("model-0001.params")
 
@@ -80,5 +74,3 @@ def _remove_mxnet_files():
 def remove_onnx_file(path="model.onnx"):
     if os.path.exists(path):
         os.remove(path)
-
-explicit_model()
