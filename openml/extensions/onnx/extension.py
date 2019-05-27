@@ -32,6 +32,8 @@ from openml.tasks import (
     OpenMLRegressionTask,
 )
 
+from .config import criterion_gen, optimizer, batch_size, epoch_count, sanitize_value, context
+
 if sys.version_info >= (3, 5):
     from json.decoder import JSONDecodeError
 else:
@@ -268,8 +270,8 @@ class OnnxExtension(Extension):
                 'mxnet',
                 mx.__version__,
             ),
-            'numpy>=1.6.1,<=1.14.6',
-            'scipy>=0.9,<=1.2.1',
+            'numpy==1.14.6',
+            'scipy==1.2.1',
         ])
 
         name = class_name
@@ -643,17 +645,16 @@ class OnnxExtension(Extension):
         # but not desirable if we want to upload to OpenML).
 
         # Save model to file and import it as MXNet model
-        # TODO: Constant CPU context?
         onnx.save(model, 'model.onnx')
-        model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=mx.cpu())
+        model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=context)
 
         # Reinitialize weights and bias
         # TODO: Find way to initialize using Xavier
         model_mx.initialize(init=mx.init.Uniform(), force_reinit=True)
 
         # Sanitize train and test data
-        X_train[np.isnan(X_train)] = 1.0e-12
-        X_test[np.isnan(X_test)] = 1.0e-12
+        X_train[np.isnan(X_train)] = sanitize_value
+        X_test[np.isnan(X_test)] = sanitize_value
 
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_mx)
@@ -667,23 +668,18 @@ class OnnxExtension(Extension):
             modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
-                # TODO: Extract to different function?
-                if isinstance(task, OpenMLClassificationTask):
-                    loss_fn = gluon.loss.SoftmaxCrossEntropyLoss()
-                elif isinstance(task, OpenMLRegressionTask):
-                    loss_fn = gluon.loss.L2Loss()
-                else:
-                    raise TypeError('Task not supported')
+                # Obtain loss function from configuration
+                loss_fn = criterion_gen(task)
 
-                # Define trainer
-                # TODO: Enable user to configure those
-                trainer = gluon.Trainer(model_mx.collect_params(), 'sgd')
-                batch_size = 32
-                epochs = 20
+                # Define trainer using optimizer from configuration
+                trainer = gluon.Trainer(model_mx.collect_params(), optimizer)
+
+                # Calculate the number of batches using batch size from configuration
                 nr_of_batches = math.ceil(X_train.shape[0] / batch_size)
 
-                for j in range(epochs):
+                for j in range(epoch_count):
                     for i in range(nr_of_batches):
+                        # Take current batch of input data and labels
                         input = nd.array(X_train[i * batch_size:(i + 1) * batch_size])
                         labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
 
@@ -714,8 +710,7 @@ class OnnxExtension(Extension):
         modelpredict_start_cputime = time.process_time()
         modelpredict_start_walltime = time.time()
 
-        # In supervised learning this returns the predictions for Y, in clustering
-        # it returns the clusters
+        # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
             pred_y = model_mx(nd.array(X_test))
             if isinstance(task, OpenMLClassificationTask):
