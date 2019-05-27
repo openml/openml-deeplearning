@@ -106,7 +106,6 @@ class OnnxExtension(Extension):
     def _deserialize_onnx(
             self,
             flow: 'OpenMLFlow',
-            components: Optional[Dict] = None,
             initialize_with_defaults: bool = False,
             recursion_depth: int = 0,
     ) -> Any:
@@ -119,9 +118,6 @@ class OnnxExtension(Extension):
         ----------
         flow : OpenMlFlow
             The flow from which the necessary deserialization information is extracted
-
-        components : dict
-
 
         initialize_with_defaults : bool, optional (default=False)
             If this flag is set, the hyperparameter values of flows will be
