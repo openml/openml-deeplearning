@@ -44,13 +44,6 @@ DEPENDENCIES_PATTERN = re.compile(
     r'(?P<version>(\d+\.)?(\d+\.)?(\d+)?(dev)?[0-9]*))?$'
 )
 
-SIMPLE_NUMPY_TYPES = [nptype for type_cat, nptypes in np.sctypes.items()
-                      for nptype in nptypes if type_cat != 'others']
-SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
-
-
-LAYER_PATTERN = re.compile(r'layer\d+\_(.*)')
-
 
 class OnnxExtension(Extension):
     """Connect ONNX to OpenML-Python."""
