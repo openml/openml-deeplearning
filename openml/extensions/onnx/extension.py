@@ -107,7 +107,6 @@ class OnnxExtension(Extension):
             self,
             flow: 'OpenMLFlow',
             initialize_with_defaults: bool = False,
-            recursion_depth: int = 0,
     ) -> Any:
         """Creates the ONNX representation of the OpenMLFlow.
 
@@ -152,7 +151,7 @@ class OnnxExtension(Extension):
             except ValueError:
                 return False
 
-        logging.info('-%s deserialize %s' % ('-' * recursion_depth, flow.name))
+        logging.info('-%s deserialize %s' % ('-' * 0, flow.name))
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
