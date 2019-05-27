@@ -10,6 +10,8 @@ from openml.testing import TestBase
 import onnx
 from .onnx_model_utils import create_onnx_file, remove_onnx_file
 
+from collections import OrderedDict
+
 import sklearn
 from openml.extensions.sklearn import SklearnExtension
 from sklearn import pipeline
