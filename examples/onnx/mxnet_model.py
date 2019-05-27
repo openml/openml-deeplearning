@@ -4,6 +4,11 @@ import os
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
 
+
+ONNX_FILE_PATH_DEFAULT = 'model.onnx'
+MXNET_PARAMS_PATH_DEFAULT = './model-0001.params'
+MXNET_SYMBOL_PATH_DEFAULT = './model-symbol.json'
+
 ############################################################################
 # Obtain task with training data
 task = openml.tasks.get_task(10101)
@@ -42,26 +47,26 @@ mlp_model.bind(data_shapes=data_shapes, label_shapes=label_shapes)
 mlp_model.init_params(mx.init.Xavier())
 
 # Save the parameters and symbol to files
-mlp_model.save_params('./model-0001.params')
-mlp.save('./model-symbol.json')
+mlp_model.save_params(MXNET_PARAMS_PATH_DEFAULT)
+mlp.save(MXNET_SYMBOL_PATH_DEFAULT)
 
 # Export the ONNX specification of the model, using the parameters and symbol files
 onnx_mxnet.export_model(
-    sym='./model-symbol.json',
-    params='./model-0001.params',
+    sym=MXNET_SYMBOL_PATH_DEFAULT,
+    params=MXNET_PARAMS_PATH_DEFAULT,
     input_shape=[(64, input_length)],
-    onnx_file_path='model.onnx')
+    onnx_file_path=ONNX_FILE_PATH_DEFAULT)
 ############################################################################
 
 ############################################################################
 # Load ONNX file and remove files
-model = onnx.load_model("model.onnx")
-if os.path.exists("model-0001.params"):
-    os.remove("model-0001.params")
-if os.path.exists("model-symbol.json"):
-    os.remove("model-symbol.json")
-if os.path.exists("model.onnx"):
-    os.remove("model.onnx")
+model = onnx.load_model(ONNX_FILE_PATH_DEFAULT)
+if os.path.exists(MXNET_PARAMS_PATH_DEFAULT):
+    os.remove(MXNET_PARAMS_PATH_DEFAULT)
+if os.path.exists(MXNET_SYMBOL_PATH_DEFAULT):
+    os.remove(MXNET_SYMBOL_PATH_DEFAULT)
+if os.path.exists(ONNX_FILE_PATH_DEFAULT):
+    os.remove(ONNX_FILE_PATH_DEFAULT)
 ############################################################################
 # Run the Keras model on the task (requires an API key).
 run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)

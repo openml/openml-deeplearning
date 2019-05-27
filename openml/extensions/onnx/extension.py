@@ -17,6 +17,7 @@ import pandas as pd
 import scipy.sparse
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
+from onnx import ModelProto
 from mxnet import nd, gluon, autograd
 from google.protobuf import json_format
 
@@ -43,6 +44,8 @@ DEPENDENCIES_PATTERN = re.compile(
     r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'
     r'(?P<version>(\d+\.)?(\d+\.)?(\d+)?(dev)?[0-9]*))?$'
 )
+
+ONNX_FILE_PATH = 'model.onnx'
 
 
 class OnnxExtension(Extension):
@@ -84,12 +87,16 @@ class OnnxExtension(Extension):
     ################################################################################################
     # Methods for flow serialization and de-serialization
 
-    def flow_to_model(self, flow: 'OpenMLFlow', initialize_with_defaults: bool = False) -> Any:
+    def flow_to_model(
+            self,
+            flow: 'OpenMLFlow',
+            initialize_with_defaults: bool = False
+    ) -> ModelProto:
         """Initializes an ONNX model representation based on a flow.
 
         Parameters
         ----------
-        flow : mixed
+        flow : OpenMLFlow
             the object to deserialize (can be flow object, or any serialized
             parameter value that is accepted by)
 
@@ -99,7 +106,8 @@ class OnnxExtension(Extension):
 
         Returns
         -------
-        mixed
+        ModelProto
+            The ONNX model associated with the OpenMLFlow
         """
         return self._deserialize_onnx(flow, initialize_with_defaults=initialize_with_defaults)
 
@@ -107,7 +115,7 @@ class OnnxExtension(Extension):
             self,
             flow: 'OpenMLFlow',
             initialize_with_defaults: bool = False,
-    ) -> Any:
+    ) -> ModelProto:
         """Creates the ONNX representation of the OpenMLFlow.
 
         Deserializes the components, parameters, and parameters_meta_info dictionaries
@@ -115,7 +123,7 @@ class OnnxExtension(Extension):
 
         Parameters
         ----------
-        flow : OpenMlFlow
+        flow : OpenMLFlow
             The flow from which the necessary deserialization information is extracted
 
         initialize_with_defaults : bool, optional (default=False)
@@ -283,7 +291,6 @@ class OnnxExtension(Extension):
 
                                 ],
                           language='English',
-                          # TODO fill in dependencies!
                           dependencies=dependencies)
 
         return flow
@@ -369,7 +376,6 @@ class OnnxExtension(Extension):
         parameters['backend'] = {}
 
         # Add graph information to parameters dictionary
-        # for key, value in model_dic['graph'].items():
         for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
             if isinstance(value, list):
                 for (index, val) in enumerate(value):
@@ -519,7 +525,6 @@ class OnnxExtension(Extension):
 
     def seed_model(self, model: Any, seed: Optional[int] = None) -> Any:
         """
-        # TODO: Does this still apply?
         Not applied for ONNX, since there are no random states in ONNX.
 
         Parameters
@@ -628,16 +633,11 @@ class OnnxExtension(Extension):
             if X_test is None:
                 raise TypeError('argument X_test must not be of type None')
 
-        # TODO: if possible, give a warning if model is already fitted (acceptable
-        # in case of custom experimentation,
-        # but not desirable if we want to upload to OpenML).
-
         # Save model to file and import it as MXNet model
-        onnx.save(model, 'model.onnx')
-        model_mx = onnx_mxnet.import_to_gluon('model.onnx', ctx=context)
+        onnx.save(model, ONNX_FILE_PATH)
+        model_mx = onnx_mxnet.import_to_gluon(ONNX_FILE_PATH, ctx=context)
 
         # Reinitialize weights and bias
-        # TODO: Find way to initialize using Xavier
         model_mx.initialize(init=mx.init.Uniform(), force_reinit=True)
 
         # Sanitize train and test data
@@ -692,7 +692,6 @@ class OnnxExtension(Extension):
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
-            # TODO: Check if needs to be changed
             model_classes = mx.nd.argmax(nd.array(y_train), axis=-1)
 
         modelpredict_start_cputime = time.process_time()

@@ -8,6 +8,11 @@ import openml
 from openml.tasks import OpenMLClassificationTask, OpenMLRegressionTask
 
 
+ONNX_FILE_PATH_DEFAULT = 'model.onnx'
+MXNET_PARAMS_PATH_DEFAULT = './model-0001.params'
+MXNET_SYMBOL_PATH_DEFAULT = './model-symbol.json'
+
+
 def explicit_model():
     task = openml.tasks.get_task(10101)
     X, y = task.get_X_and_y()
@@ -23,7 +28,7 @@ def explicit_model():
     input_length = X_train.shape[1]
 
     create_onnx_file(input_length, output_length, X_train, task)
-    model = onnx.load_model("model.onnx")
+    model = onnx.load_model(ONNX_FILE_PATH_DEFAULT)
     return model
 
 
@@ -51,26 +56,26 @@ def create_onnx_file(input_len, output_len, X_train, task):
     init = mx.init.Xavier()
     mlp_model.init_params(initializer=init)
 
-    mlp_model.save_params('./model-0001.params')
-    mlp.save('./model-symbol.json')
+    mlp_model.save_params(MXNET_PARAMS_PATH_DEFAULT)
+    mlp.save(MXNET_SYMBOL_PATH_DEFAULT)
 
     onnx_mxnet.export_model(
-        sym='./model-symbol.json',
-        params='./model-0001.params',
+        sym=MXNET_SYMBOL_PATH_DEFAULT,
+        params=MXNET_PARAMS_PATH_DEFAULT,
         input_shape=[(1024, input_len)],
-        onnx_file_path='model.onnx')
+        onnx_file_path=ONNX_FILE_PATH_DEFAULT)
 
     remove_mxnet_files()
 
 
 def remove_mxnet_files():
-    if os.path.exists("model-0001.params"):
-        os.remove("model-0001.params")
+    if os.path.exists(MXNET_PARAMS_PATH_DEFAULT):
+        os.remove(MXNET_PARAMS_PATH_DEFAULT)
 
-    if os.path.exists("model-symbol.json"):
-        os.remove("model-symbol.json")
+    if os.path.exists(MXNET_SYMBOL_PATH_DEFAULT):
+        os.remove(MXNET_SYMBOL_PATH_DEFAULT)
 
 
-def remove_onnx_file(path="model.onnx"):
+def remove_onnx_file(path=ONNX_FILE_PATH_DEFAULT):
     if os.path.exists(path):
         os.remove(path)

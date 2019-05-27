@@ -20,7 +20,6 @@ def _default_criterion_gen(task: OpenMLTask) -> gluon.loss.Loss:
 # criterion_gen returns the criterion based on the task type
 criterion_gen = _default_criterion_gen  # type: Callable[[OpenMLTask], gluon.loss.Loss]
 
-
 # optimizer represents the optimizer to be used during training of the model
 optimizer = mx.optimizer.Adam()  # type: mx.optimizer.Optimizer
 
