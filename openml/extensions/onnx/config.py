@@ -34,7 +34,7 @@ epoch_count = 32  # type: int
 sanitize_value = 1e-6  # type: float
 
 # context represents the context of the MXNet model - by default it will use the CPU
-context = mx.cpu()  # type: mx.context.Context
+context = mx.cpu()
 
 
 def _setup():
