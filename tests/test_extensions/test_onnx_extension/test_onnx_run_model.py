@@ -3,7 +3,8 @@ import sys
 import onnx
 import numpy as np
 
-from .onnx_model_utils import remove_onnx_file, create_onnx_file, remove_mxnet_files
+from tests.test_extensions.test_onnx_extension.onnx_model_utils \
+    import remove_onnx_file, create_onnx_file, remove_mxnet_files
 
 import openml
 from openml.extensions.onnx import OnnxExtension
