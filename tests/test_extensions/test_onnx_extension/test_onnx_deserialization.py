@@ -1,14 +1,11 @@
 import os
 import sys
 import onnx
-
-from tests.test_extensions.test_onnx_extension.onnx_model_utils \
-    import remove_onnx_file, create_onnx_file, remove_mxnet_files
-
 import openml
-from openml.testing import TestBase
+from .onnx_model_utils import create_onnx_file, remove_onnx_file
 from openml.extensions.onnx import OnnxExtension
 from openml.flows.functions import assert_flows_equal
+from openml.testing import TestBase
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
@@ -22,10 +19,6 @@ class TestOnnxExtensionFlowDeserialization(TestBase):
         openml.config.server = self.production_server
 
         self.extension = OnnxExtension()
-
-    def tearDown(self):
-        remove_mxnet_files()
-        remove_onnx_file()
 
     def test_deserialize_sequential(self):
         """ Function test_deserialize_sequential_with_defaults
