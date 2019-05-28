@@ -163,7 +163,7 @@ class OnnxExtension(Extension):
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
-        model_dic = {'graph': {}}
+        model_dic = {'graph': {}}  # type: Dict[str, Any]
 
         # Construct the model dictionary by parsing
         # the parameters and placing them correctly
@@ -766,7 +766,7 @@ class OnnxExtension(Extension):
             self,
             flow: 'OpenMLFlow',
             model: Any = None,
-    ) -> List[OrderedDict[str, Optional[str]]]:
+    ) -> List[Dict[str, Any]]:
         """Extracts all parameter settings required for the flow from the model.
 
         If no explicit model is provided, the parameters will be extracted from `flow.model`
@@ -795,13 +795,13 @@ class OnnxExtension(Extension):
 
         # Extract the parameters from the ONNX model
         parameters = self._get_parameters(model)
-        parameter_settings = []
+        parameter_settings = []  # type: List[Dict[str, Any]]
 
         # Format the parameters as expected in the output
         for (key, value) in parameters.items():
-            parameter_settings.append(OrderedDict((('oml:name', key),
-                                                   ('oml:value', value),
-                                                   ('oml:component', flow.flow_id))))
+            parameter_settings.append({'oml:name': key,
+                                       'oml:value': value,
+                                       'oml:component': flow.flow_id})
 
         return parameter_settings
 
