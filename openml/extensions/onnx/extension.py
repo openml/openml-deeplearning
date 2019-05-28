@@ -235,7 +235,7 @@ class OnnxExtension(Extension):
 
         # Initialize parameters and parameters_meta_info dictionaries
         parameters = self._get_parameters(model)
-        parameters_meta_info = OrderedDict()
+        parameters_meta_info = OrderedDict()  # type: OrderedDict[str, OrderedDict[str, Any]]
 
         # Add all parameters to parameters_meta_info dictionary
         for (key, value) in parameters.items():
@@ -266,7 +266,7 @@ class OnnxExtension(Extension):
                 'mxnet',
                 mx.__version__,
             ),
-            'numpy==1.14.6',
+            'numpy>=1.6.1',
             'scipy==1.2.1',
         ])
 
@@ -274,7 +274,7 @@ class OnnxExtension(Extension):
 
         # For ONNX, components and parameters_meta_info are empty so they are initialized with
         # empty ordered dictionaries
-        components = OrderedDict()
+        components = OrderedDict()  # type: OrderedDict[str, Any]
 
         onnx_version = self._format_external_version('onnx', onnx.__version__)
         onnx_version_formatted = onnx_version.replace('==', '_')
@@ -369,11 +369,10 @@ class OnnxExtension(Extension):
 
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         # Convert the protobuf to python dictionary
-        model_dic = json_format.MessageToDict(model)
+        model_dic = json_format.MessageToDict(model)  # type: Dict[str, Any]
 
         # Initialize parameters dictionary
-        parameters = {}
-        parameters['backend'] = {}
+        parameters = {'backend': {}}  # type: Dict[str, Any]
 
         # Add graph information to parameters dictionary
         for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
@@ -400,9 +399,10 @@ class OnnxExtension(Extension):
         parameters['backend'] = json.dumps(parameters['backend'])
 
         # Sort the parameters dictionary as expected by OpenML
-        parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        parameters_ordered = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        # type: OrderedDict[str, Optional[str]]
 
-        return parameters
+        return parameters_ordered
 
     def _check_dependencies(self, dependencies: str) -> None:
         """
@@ -766,7 +766,7 @@ class OnnxExtension(Extension):
             self,
             flow: 'OpenMLFlow',
             model: Any = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[OrderedDict[str, Optional[str]]]:
         """Extracts all parameter settings required for the flow from the model.
 
         If no explicit model is provided, the parameters will be extracted from `flow.model`
