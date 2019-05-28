@@ -163,7 +163,7 @@ class OnnxExtension(Extension):
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
-        model_dic = {'graph': {}}
+        model_dic = {'graph': {}}  # type: Dict[str, Any]
 
         # Construct the model dictionary by parsing
         # the parameters and placing them correctly
@@ -235,7 +235,7 @@ class OnnxExtension(Extension):
 
         # Initialize parameters and parameters_meta_info dictionaries
         parameters = self._get_parameters(model)
-        parameters_meta_info = OrderedDict()
+        parameters_meta_info = OrderedDict()  # type: OrderedDict[str, OrderedDict[str, Any]]
 
         # Add all parameters to parameters_meta_info dictionary
         for (key, value) in parameters.items():
@@ -266,7 +266,7 @@ class OnnxExtension(Extension):
                 'mxnet',
                 mx.__version__,
             ),
-            'numpy==1.14.6',
+            'numpy>=1.6.1',
             'scipy==1.2.1',
         ])
 
@@ -274,7 +274,7 @@ class OnnxExtension(Extension):
 
         # For ONNX, components and parameters_meta_info are empty so they are initialized with
         # empty ordered dictionaries
-        components = OrderedDict()
+        components = OrderedDict()  # type: OrderedDict[str, Any]
 
         onnx_version = self._format_external_version('onnx', onnx.__version__)
         onnx_version_formatted = onnx_version.replace('==', '_')
@@ -369,11 +369,10 @@ class OnnxExtension(Extension):
 
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         # Convert the protobuf to python dictionary
-        model_dic = json_format.MessageToDict(model)
+        model_dic = json_format.MessageToDict(model)  # type: Dict[str, Any]
 
         # Initialize parameters dictionary
-        parameters = {}
-        parameters['backend'] = {}
+        parameters = {'backend': {}}  # type: Dict[str, Any]
 
         # Add graph information to parameters dictionary
         for key, value in sorted(model_dic['graph'].items(), key=lambda t: t[0]):
@@ -400,9 +399,10 @@ class OnnxExtension(Extension):
         parameters['backend'] = json.dumps(parameters['backend'])
 
         # Sort the parameters dictionary as expected by OpenML
-        parameters = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        parameters_ordered = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))  \
+            # type: OrderedDict[str, Optional[str]]
 
-        return parameters
+        return parameters_ordered
 
     def _check_dependencies(self, dependencies: str) -> None:
         """
@@ -642,7 +642,8 @@ class OnnxExtension(Extension):
 
         # Sanitize train and test data
         X_train[np.isnan(X_train)] = sanitize_value
-        X_test[np.isnan(X_test)] = sanitize_value
+        if X_test is not None:
+            X_test[np.isnan(X_test)] = sanitize_value
 
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_mx)
@@ -669,7 +670,8 @@ class OnnxExtension(Extension):
                     for i in range(nr_of_batches):
                         # Take current batch of input data and labels
                         input = nd.array(X_train[i * batch_size:(i + 1) * batch_size])
-                        labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
+                        if y_train is not None:
+                            labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
 
                         # Train the model
                         with autograd.record():
@@ -795,13 +797,13 @@ class OnnxExtension(Extension):
 
         # Extract the parameters from the ONNX model
         parameters = self._get_parameters(model)
-        parameter_settings = []
+        parameter_settings = []  # type: List[Dict[str, Any]]
 
         # Format the parameters as expected in the output
         for (key, value) in parameters.items():
-            parameter_settings.append(OrderedDict((('oml:name', key),
-                                                   ('oml:value', value),
-                                                   ('oml:component', flow.flow_id))))
+            parameter_settings.append({'oml:name': key,
+                                       'oml:value': value,
+                                       'oml:component': flow.flow_id})
 
         return parameter_settings
 
