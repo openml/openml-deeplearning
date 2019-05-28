@@ -642,7 +642,8 @@ class OnnxExtension(Extension):
 
         # Sanitize train and test data
         X_train[np.isnan(X_train)] = sanitize_value
-        X_test[np.isnan(X_test)] = sanitize_value
+        if X_test is not None:
+            X_test[np.isnan(X_test)] = sanitize_value
 
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_mx)
@@ -669,7 +670,8 @@ class OnnxExtension(Extension):
                     for i in range(nr_of_batches):
                         # Take current batch of input data and labels
                         input = nd.array(X_train[i * batch_size:(i + 1) * batch_size])
-                        labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
+                        if y_train is not None:
+                            labels = nd.array(y_train[i * batch_size:(i + 1) * batch_size])
 
                         # Train the model
                         with autograd.record():
