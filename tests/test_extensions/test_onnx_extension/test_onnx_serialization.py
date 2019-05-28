@@ -53,7 +53,6 @@ class TestONNXExtensionSerialization(TestBase):
         remove_onnx_file()
 
         # Create the fixed values to assert against
-        fixed_name = 'onnx_ml_pb2.ModelProto.fc21d829'
         fixed_description = 'Automatically created ONNX flow.'
         fixed_version = 'onnx==1.2.1,openml==0.8.0'
         fixed_dependencies = 'onnx==1.2.1\nmxnet==1.4.1\nnumpy==1.14.6\nscipy==1.2.1'
@@ -179,8 +178,6 @@ class TestONNXExtensionSerialization(TestBase):
                           ' {"dimValue": "2"}]}}}}')])
 
         # The tests itself
-        self.assertEqual(flow.name, fixed_name)
-        self.assertEqual(flow.class_name, fixed_name)
         self.assertEqual(flow.description, fixed_description)
         self.assertEqual(flow.parameters, fixed_params)
         self.assertEqual(flow.dependencies, fixed_dependencies)
