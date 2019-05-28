@@ -399,8 +399,8 @@ class OnnxExtension(Extension):
         parameters['backend'] = json.dumps(parameters['backend'])
 
         # Sort the parameters dictionary as expected by OpenML
-        # type: OrderedDict[str, Optional[str]]
-        parameters_ordered = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))
+        parameters_ordered = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))  \
+            # type: OrderedDict[str, Optional[str]]
 
         return parameters_ordered
 
