@@ -1153,12 +1153,12 @@ class PytorchExtension(Extension):
                         predicted = model_copy(inputs)
                         predicted = predict(predicted, task)
 
-                        accuracy = float('nan')  # type: Union[torch.Tensor, float]
+                        accuracy = float('nan')  # type: float
                         if isinstance(task, OpenMLClassificationTask):
                             correct += (predicted == labels).sum()
                             incorrect += (predicted != labels).sum()
-                            accuracy = torch.tensor(1.0) * correct / (correct + incorrect)
-                            accuracy = accuracy.item()
+                            accuracy_tensor = torch.tensor(1.0) * correct / (correct + incorrect)
+                            accuracy = accuracy_tensor.item()
 
                         progress_callback(fold_no, rep_no, epoch, batch_idx,
                                           loss_opt.item(), accuracy)
