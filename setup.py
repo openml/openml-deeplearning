@@ -76,7 +76,7 @@ setuptools.setup(name="openml",
                      ],
                      'dlonnx': [
                          'mxnet',
-                         'onnx'
+                         'onnx==1.2.1'
                      ]
                  },
                  test_suite="pytest",
