@@ -1,5 +1,6 @@
 import os
 import sys
+import inspect
 import numpy as np
 
 import openml
@@ -8,7 +9,6 @@ from openml import config
 from openml.testing import TestBase
 
 import onnx
-from .onnx_model_utils import create_onnx_file, remove_onnx_file
 
 import sklearn
 from openml.extensions.sklearn import SklearnExtension
@@ -36,12 +36,19 @@ class SklearnModel(sklearn.base.BaseEstimator):
         pass
 
 
-class TestONNXExtensionSerialization(TestBase):
+class TestOnnxExtensionSerialization(TestBase):
     flow = None
     model_mx = None
 
     def setUp(self, n_levels: int = 1):
         super().setUp(n_levels=2)
+
+        # Change directory to access onnx models
+        abspath_this_file = os.path.abspath(inspect.getfile(self.__class__))
+        static_cache_dir = os.path.dirname(abspath_this_file)
+        os.chdir(static_cache_dir)
+        os.chdir('../../files/models')
+
         self.sklearnModel = SklearnModel('true', '1', '0.1')
 
         self.extension = OnnxExtension()
@@ -57,14 +64,9 @@ class TestONNXExtensionSerialization(TestBase):
         X_train[np.isnan(X_train)] = 1.0e-12
         X_test[np.isnan(X_test)] = 1.0e-12
 
-        output_length = len(task.class_labels)
-        input_length = X_train.shape[1]
-        create_onnx_file(input_length, output_length, X_train, task)
-        self.model_mx = onnx.load('model.onnx')
+        onnx_file = 'model_task_{}.onnx'.format(task.task_id)
+        self.model_mx = onnx.load(onnx_file)
         self.flow = self.extension.model_to_flow(self.model_mx)
-
-    def tearDown(self):
-        remove_onnx_file()
 
     def test_is_estimator(self):
         is_estimator = self.extension.is_estimator(self.model_mx)

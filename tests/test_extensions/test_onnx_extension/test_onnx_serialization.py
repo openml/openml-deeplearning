@@ -1,11 +1,8 @@
 import os
 import sys
 import onnx
-import numpy as np
+import inspect
 from collections import OrderedDict
-
-from tests.test_extensions.test_onnx_extension.onnx_model_utils \
-    import remove_onnx_file, create_onnx_file, remove_mxnet_files
 
 import openml
 from openml.extensions.onnx import OnnxExtension
@@ -16,41 +13,24 @@ this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
 
-class TestONNXExtensionSerialization(TestBase):
+class TestOnnxExtensionSerialization(TestBase):
 
     def setUp(self, n_levels: int = 1):
         super().setUp(n_levels=2)
         # Test server has out of date data sets, so production server is used
         openml.config.server = self.production_server
 
+        # Change directory to access onnx models
+        abspath_this_file = os.path.abspath(inspect.getfile(self.__class__))
+        static_cache_dir = os.path.dirname(abspath_this_file)
+        os.chdir(static_cache_dir)
+        os.chdir('../../files/models')
+
         self.extension = OnnxExtension()
 
-    def tearDown(self):
-        remove_mxnet_files()
-        remove_onnx_file()
-
     def test_serialize_onnx_model(self):
-
-        # Get the task and split the data
-        task = openml.tasks.get_task(10101)
-        X, y = task.get_X_and_y()
-        train_indices, test_indices = task.get_train_test_split_indices(
-            repeat=0, fold=0, sample=0)
-        X_train = X[train_indices]
-        X_test = X[test_indices]
-
-        # Sanitize null values
-        X_train[np.isnan(X_train)] = 1.0e-12
-        X_test[np.isnan(X_test)] = 1.0e-12
-
-        output_length = len(task.class_labels)
-        input_length = X_train.shape[1]
-
-        # Create the pre-made model, serialize and delete the file
-        create_onnx_file(input_length, output_length, X_train, task)
-        model_mx = onnx.load('model.onnx')
+        model_mx = onnx.load('model_task_10101.onnx')
         flow = self.extension.model_to_flow(model_mx)
-        remove_onnx_file()
 
         # Create the fixed values to assert against
         fixed_description = 'Automatically created ONNX flow.'

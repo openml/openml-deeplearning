@@ -1,9 +1,7 @@
 import os
 import sys
+import inspect
 import onnx
-
-from tests.test_extensions.test_onnx_extension.onnx_model_utils \
-    import remove_onnx_file, create_onnx_file, remove_mxnet_files
 
 import openml
 from openml.testing import TestBase
@@ -21,13 +19,15 @@ class TestOnnxExtensionFlowDeserialization(TestBase):
         # Test server has out of date data sets, so production server is used
         openml.config.server = self.production_server
 
+        # Change directory to access onnx models
+        abspath_this_file = os.path.abspath(inspect.getfile(self.__class__))
+        static_cache_dir = os.path.dirname(abspath_this_file)
+        os.chdir(static_cache_dir)
+        os.chdir('../../files/models')
+
         self.extension = OnnxExtension()
 
-    def tearDown(self):
-        remove_mxnet_files()
-        remove_onnx_file()
-
-    def test_deserialize_sequential(self):
+    def test_deserialize_onnx_model(self):
         """ Function test_deserialize_sequential_with_defaults
         Test for Sequential Keras model deserialization
         Depends on correct implementation of model_to_flow
@@ -35,33 +35,22 @@ class TestOnnxExtensionFlowDeserialization(TestBase):
         :return: Nothing
         """
 
-        task_lst = [4823, 52948, 2285, 4729, 4990]
+        task_lst = [4823, 52948]
 
         for i in range(len(task_lst)):
             with self.subTest(i=i):
                 task = openml.tasks.get_task(task_lst[i])
 
-                # Obtain train and test data
-                X, y = task.get_X_and_y()
-                train_indices, test_indices = task.get_train_test_split_indices(
-                    repeat=0, fold=0, sample=0)
-                X_train = X[train_indices]
-
-                # Calculate input and output shapes
-                input_length = X_train.shape[1]
-                output_length = 1
-
-                # Create an ONNX file from an MXNet model
-                create_onnx_file(input_length, output_length, X_train, task)
-
-                # Load the ONNX model from the file and remove the file
-                model_original = onnx.load('model.onnx')
-                remove_onnx_file()
+                # Load the ONNX model from the file
+                onnx_file = 'model_task_{}.onnx'.format(task.task_id)
+                model_original = onnx.load(onnx_file)
 
                 # Create an exact copy of the model
                 onnx.save(model_original, 'model_copy.onnx')
                 model_adjusted = onnx.load('model_copy.onnx')
-                remove_onnx_file('model_copy.onnx')
+
+                # Remove unneeded file
+                os.remove('model_copy.onnx')
 
                 # we want to confirm that model_original and model_adjusted are the same.
                 # We use the flow equals function for this

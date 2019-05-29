@@ -1,10 +1,8 @@
 import os
 import sys
 import onnx
+import inspect
 import numpy as np
-
-from tests.test_extensions.test_onnx_extension.onnx_model_utils \
-    import remove_onnx_file, create_onnx_file, remove_mxnet_files
 
 import openml
 from openml.extensions.onnx import OnnxExtension
@@ -21,11 +19,13 @@ class TestOnnxExtensionRunFunctions(TestBase):
         # Test server has out of date data sets, so production server is used
         openml.config.server = self.production_server
 
-        self.extension = OnnxExtension()
+        # Change directory to access onnx models
+        abspath_this_file = os.path.abspath(inspect.getfile(self.__class__))
+        static_cache_dir = os.path.dirname(abspath_this_file)
+        os.chdir(static_cache_dir)
+        os.chdir('../../files/models')
 
-    def tearDown(self):
-        remove_mxnet_files()
-        remove_onnx_file()
+        self.extension = OnnxExtension()
 
     def test_run_model_on_fold_classification(self):
         """ Function testing run_model_on_fold
@@ -35,7 +35,7 @@ class TestOnnxExtensionRunFunctions(TestBase):
         """
 
         # Test tasks
-        task_lst = [10101, 9914, 145804, 146065, 146064]
+        task_lst = [10101, 9914]
 
         # Subtests, q for each task
         for i in range(len(task_lst)):
@@ -52,15 +52,11 @@ class TestOnnxExtensionRunFunctions(TestBase):
                 y_test = y[test_indices]
 
                 # Calculate input and output shapes
-                input_length = X_train.shape[1]
                 output_length = len(task.class_labels)
 
-                # Create an ONNX file from an MXNet model
-                create_onnx_file(input_length, output_length, X_train, task)
-
-                # Load the ONNX model from the file and remove the file
-                model = onnx.load('model.onnx')
-                remove_onnx_file()
+                # Load the ONNX model from the file
+                onnx_file = 'model_task_{}.onnx'.format(task.task_id)
+                model = onnx.load(onnx_file)
 
                 # Call tested functions with given model and parameters
                 res = self.extension._run_model_on_fold(
@@ -93,7 +89,7 @@ class TestOnnxExtensionRunFunctions(TestBase):
         :return: Nothing
         """
 
-        task_lst = [4823, 52948, 2285, 4729, 4990]
+        task_lst = [4823, 52948]
 
         for i in range(len(task_lst)):
             with self.subTest(i=i):
@@ -109,16 +105,9 @@ class TestOnnxExtensionRunFunctions(TestBase):
                 X_test = X[test_indices]
                 y_test = y[test_indices]
 
-                # Calculate input and output shapes
-                input_length = X_train.shape[1]
-                output_length = 1
-
-                # Create an ONNX file from an MXNet model
-                create_onnx_file(input_length, output_length, X_train, task)
-
-                # Load the ONNX model from the file and remove the file
-                model = onnx.load('model.onnx')
-                remove_onnx_file()
+                # Load the ONNX model from the file
+                onnx_file = 'model_task_{}.onnx'.format(task.task_id)
+                model = onnx.load(onnx_file)
 
                 # Call tested functions with given model and parameters
                 res = self.extension._run_model_on_fold(
