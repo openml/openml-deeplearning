@@ -179,6 +179,6 @@ class TestONNXExtensionSerialization(TestBase):
 
         # The tests itself
         self.assertEqual(flow.description, fixed_description)
-        self.assertEqual(flow.parameters, fixed_params)
+        self.assertDictEqual(flow.parameters, fixed_params)
         self.assertEqual(flow.dependencies, fixed_dependencies)
         self.assertEqual(flow.external_version, fixed_version)
