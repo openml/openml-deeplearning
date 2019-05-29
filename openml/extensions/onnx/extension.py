@@ -414,7 +414,7 @@ class OnnxExtension(Extension):
         # Remove redundant graph information
         del parameters['backend']['graph']
 
-        parameters['backend'] = json.dumps(parameters['backend'])
+        parameters['backend'] = json.dumps(_to_ordered(parameters['backend']))
 
         # Sort the parameters dictionary as expected by OpenML
         parameters_ordered = OrderedDict(sorted(parameters.items(), key=lambda x: x[0]))  \
