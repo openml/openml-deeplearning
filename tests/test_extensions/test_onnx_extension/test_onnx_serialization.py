@@ -55,7 +55,7 @@ class TestONNXExtensionSerialization(TestBase):
         # Create the fixed values to assert against
         fixed_description = 'Automatically created ONNX flow.'
         fixed_version = 'onnx==1.2.1,openml==0.8.0'
-        fixed_dependencies = 'onnx==1.2.1\nmxnet==1.4.1\nnumpy>=1.6.1\nscipy==1.2.1'
+        fixed_dependencies = 'onnx==1.2.1\nmxnet==1.4.1\nnumpy>=1.6.1\nscipy>=1.2.1'
         fixed_params = \
             OrderedDict([('backend', '{"irVersion": "3", "opsetImport": [{"version": "7"}]}'),
                          ('initializer_0_batchnorm0_gamma',

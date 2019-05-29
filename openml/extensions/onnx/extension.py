@@ -267,7 +267,7 @@ class OnnxExtension(Extension):
                 mx.__version__,
             ),
             'numpy>=1.6.1',
-            'scipy==1.2.1',
+            'scipy>=1.2.1',
         ])
 
         name = class_name
