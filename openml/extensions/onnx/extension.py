@@ -1,3 +1,4 @@
+import os
 import importlib
 import json
 import logging
@@ -636,6 +637,10 @@ class OnnxExtension(Extension):
         # Save model to file and import it as MXNet model
         onnx.save(model, ONNX_FILE_PATH)
         model_mx = onnx_mxnet.import_to_gluon(ONNX_FILE_PATH, ctx=context)
+
+        # Remove the saved file
+        if os.path.exists(ONNX_FILE_PATH):
+            os.remove(ONNX_FILE_PATH)
 
         # Reinitialize weights and bias
         model_mx.initialize(init=mx.init.Uniform(), force_reinit=True)
