@@ -369,6 +369,14 @@ class OnnxExtension(Extension):
         return ','.join(list(sorted(external_versions)))
 
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
+        def _to_ordered_dict(o):
+            if isinstance(o, dict):
+                for (key, val) in o.items():
+                    if isinstance(val, dict):
+                        o[key] = _to_ordered_dict(val)
+                result = OrderedDict(sorted(o.items(), key=lambda x: x[0]))
+            return result
+
         # Convert the protobuf to python dictionary
         model_dic = json_format.MessageToDict(model)  # type: Dict[str, Any]
 
@@ -381,7 +389,7 @@ class OnnxExtension(Extension):
                 for (index, val) in enumerate(value):
                     k = '{}_{}_{}'.format(key, str(index), val['name'])
                     if isinstance(val, Dict):
-                        v = OrderedDict(sorted(val.items(), key=lambda x: x[0]))
+                        v = _to_ordered_dict(val)
                     else:
                         v = val
                     if key == 'initializer':
