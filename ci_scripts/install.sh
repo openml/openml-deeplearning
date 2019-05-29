@@ -28,6 +28,7 @@ conda create -n testenv --yes python=$PYTHON_VERSION pip
 source activate testenv
 
 python --version
+sudo apt-get update
 sudo apt-get install protobuf-compiler
 pip install -e '.[test]'
 pip install -e '.[dlkeras]'
