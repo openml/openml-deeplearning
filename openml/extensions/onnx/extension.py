@@ -388,15 +388,14 @@ class OnnxExtension(Extension):
             if isinstance(value, list):
                 for (index, val) in enumerate(value):
                     k = '{}_{}_{}'.format(key, str(index), val['name'])
-                    if isinstance(val, Dict):
-                        v = _to_ordered_dict(val)
-                    else:
-                        v = val
+                    v = val
                     if key == 'initializer':
                         # Remove data from initializer as the model
                         # will be reinitialized after deserialization
                         data_key = v['dataType'].lower() + 'Data'
                         del v[data_key]
+                    if isinstance(v, Dict):
+                        v = _to_ordered_dict(v)
                     parameters[k] = json.dumps(v)
             else:
                 parameters[key] = value
