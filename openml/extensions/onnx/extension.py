@@ -369,12 +369,19 @@ class OnnxExtension(Extension):
         return ','.join(list(sorted(external_versions)))
 
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
-        def _to_ordered_dict(o):
+        def _to_ordered(o):
             if isinstance(o, dict):
                 for (key, val) in o.items():
-                    if isinstance(val, dict):
-                        o[key] = _to_ordered_dict(val)
+                    if isinstance(val, dict) or isinstance(val, list):
+                        o[key] = _to_ordered(val)
                 result = OrderedDict(sorted(o.items(), key=lambda x: x[0]))
+            elif isinstance(o, list):
+                result = []
+                for item in o:
+                    if isinstance(item, dict):
+                        result.append(_to_ordered(item))
+                    else:
+                        result.append(item)
             return result
 
         # Convert the protobuf to python dictionary
@@ -395,7 +402,7 @@ class OnnxExtension(Extension):
                         data_key = v['dataType'].lower() + 'Data'
                         del v[data_key]
                     if isinstance(v, Dict):
-                        v = _to_ordered_dict(v)
+                        v = _to_ordered(v)
                     parameters[k] = json.dumps(v)
             else:
                 parameters[key] = value

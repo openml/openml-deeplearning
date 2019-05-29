@@ -103,18 +103,18 @@ class TestOnnxExtensionSerialization(TestBase):
                           ' {"dim": [{"dimValue": "2"}, {"dimValue": "1024"}]}}}}'),
                          ('name', 'mxnet_converted_model'),
                          ('node_0_batchnorm0',
-                          '{"attribute": [{"name": "epsilon", "f": 0.0010000000474974513, '
-                          '"type": "FLOAT"}, {"name": "momentum", "f": 0.8999999761581421, '
-                          '"type": "FLOAT"}, {"name": "spatial", "i": "0", "type": "INT"}], '
+                          '{"attribute": [{"f": 0.0010000000474974513, "name": "epsilon", '
+                          '"type": "FLOAT"}, {"f": 0.8999999761581421, "name": "momentum", '
+                          '"type": "FLOAT"}, {"i": "0", "name": "spatial", "type": "INT"}], '
                           '"input": ["data", "batchnorm0_gamma", "batchnorm0_beta", '
                           '"batchnorm0_moving_mean", "batchnorm0_moving_var"], '
                           '"name": "batchnorm0", "opType": "BatchNormalization", '
                           '"output": ["batchnorm0"]}'),
                          ('node_1_fullyconnected0',
-                          '{"attribute": [{"name": "alpha", "f": 1.0, "type": "FLOAT"}, '
-                          '{"name": "beta", "f": 1.0, "type": "FLOAT"}, '
-                          '{"name": "transA", "i": "0", "type": "INT"}, '
-                          '{"name": "transB", "i": "1", "type": "INT"}], '
+                          '{"attribute": [{"f": 1.0, "name": "alpha", "type": "FLOAT"}, '
+                          '{"f": 1.0, "name": "beta", "type": "FLOAT"}, {"i": "0", '
+                          '"name": "transA", "type": "INT"}, {"i": "1", '
+                          '"name": "transB", "type": "INT"}], '
                           '"input": ["batchnorm0", "fullyconnected0_weight", '
                           '"fullyconnected0_bias"], "name": "fullyconnected0", '
                           '"opType": "Gemm", "output": ["fullyconnected0"]}'),
@@ -122,13 +122,14 @@ class TestOnnxExtensionSerialization(TestBase):
                           '{"input": ["fullyconnected0"], "name": "activation0", "opType": "Relu", '
                           '"output": ["activation0"]}'),
                          ('node_3_dropout0',
-                          '{"attribute": [{"name": "ratio", "f": 0.10000000149011612, '
+                          '{"attribute": [{"f": 0.10000000149011612, "name": "ratio", '
                           '"type": "FLOAT"}], "input": ["activation0"], "name": "dropout0", '
                           '"opType": "Dropout", "output": ["dropout0"]}'),
                          ('node_4_fullyconnected1',
-                          '{"attribute": [{"name": "alpha", "f": 1.0, "type": "FLOAT"}, '
-                          '{"name": "beta", "f": 1.0, "type": "FLOAT"}, {"name": "transA", '
-                          '"i": "0", "type": "INT"}, {"name": "transB", "i": "1", "type": "INT"}], '
+                          '{"attribute": [{"f": 1.0, "name": "alpha", "type": "FLOAT"}, '
+                          '{"f": 1.0, "name": "beta", "type": "FLOAT"}, {"i": "0", '
+                          '"name": "transA", "type": "INT"}, {"i": "1", '
+                          '"name": "transB", "type": "INT"}], '
                           '"input": ["dropout0", "fullyconnected1_weight", "fullyconnected1_bias"],'
                           ' "name": "fullyconnected1", "opType": "Gemm", '
                           '"output": ["fullyconnected1"]}'),
@@ -136,18 +137,18 @@ class TestOnnxExtensionSerialization(TestBase):
                           '{"input": ["fullyconnected1"], "name": "activation1", '
                           '"opType": "Relu", "output": ["activation1"]}'),
                          ('node_6_dropout1',
-                          '{"attribute": [{"name": "ratio", "f": 0.20000000298023224, '
+                          '{"attribute": [{"f": 0.20000000298023224, "name": "ratio", '
                           '"type": "FLOAT"}], "input": ["activation1"], "name": "dropout1", '
                           '"opType": "Dropout", "output": ["dropout1"]}'),
                          ('node_7_fullyconnected2',
-                          '{"attribute": [{"name": "alpha", "f": 1.0, "type": "FLOAT"}, '
-                          '{"name": "beta", "f": 1.0, "type": "FLOAT"}, {"name": "transA", '
-                          '"i": "0", "type": "INT"}, {"name": "transB", "i": "1", "type": "INT"}], '
+                          '{"attribute": [{"f": 1.0, "name": "alpha", "type": "FLOAT"}, {"f": 1.0, '
+                          '"name": "beta", "type": "FLOAT"}, {"i": "0", "name": "transA", '
+                          '"type": "INT"}, {"i": "1", "name": "transB", "type": "INT"}], '
                           '"input": ["dropout1", "fullyconnected2_weight", "fullyconnected2_bias"],'
                           ' "name": "fullyconnected2", "opType": "Gemm", '
                           '"output": ["fullyconnected2"]}'),
                          ('node_8_softmax',
-                          '{"attribute": [{"name": "axis", "i": "1", "type": "INT"}], '
+                          '{"attribute": [{"i": "1", "name": "axis", "type": "INT"}], '
                           '"input": ["fullyconnected2"], "name": "softmax", '
                           '"opType": "Softmax", "output": ["softmax"]}'),
                          ('output_0_softmax',
