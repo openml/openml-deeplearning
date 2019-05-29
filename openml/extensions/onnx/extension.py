@@ -380,7 +380,10 @@ class OnnxExtension(Extension):
             if isinstance(value, list):
                 for (index, val) in enumerate(value):
                     k = '{}_{}_{}'.format(key, str(index), val['name'])
-                    v = val
+                    if isinstance(val, Dict):
+                        v = OrderedDict(sorted(val.items(), key=lambda x: x[0]))
+                    else:
+                        v = val
                     if key == 'initializer':
                         # Remove data from initializer as the model
                         # will be reinitialized after deserialization
