@@ -14,7 +14,8 @@ this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
 # Values taken from https://github.com/onnx/onnx/blob/master/onnx/onnx-ml.proto3
-# Might change in the future - changes here should be made in the onnx extension.py as well
+# Might change in the future - changes here should be made in the extension and
+# the serialization/deserialization unit tests as well
 ONNX_ATTR_TYPES = {
     'UNDEFINED': 0,
     'FLOAT': 1,

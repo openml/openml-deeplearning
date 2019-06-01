@@ -49,8 +49,8 @@ DEPENDENCIES_PATTERN = re.compile(
 ONNX_FILE_PATH = 'model.onnx'
 
 # Values taken from https://github.com/onnx/onnx/blob/master/onnx/onnx-ml.proto3
-# Might change in the future - changes here should be made in the unit tests for serialization
-# (test_onnx_serialization.py) as well
+# Might change in the future - changes here should be made in the the
+# serialization/deserialization unit tests as well
 ONNX_ATTR_TYPES = {
     1: 'FLOAT',
     2: 'INT',
