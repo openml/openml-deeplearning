@@ -48,6 +48,21 @@ DEPENDENCIES_PATTERN = re.compile(
 
 ONNX_FILE_PATH = 'model.onnx'
 
+# Values taken from https://github.com/onnx/onnx/blob/master/onnx/onnx-ml.proto3
+# Might change in the future - changes here should be made in the unit tests for serialization
+# (test_onnx_serialization.py) as well
+ONNX_ATTR_TYPES = {
+    1: 'FLOAT',
+    2: 'INT',
+    3: 'STRING',
+    4: 'TENSOR',
+    5: 'GRAPH',
+    6: 'FLOATS',
+    7: 'INTS',
+    8: 'STRINGS',
+    9: 'TENSORS',
+    10: 'GRAPHS'
+}
 
 class OnnxExtension(Extension):
     """Connect ONNX to OpenML-Python."""
@@ -196,7 +211,13 @@ class OnnxExtension(Extension):
             nr_values = 1
             for dim in item['dims']:
                 nr_values *= int(dim)
-            data_key = item['dataType'].lower() + 'Data'
+            # Determine the name of the attribute containing the data
+            if isinstance(item['dataType'], int):
+                data_key = ONNX_ATTR_TYPES[item['dataType']].lower() + 'Data'
+            elif isinstance(item['dataType'], str):
+                data_key = item['dataType'].lower() + 'Data'
+            else:
+                raise ValueError('Unknown data type. Try downgrading ONNX to 1.2.1.')
             item[data_key] = [0] * nr_values
 
         # Create an empty ModelProto and fill it by parsing the model dictionary
@@ -353,7 +374,7 @@ class OnnxExtension(Extension):
         # version of all subcomponents, which themselves already contain all
         # requirements for their subcomponents. The external version string is a
         # sorted concatenation of all modules which are present in this run.
-        model_package_name = model.__module__.split('_')[0]
+        model_package_name = re.split(r'[._]', model.__module__)[0]
         module = importlib.import_module(model_package_name)
         model_package_version_number = module.__version__  # type: ignore
         external_version = self._format_external_version(
@@ -371,11 +392,13 @@ class OnnxExtension(Extension):
     def _get_parameters(self, model: Any) -> 'OrderedDict[str, Optional[str]]':
         def _to_ordered(o):
             if isinstance(o, dict):
+                # If o is a dictionary, recursively sort its values, and then sort by keys
                 for (key, val) in o.items():
                     if isinstance(val, dict) or isinstance(val, list):
                         o[key] = _to_ordered(val)
                 result = OrderedDict(sorted(o.items(), key=lambda x: x[0]))
             elif isinstance(o, list):
+                # If o is a list, recursively sort items which are dictionaries
                 result = []
                 for item in o:
                     if isinstance(item, dict):
@@ -397,9 +420,15 @@ class OnnxExtension(Extension):
                     k = '{}_{}_{}'.format(key, str(index), val['name'])
                     v = val
                     if key == 'initializer':
+                        # Determine the name of the attribute containing the data
+                        if isinstance(v['dataType'], int):
+                            data_key = ONNX_ATTR_TYPES[v['dataType']].lower() + 'Data'
+                        elif isinstance(v['dataType'], str):
+                            data_key = v['dataType'].lower() + 'Data'
+                        else:
+                            raise ValueError('Unknown data type. Try downgrading ONNX to 1.2.1.')
                         # Remove data from initializer as the model
                         # will be reinitialized after deserialization
-                        data_key = v['dataType'].lower() + 'Data'
                         del v[data_key]
                     if isinstance(v, Dict):
                         v = _to_ordered(v)

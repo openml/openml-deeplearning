@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import onnx
 import inspect
@@ -11,6 +12,24 @@ from openml.testing import TestBase
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
+
+# Values taken from https://github.com/onnx/onnx/blob/master/onnx/onnx-ml.proto3
+# Might change in the future - changes here should be made in the onnx extension.py as well
+ONNX_ATTR_TYPES = {
+    'UNDEFINED': 0,
+    'FLOAT': 1,
+    'INT': 2,
+    'STRING': 3,
+    'TENSOR': 4,
+    'GRAPH': 5,
+    'FLOATS': 6,
+    'INTS': 7,
+    'STRINGS': 8,
+    'TENSORS': 9,
+    'GRAPHS': 10
+}
+
+DATA_TYPE_PATTERN = re.compile(r'\"(dataType|elemType)\": \"([A-Za-z]+)\"')
 
 
 class TestOnnxExtensionSerialization(TestBase):
@@ -34,8 +53,9 @@ class TestOnnxExtensionSerialization(TestBase):
 
         # Create the fixed values to assert against
         fixed_description = 'Automatically created ONNX flow.'
-        fixed_version = 'onnx==1.2.1,openml==0.8.0'
-        fixed_dependencies = 'onnx==1.2.1\nmxnet==1.4.1\nnumpy>=1.6.1\nscipy>=1.2.1'
+        fixed_version = 'onnx=={},openml==0.8.0'.format(onnx.__version__)
+        fixed_dependencies = \
+            'onnx=={}\nmxnet==1.4.1\nnumpy>=1.6.1\nscipy>=1.2.1'.format(onnx.__version__)
         fixed_params = \
             OrderedDict([('backend', '{"irVersion": "3", "opsetImport": [{"version": "7"}]}'),
                          ('initializer_0_batchnorm0_gamma',
@@ -154,6 +174,26 @@ class TestOnnxExtensionSerialization(TestBase):
                          ('output_0_softmax',
                           '{"name": "softmax", "type": {"tensorType": {"elemType": "FLOAT", '
                           '"shape": {"dim": [{"dimValue": "1024"}, {"dimValue": "2"}]}}}}')])
+
+        # Check if older version of onnx (1.2.1) was used for the creation of the flow
+        is_old_onnx = False
+        for key, val in flow.parameters.items():
+            match = DATA_TYPE_PATTERN.search(val)
+            if match is not None:
+                is_old_onnx = True
+                break
+
+        # If it is a newer version of onnx (>= 1.5.0), change "dataType" and "elemType" fields
+        # to have the corresponding numbers as values instead of the strings
+        if not is_old_onnx:
+            for key, val in fixed_params.items():
+                match = DATA_TYPE_PATTERN.search(val)
+                if match is not None:
+                    fixed_params[key] = re.sub(
+                        DATA_TYPE_PATTERN,
+                        '"{}": {}'.format(match.group(1), ONNX_ATTR_TYPES[match.group(2)]),
+                        val
+                    )
 
         # The tests itself
         self.assertEqual(flow.description, fixed_description)
