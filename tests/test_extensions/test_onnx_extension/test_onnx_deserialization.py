@@ -7,7 +7,6 @@ from google.protobuf import json_format
 import openml
 from openml.testing import TestBase
 from openml.extensions.onnx import OnnxExtension
-from openml.flows.functions import assert_flows_equal
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
