@@ -64,6 +64,7 @@ ONNX_ATTR_TYPES = {
     10: 'GRAPHS'
 }
 
+
 class OnnxExtension(Extension):
     """Connect ONNX to OpenML-Python."""
 
