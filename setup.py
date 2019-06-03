@@ -72,7 +72,7 @@ setuptools.setup(name="openml",
                          'tensorflow'
                      ],
                      'dltorch': [
-                         'torch==1.0.1',
+                         'torch',
                      ],
                      'dlonnx': [
                          'mxnet',
