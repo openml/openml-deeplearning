@@ -377,7 +377,7 @@ class MXNetExtension(Extension):
         mxnet_version_formatted = mxnet_version.replace('==', '_')
         flow = OpenMLFlow(name=name,
                           class_name=class_name,
-                          description='Automatically created scikit-learn flow.',
+                          description='Automatically created MXNet flow.',
                           model=model,
                           components=subcomponents,
                           parameters=parameters,
