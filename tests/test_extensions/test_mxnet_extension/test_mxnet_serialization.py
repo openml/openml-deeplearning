@@ -4,7 +4,6 @@ from collections import OrderedDict
 from unittest import mock
 
 import mxnet as mx
-from mxnet import gluon
 from mxnet.gluon import nn
 
 from openml import config
@@ -13,38 +12,6 @@ from openml.testing import TestBase
 
 this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
-
-
-class Net(gluon.HybridBlock):
-    def __init__(self, **kwargs):
-        super(Net, self).__init__(**kwargs)
-        with self.name_scope():
-            # layers created in name_scope will inherit name space
-            # from parent layer.
-            self.conv1 = nn.Conv2D(6, kernel_size=5)
-            self.pool1 = nn.MaxPool2D(pool_size=2)
-            self.conv2 = nn.Conv2D(16, kernel_size=5)
-            self.pool2 = nn.MaxPool2D(pool_size=2)
-            self.fc1 = nn.Dense(120)
-            self.fc2 = nn.Dense(84)
-            # You can use a Dense layer for fc3 but we do dot product manually
-            # here for illustration purposes.
-            self.fc3_weight = self.params.get('fc3_weight', shape=(10, 84))
-
-    def hybrid_forward(self, F, x, fc3_weight):
-        # Here `F` can be either mx.nd or mx.sym, x is the input data,
-        # and fc3_weight is either self.fc3_weight.data() or
-        # self.fc3_weight.var() depending on whether x is Symbol or NDArray
-        print(x)
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        # 0 means copy over size from corresponding dimension.
-        # -1 means infer size from the rest of dimensions.
-        x = x.reshape((0, -1))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.dot(x, fc3_weight, transpose_b=True)
-        return x
 
 
 class TestPytorchExtensionFlowSerialization(TestBase):
@@ -67,7 +34,6 @@ class TestPytorchExtensionFlowSerialization(TestBase):
                 nn.Dense(10)
             )
 
-            #model = Net()
             fixture_name = 'mxnet.gluon.nn.basic_layers.HybridSequential'
             fixture_description = 'Automatically created MXNet flow.'
             version_fixture = 'mxnet==%s\nnumpy>=1.6.1\nscipy>=0.9' \
@@ -182,4 +148,4 @@ class TestPytorchExtensionFlowSerialization(TestBase):
             self.assertEqual(serialization.parameters, fixture_parameters)
             self.assertEqual(serialization.dependencies, version_fixture)
 
-            self.assertEqual(check_dependencies_mock.call_count, 7)
+            self.assertEqual(check_dependencies_mock.call_count, 0)
