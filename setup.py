@@ -74,6 +74,10 @@ setuptools.setup(name="openml",
                      'dltorch': [
                          'torch',
                      ],
+                     'dlonnx': [
+                         'mxnet',
+                         'onnx'
+                     ]
                  },
                  test_suite="pytest",
                  classifiers=['Intended Audience :: Science/Research',

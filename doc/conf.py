@@ -45,6 +45,8 @@ extensions = [
     'numpydoc'
 ]
 
+autodoc_mock_imports = ['torch']
+
 autosummary_generate = True
 numpydoc_show_class_members = False
 
