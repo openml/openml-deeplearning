@@ -1,9 +1,16 @@
+"""
+ONNX model example
+==================
+
+An example of a sequential network that solves a supervised classification task used
+ as an OpenML flow. Uses MXNet as backend.
+"""
+
 import openml.extensions.onnx
 import onnx
 import os
 import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
-
 
 ONNX_FILE_PATH_DEFAULT = 'model.onnx'
 MXNET_PARAMS_PATH_DEFAULT = './model-0001.params'
@@ -68,7 +75,7 @@ if os.path.exists(MXNET_SYMBOL_PATH_DEFAULT):
 if os.path.exists(ONNX_FILE_PATH_DEFAULT):
     os.remove(ONNX_FILE_PATH_DEFAULT)
 ############################################################################
-# Run the Keras model on the task (requires an API key).
+# Run the model on the task (requires an API key).
 run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
 # Publish the experiment on OpenML (optional, requires an API key).
 run.publish()
