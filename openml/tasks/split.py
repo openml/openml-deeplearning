@@ -10,6 +10,14 @@ Split = namedtuple("Split", ["train", "test"])
 
 
 class OpenMLSplit(object):
+    """OpenML Split object.
+
+       Parameters
+       ----------
+       name : int or str
+       description : str
+       split : dict
+    """
 
     def __init__(self, name, description, split):
         self.description = description
@@ -77,7 +85,7 @@ class OpenMLSplit(object):
                 raise FileNotFoundError(
                     'Split arff %s does not exist!' % filename
                 )
-            file_data = arff.load(open(filename))
+            file_data = arff.load(open(filename), return_type=arff.DENSE_GEN)
             splits = file_data['data']
             name = file_data['relation']
             attrnames = [attr[0] for attr in file_data['attributes']]
@@ -110,11 +118,7 @@ class OpenMLSplit(object):
                     repetitions[repetition][fold][sample] = ([], [])
                 split = repetitions[repetition][fold][sample]
 
-                if not isinstance(line[type_idx], str):
-                    type_ = line[type_idx].decode('utf-8')
-                else:
-                    type_ = line[type_idx]
-
+                type_ = line[type_idx]
                 if type_ == 'TRAIN':
                     split[0].append(line[rowid_idx])
                 elif type_ == 'TEST':

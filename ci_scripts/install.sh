@@ -27,6 +27,10 @@ popd
 conda create -n testenv --yes python=$PYTHON_VERSION pip
 source activate testenv
 
+if [[ -v SCIPY_VERSION ]]; then
+    conda install --yes scipy=$SCIPY_VERSION
+fi
+
 python --version
 pip install -e '.[test]'
 pip install -e '.[dlkeras]'
