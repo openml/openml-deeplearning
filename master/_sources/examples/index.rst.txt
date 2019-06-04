@@ -187,6 +187,26 @@ OpenML experiment examples using Keras sequential and functional networks.
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a sequential network used to solve a regression task.">
+
+.. only:: html
+
+    .. figure:: /examples/keras/images/thumb/sphx_glr_regression_thumb.png
+
+        :ref:`sphx_glr_examples_keras_regression.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/keras/regression
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="An example of a functional (non-sequential) network used as an OpenML flow.">
 
 .. only:: html
@@ -204,6 +224,40 @@ OpenML experiment examples using Keras sequential and functional networks.
    :hidden:
 
    /examples/keras/functional_model
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+
+
+.. _sphx_glr_examples_onnx:
+
+ONNX Examples
+===================
+
+OpenML experiment examples using ONNX models.
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a sequential network that solves a supervised classification task used  as an Ope...">
+
+.. only:: html
+
+    .. figure:: /examples/onnx/images/thumb/sphx_glr_mxnet_model_thumb.png
+
+        :ref:`sphx_glr_examples_onnx_mxnet_model.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/onnx/mxnet_model
 .. raw:: html
 
     <div style='clear:both'></div>

@@ -63,7 +63,8 @@ openml.extensions.pytorch.config.progress_callback = VisdomLinePlotter()
 ############################################################################
 # The network described in the sequential classification example.
 model = torch.nn.Sequential(
-    openml.extensions.pytorch.layers.Reshape((-1, 1, 28, 28)),
+    openml.extensions.pytorch.layers.Functional(function=torch.Tensor.reshape,
+                                                shape=(-1, 1, 28, 28)),
     torch.nn.BatchNorm2d(num_features=1),
     torch.nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5),
     torch.nn.LeakyReLU(),
@@ -71,7 +72,8 @@ model = torch.nn.Sequential(
     torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=5),
     torch.nn.LeakyReLU(),
     torch.nn.MaxPool2d(kernel_size=2),
-    openml.extensions.pytorch.layers.Reshape((-1, 4 * 4 * 64)),
+    openml.extensions.pytorch.layers.Functional(function=torch.Tensor.reshape,
+                                                shape=(-1, 4 * 4 * 64)),
     torch.nn.Linear(in_features=4 * 4 * 64, out_features=256),
     torch.nn.LeakyReLU(),
     torch.nn.Dropout(),

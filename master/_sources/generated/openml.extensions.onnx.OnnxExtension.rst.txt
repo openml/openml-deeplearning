@@ -1,0 +1,6 @@
+:mod:`openml.extensions.onnx`.OnnxExtension
+==================================================
+
+.. currentmodule:: openml.extensions.onnx
+
+.. autoclass:: OnnxExtension
