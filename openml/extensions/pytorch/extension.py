@@ -88,7 +88,8 @@ class PytorchExtension(Extension):
         -------
         bool
         """
-        return isinstance(model, torch.nn.Module)
+        from torch.nn import Module
+        return isinstance(model, Module)
 
     ################################################################################################
     # Methods for flow serialization and de-serialization
