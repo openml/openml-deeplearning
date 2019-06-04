@@ -14,7 +14,7 @@ this_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_directory)
 
 
-class TestPytorchExtensionFlowSerialization(TestBase):
+class TestMXNetExtensionFlowSerialization(TestBase):
 
     def setUp(self, n_levels: int = 1):
         super().setUp(n_levels=2)
@@ -137,10 +137,10 @@ class TestPytorchExtensionFlowSerialization(TestBase):
                               '"node_row_ptr": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, '
                               '14, 15, 16, 17, 18, 19, 20, 21, 22]}')])
 
-            structure_fixture = {'mxnet.gluon.nn.basic_layers.HybridSequential': []}
+            # structure_fixture = {'mxnet.gluon.nn.basic_layers.HybridSequential': []}
 
             serialization = self.extension.model_to_flow(model)
-            structure = serialization.get_structure('name')
+            # structure = serialization.get_structure('name')
 
             self.assertIn(fixture_name, serialization.name)
             self.assertEqual(serialization.class_name[:len(fixture_name)], fixture_name)
