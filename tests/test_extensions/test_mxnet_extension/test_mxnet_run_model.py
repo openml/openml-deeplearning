@@ -44,10 +44,11 @@ class TestMXNetExtensionRunFunctions(TestBase):
 
                 # Basic HybridSequential model
                 model = nn.HybridSequential()
-                model.add(
-                    nn.Dense(30, activation="relu"),
-                    nn.Dense(output_length)
-                )
+                with model.name_scope():
+                    model.add(
+                        nn.Dense(30, activation="relu"),
+                        nn.Dense(output_length)
+                    )
 
                 model.hybridize()
 
