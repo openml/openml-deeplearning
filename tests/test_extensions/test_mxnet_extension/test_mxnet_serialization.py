@@ -33,6 +33,7 @@ class TestMXNetExtensionFlowSerialization(TestBase):
                 nn.Dense(84, activation="relu"),
                 nn.Dense(10)
             )
+            model.collect_params().initialize(mx.init.Constant(0))
 
             fixture_name = 'mxnet.gluon.nn.basic_layers.HybridSequential'
             fixture_description = 'Automatically created MXNet flow.'
