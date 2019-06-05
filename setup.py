@@ -77,7 +77,10 @@ setuptools.setup(name="openml",
                      'dlonnx': [
                          'mxnet',
                          'onnx'
-                     ]
+                     ],
+                     'dlmxnet': [
+                         'mxnet',
+                     ],
                  },
                  test_suite="pytest",
                  classifiers=['Intended Audience :: Science/Research',

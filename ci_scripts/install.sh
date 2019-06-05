@@ -38,6 +38,7 @@ pip install -e '.[test]'
 pip install -e '.[dlkeras]'
 pip install -e '.[dltorch]'
 pip install -e '.[dlonnx]'
+pip install -e '.[dlmxnet]'
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
 
