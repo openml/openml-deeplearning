@@ -2,13 +2,12 @@ from collections import OrderedDict  # noqa: F401
 import copy
 from distutils.version import LooseVersion
 import importlib
-import inspect
 import json
 import logging
 import re
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import zlib
 
@@ -147,7 +146,7 @@ class MXNetExtension(Extension):
 
         # First, we need to check whether the presented object is a json string.
         # JSON strings are used to encoder parameter values. By passing around
-        # json strings for parameters, we make sure that we can flow_to_sklearn
+        # json strings for parameters, we make sure that we can flow_to_mxnet
         # the parameter values to the correct type.
 
         if isinstance(o, str):
@@ -156,54 +155,25 @@ class MXNetExtension(Extension):
             except JSONDecodeError:
                 pass
 
+        rval = None  # type: Any
         if isinstance(o, dict):
-            # Check if the dict encodes a 'special' object, which could not
-            # easily converted into a string, but rather the information to
-            # re-create the object were stored in a dictionary.
-            if 'oml-python:serialized_object' in o:
-                serialized_type = o['oml-python:serialized_object']
-                value = o['value']
-                if serialized_type == 'component_reference':
-                    assert components is not None  # Necessary for mypy
-                    value = self._deserialize_mxnet(value, recursion_depth=depth_pp)
-                    step_name = value['step_name']
-                    key = value['key']
-                    component = self._deserialize_mxnet(
-                        components[key],
+            rval = OrderedDict(
+                (
+                    self._deserialize_mxnet(
+                        o=key,
+                        components=components,
                         initialize_with_defaults=initialize_with_defaults,
-                        recursion_depth=depth_pp
+                        recursion_depth=depth_pp,
+                    ),
+                    self._deserialize_mxnet(
+                        o=value,
+                        components=components,
+                        initialize_with_defaults=initialize_with_defaults,
+                        recursion_depth=depth_pp,
                     )
-                    # The component is now added to where it should be used
-                    # later. It should not be passed to the constructor of the
-                    # main flow object.
-                    del components[key]
-                    if step_name is None:
-                        rval = component
-                    elif 'argument_1' not in value:
-                        rval = (step_name, component)
-                    else:
-                        rval = (step_name, component, value['argument_1'])
-                else:
-                    raise ValueError('Cannot flow_to_mxnet %s' % serialized_type)
-
-            else:
-                rval = OrderedDict(
-                    (
-                        self._deserialize_mxnet(
-                            o=key,
-                            components=components,
-                            initialize_with_defaults=initialize_with_defaults,
-                            recursion_depth=depth_pp,
-                        ),
-                        self._deserialize_mxnet(
-                            o=value,
-                            components=components,
-                            initialize_with_defaults=initialize_with_defaults,
-                            recursion_depth=depth_pp,
-                        )
-                    )
-                    for key, value in sorted(o.items())
                 )
+                for key, value in sorted(o.items())
+            )
         elif isinstance(o, (list, tuple)):
             rval = [
                 self._deserialize_mxnet(
@@ -416,7 +386,8 @@ class MXNetExtension(Extension):
                 external_versions.add(external_version)
         return ','.join(list(sorted(external_versions)))
 
-    def _get_symbolic_configuration(self, model: mxnet.gluon.HybridBlock) -> 'OrderedDict[str, Any]':
+    def _get_symbolic_configuration(self, model: mxnet.gluon.HybridBlock) \
+            -> 'OrderedDict[str, Any]':
         # The dictionary containing the configuration of the model.
         configuration = OrderedDict()  # type: OrderedDict[str, Any]
 
@@ -437,7 +408,8 @@ class MXNetExtension(Extension):
         max_len = int(np.ceil(np.log10(len(nodes))))
         len_format = '{0:0>' + str(max_len) + '}'
 
-        # Add the order identifier to each node, in order to maintain the order during reconstruction.
+        # Add the order identifier to each node, in order to maintain the order
+        # during reconstruction.
         for idx, node in enumerate(nodes):
             configuration[len_format.format(idx) + "_" + node['name']] = node
 
@@ -480,11 +452,6 @@ class MXNetExtension(Extension):
                     else:
                         yield el
 
-            # In case rval is a list of lists (or tuples), we need to identify two situations:
-            # - sklearn pipeline steps, feature union or base classifiers in voting classifier.
-            #   They look like e.g. [("imputer", Imputer()), ("classifier", SVC())]
-            # - a list of lists with simple types (e.g. int or str), such as for an OrdinalEncoder
-            #   where all possible values for each feature are described: [[0,1,2], [1,2,5]]
             is_non_empty_list_of_lists_with_same_type = (
                 isinstance(rval, (list, tuple))
                 and len(rval) > 0
@@ -564,21 +531,6 @@ class MXNetExtension(Extension):
                     parameter_json = json.dumps(parameter_value)
                 parameters[k] = parameter_json
 
-            elif isinstance(rval, OpenMLFlow):
-
-                # A subcomponent, for example the base model in
-                # AdaBoostClassifier
-                sub_components[k] = rval
-                sub_components_explicit.add(k)
-                component_reference = OrderedDict()
-                component_reference['oml-python:serialized_object'] = 'component_reference'
-                cr_value = OrderedDict()
-                cr_value['key'] = k
-                cr_value['step_name'] = None
-                component_reference['value'] = cr_value
-                cr = self._serialize_sklearn(component_reference, model)
-                parameters[k] = json.dumps(cr)
-
             else:
                 # a regular hyperparameter
                 if not (hasattr(rval, '__len__') and len(rval) == 0):
@@ -591,33 +543,6 @@ class MXNetExtension(Extension):
 
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
 
-    def _get_fn_arguments_with_defaults(self, fn_name: Callable) -> Tuple[Dict, Set]:
-        """
-        Returns:
-            i) a dict with all parameter names that have a default value, and
-            ii) a set with all parameter names that do not have a default
-
-        Parameters
-        ----------
-        fn_name : callable
-            The function of which we want to obtain the defaults
-
-        Returns
-        -------
-        params_with_defaults: dict
-            a dict mapping parameter name to the default value
-        params_without_defaults: set
-            a set with all parameters that do not have a default value
-        """
-        # parameters with defaults are optional, all others are required.
-        signature = inspect.getfullargspec(fn_name)
-        if signature.defaults:
-            optional_params = dict(zip(reversed(signature.args), reversed(signature.defaults)))
-        else:
-            optional_params = dict()
-        required_params = {arg for arg in signature.args if arg not in optional_params}
-        return optional_params, required_params
-
     def _deserialize_model(
         self,
         flow: OpenMLFlow,
@@ -625,7 +550,6 @@ class MXNetExtension(Extension):
         recursion_depth: int,
     ) -> Any:
         logging.info('-%s deserialize %s' % ('-' * recursion_depth, flow.name))
-        model_name = flow.class_name
         self._check_dependencies(flow.dependencies)
 
         parameters = flow.parameters
@@ -665,27 +589,7 @@ class MXNetExtension(Extension):
             )
             parameter_dict[name] = rval
 
-        module_name = model_name.rsplit('.', 1)
-        model_class = getattr(importlib.import_module(module_name[0]),
-                              module_name[1])
-
-        if keep_defaults:
-            # obtain all params with a default
-            param_defaults, _ = \
-                self._get_fn_arguments_with_defaults(model_class.__init__)
-
-            # delete the params that have a default from the dict,
-            # so they get initialized with their default value
-            # except [...]
-            for param in param_defaults:
-                # [...] the ones that also have a key in the components dict.
-                # As OpenML stores different flows for ensembles with different
-                # (base-)components, in OpenML terms, these are not considered
-                # hyperparameters but rather constants (i.e., changing them would
-                # result in a different flow)
-                if param not in components.keys():
-                    del parameter_dict[param]
-        return model_class(**parameter_dict)
+        return None
 
     def _check_dependencies(self, dependencies: str) -> None:
         if not dependencies:
@@ -725,43 +629,6 @@ class MXNetExtension(Extension):
         model_package_version_number: str,
     ) -> str:
         return '%s==%s' % (model_package_name, model_package_version_number)
-
-    @staticmethod
-    def _get_parameter_values_recursive(param_grid: Union[Dict, List[Dict]],
-                                        parameter_name: str) -> List[Any]:
-        """
-        Returns a list of values for a given hyperparameter, encountered
-        recursively throughout the flow. (e.g., n_jobs can be defined
-        for various flows)
-
-        Parameters
-        ----------
-        param_grid: Union[Dict, List[Dict]]
-            Dict mapping from hyperparameter list to value, to a list of
-            such dicts
-
-        parameter_name: str
-            The hyperparameter that needs to be inspected
-
-        Returns
-        -------
-        List
-            A list of all values of hyperparameters with this name
-        """
-        if isinstance(param_grid, dict):
-            result = list()
-            for param, value in param_grid.items():
-                if param.split('__')[-1] == parameter_name:
-                    result.append(value)
-            return result
-        elif isinstance(param_grid, list):
-            result = list()
-            for sub_grid in param_grid:
-                result.extend(MXNetExtension._get_parameter_values_recursive(sub_grid,
-                                                                               parameter_name))
-            return result
-        else:
-            raise ValueError('Param_grid should either be a dict or list of dicts')
 
     def _can_measure_cputime(self, model: Any) -> bool:
         """
@@ -828,7 +695,7 @@ class MXNetExtension(Extension):
 
         Parameters
         ----------
-        model : sklearn model
+        model : mxnet model
             The model to be seeded
         seed : int
             The seed to initialize the RandomState with. Unseeded subcomponents
@@ -915,7 +782,7 @@ class MXNetExtension(Extension):
             np.ndarray
             """
             # y: list or numpy array of predictions
-            # model_classes: sklearn classifier mapping from original array id to
+            # model_classes: classifier mapping from original array id to
             # prediction index id
             if not isinstance(classes, list):
                 raise ValueError('please convert model classes to list prior to '
@@ -957,10 +824,12 @@ class MXNetExtension(Extension):
                 y_train_mxnet = mxnet.nd.array(y_train)
 
                 train_dataset = mxnet.gluon.data.ArrayDataset(X_train_mxnet, y_train_mxnet)
-                train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+                train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=batch_size,
+                                                         shuffle=True)
 
                 softmax_cross_entropy = mxnet.gluon.loss.SoftmaxCrossEntropyLoss()
-                trainer = mxnet.gluon.Trainer(params=model_copy.collect_params(), optimizer=mxnet.optimizer.Adam())
+                trainer = mxnet.gluon.Trainer(params=model_copy.collect_params(),
+                                              optimizer=mxnet.optimizer.Adam())
 
                 def evaluate_accuracy(data_iterator, net):
                     acc = mxnet.metric.Accuracy()
@@ -983,7 +852,8 @@ class MXNetExtension(Extension):
                         cumulative_loss += mxnet.nd.sum(loss).asscalar()
 
                     train_accuracy = evaluate_accuracy(train_data, model_copy)
-                    print("Epoch %s. Loss: %s, Train_acc %s" % (e, cumulative_loss / num_examples, train_accuracy))
+                    print("Epoch %s. Loss: %s, Train_acc %s"
+                          % (e, cumulative_loss / num_examples, train_accuracy))
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -1114,23 +984,6 @@ class MXNetExtension(Extension):
 
         def extract_parameters(_flow, _flow_dict, component_model,
                                _main_call=False, main_id=None):
-            def is_subcomponent_specification(values):
-                # checks whether the current value can be a specification of
-                # subcomponents, as for example the value for steps parameter
-                # (in Pipeline) or transformers parameter (in
-                # ColumnTransformer). These are always lists/tuples of lists/
-                # tuples, size bigger than 2 and an OpenMLFlow item involved.
-                if not isinstance(values, (tuple, list)):
-                    return False
-                for item in values:
-                    if not isinstance(item, (tuple, list)):
-                        return False
-                    if len(item) < 2:
-                        return False
-                    if not isinstance(item[1], openml.flows.OpenMLFlow):
-                        return False
-                return True
-
             # _flow is openml flow object, _param dict maps from flow name to flow
             # id for the main call, the param dict can be overridden (useful for
             # unit tests / sentinels) this way, for flows without subflows we do
@@ -1153,7 +1006,9 @@ class MXNetExtension(Extension):
                 _current = OrderedDict()
                 _current['oml:name'] = _param_name
 
-                current_param_values = self.model_to_flow(self._get_symbolic_configuration(component_model)[_param_name])
+                current_param_values = self.model_to_flow(
+                    self._get_symbolic_configuration(component_model)[_param_name]
+                )
 
                 # Try to filter out components (a.k.a. subflows) which are
                 # handled further down in the code (by recursively calling
@@ -1161,44 +1016,8 @@ class MXNetExtension(Extension):
                 if isinstance(current_param_values, openml.flows.OpenMLFlow):
                     continue
 
-                if is_subcomponent_specification(current_param_values):
-                    # complex parameter value, with subcomponents
-                    parsed_values = list()
-                    for subcomponent in current_param_values:
-                        # scikit-learn stores usually tuples in the form
-                        # (name (str), subcomponent (mixed), argument
-                        # (mixed)). OpenML replaces the subcomponent by an
-                        # OpenMLFlow object.
-                        if len(subcomponent) < 2 or len(subcomponent) > 3:
-                            raise ValueError('Component reference should be '
-                                             'size {2,3}. ')
-
-                        subcomponent_identifier = subcomponent[0]
-                        subcomponent_flow = subcomponent[1]
-                        if not isinstance(subcomponent_identifier, str):
-                            raise TypeError('Subcomponent identifier should be '
-                                            'string')
-                        if not isinstance(subcomponent_flow,
-                                          openml.flows.OpenMLFlow):
-                            raise TypeError('Subcomponent flow should be string')
-
-                        current = {
-                            "oml-python:serialized_object": "component_reference",
-                            "value": {
-                                "key": subcomponent_identifier,
-                                "step_name": subcomponent_identifier
-                            }
-                        }
-                        if len(subcomponent) == 3:
-                            if not isinstance(subcomponent[2], list):
-                                raise TypeError('Subcomponent argument should be'
-                                                'list')
-                            current['value']['argument_1'] = subcomponent[2]
-                        parsed_values.append(current)
-                    parsed_values = json.dumps(parsed_values)
-                else:
-                    # vanilla parameter value
-                    parsed_values = json.dumps(current_param_values)
+                # vanilla parameter value
+                parsed_values = json.dumps(current_param_values)
 
                 _current['oml:value'] = parsed_values
                 if _main_call:
@@ -1218,38 +1037,6 @@ class MXNetExtension(Extension):
         parameters = extract_parameters(flow, flow_dict, model, True, flow.flow_id)
 
         return parameters
-
-    def _openml_param_name_to_sklearn(
-        self,
-        openml_parameter: openml.setups.OpenMLParameter,
-        flow: OpenMLFlow,
-    ) -> str:
-        """
-        Converts the name of an OpenMLParameter into the sklean name, given a flow.
-
-        Parameters
-        ----------
-        openml_parameter: OpenMLParameter
-            The parameter under consideration
-
-        flow: OpenMLFlow
-            The flow that provides context.
-
-        Returns
-        -------
-        sklearn_parameter_name: str
-            The name the parameter will have once used in mxnet
-        """
-        if not isinstance(openml_parameter, openml.setups.OpenMLParameter):
-            raise ValueError('openml_parameter should be an instance of OpenMLParameter')
-        if not isinstance(flow, OpenMLFlow):
-            raise ValueError('flow should be an instance of OpenMLFlow')
-
-        flow_structure = flow.get_structure('name')
-        if openml_parameter.flow_name not in flow_structure:
-            raise ValueError('Obtained OpenMLParameter and OpenMLFlow do not correspond. ')
-        name = openml_parameter.flow_name  # for PEP8
-        return '__'.join(flow_structure[name] + [openml_parameter.parameter_name])
 
     ################################################################################################
     # Methods for hyperparameter optimization
