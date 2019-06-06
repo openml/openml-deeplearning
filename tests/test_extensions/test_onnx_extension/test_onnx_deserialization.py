@@ -65,7 +65,7 @@ class TestOnnxExtensionFlowDeserialization(TestBase):
 
     def test_deserialize_onnx_model(self):
         """ Function test_deserialize_onnx_model
-        Test for Sequential Keras model deserialization
+        Test for ONNX model deserialization
         Depends on correct implementation of model_to_flow
 
         :return: Nothing

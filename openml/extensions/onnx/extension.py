@@ -46,7 +46,7 @@ DEPENDENCIES_PATTERN = re.compile(
     r'(?P<version>(\d+\.)?(\d+\.)?(\d+)?(dev)?[0-9]*))?$'
 )
 
-ONNX_FILE_PATH = 'model.onnx'
+ONNX_FILE_PATH = 'model_copy.onnx'
 
 # Values taken from https://github.com/onnx/onnx/blob/master/onnx/onnx-ml.proto3
 # Might change in the future - changes here should be made in the the
