@@ -1,3 +1,4 @@
+from . import config
 from .extension import OnnxExtension
 
 
