@@ -605,6 +605,13 @@ class MXNetExtension(Extension):
         # but not desirable if we want to upload to OpenML).
 
         model_copy = copy.deepcopy(model)
+
+        from .config import \
+            criterion_gen, optimizer_gen, \
+            scheduler_gen, \
+            batch_size, epoch_count, \
+            predict, predict_proba
+
         model_copy.collect_params().initialize(mxnet.init.Normal())
 
         # Runtime can be measured if the model is run sequentially
@@ -619,9 +626,6 @@ class MXNetExtension(Extension):
             modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
-                batch_size = 32
-                num_examples = X_train.shape[0]
-
                 X_train_mxnet = mxnet.nd.array(X_train)
                 y_train_mxnet = mxnet.nd.array(y_train)
 
@@ -629,33 +633,18 @@ class MXNetExtension(Extension):
                 train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=batch_size,
                                                          shuffle=True)
 
-                softmax_cross_entropy = mxnet.gluon.loss.SoftmaxCrossEntropyLoss()
+                criterion = criterion_gen(task)
+                lr_scheduler = scheduler_gen(task)
                 trainer = mxnet.gluon.Trainer(params=model_copy.collect_params(),
-                                              optimizer=mxnet.optimizer.Adam())
+                                              optimizer=optimizer_gen(lr_scheduler, task))
 
-                def evaluate_accuracy(data_iterator, net):
-                    acc = mxnet.metric.Accuracy()
-                    for i, (data, label) in enumerate(data_iterator):
-                        output = net(data)
-                        predictions = mxnet.nd.argmax(output, axis=1)
-                        acc.update(preds=predictions, labels=label)
-                    return acc.get()[1]
-
-                epochs = 64
-
-                for e in range(epochs):
-                    cumulative_loss = 0
+                for epoch in range(epoch_count):
                     for i, (data, label) in enumerate(train_data):
                         with mxnet.autograd.record():
                             output = model_copy(data)
-                            loss = softmax_cross_entropy(output, label)
+                            loss = criterion(output, label)
                         loss.backward()
                         trainer.step(batch_size)
-                        cumulative_loss += mxnet.nd.sum(loss).asscalar()
-
-                    train_accuracy = evaluate_accuracy(train_data, model_copy)
-                    print("Epoch %s. Loss: %s, Train_acc %s"
-                          % (e, cumulative_loss / num_examples, train_accuracy))
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -681,8 +670,7 @@ class MXNetExtension(Extension):
             X_test_mxnet = mxnet.nd.array(X_test)
 
             pred_y = model_copy(X_test_mxnet)
-            pred_y = pred_y.argmax(axis=1)
-            pred_y = pred_y.astype('int')
+            pred_y = predict(pred_y, task)
             pred_y = pred_y.asnumpy()
         else:
             raise ValueError(task)
@@ -705,7 +693,7 @@ class MXNetExtension(Extension):
                 X_test_mxnet = mxnet.nd.array(X_test)
 
                 proba_y = model_copy(X_test_mxnet)
-                proba_y = proba_y.softmax(axis=1)
+                proba_y = predict_proba(proba_y)
                 proba_y = proba_y.asnumpy()
             except AttributeError:
                 if task.class_labels is not None:
