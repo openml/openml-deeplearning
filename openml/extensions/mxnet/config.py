@@ -64,7 +64,7 @@ def _default_predict(output: backend_type,
         output = output.argmax(axis=output_axis)
         output = output.astype('int')
     elif isinstance(task, OpenMLRegressionTask):
-        output = output.flatten()
+        output = output.reshape(shape=(-1,))
     else:
         raise ValueError(task)
     return output
@@ -83,6 +83,19 @@ def _default_predict_proba(output: backend_type) -> backend_type:
 
 # predict_proba turns the outputs of the model into probabilities for each class
 predict_proba = _default_predict_proba  # type: Callable[[backend_type], backend_type]
+
+
+# _default sanitizer replaces NaNs with 1e-6
+def _default_sanitize(output: mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
+    output = mxnet.ndarray.where(mxnet.ndarray.contrib.isnan(output),
+                                 mxnet.ndarray.ones_like(output) * 1e-6,
+                                 output)
+    return output
+
+
+# sanitize sanitizes the input data in order to ensure that models can be
+# trained safely
+sanitize = _default_sanitize  # type: Callable[[mxnet.ndarray.NDArray], mxnet.ndarray.NDArray]
 
 
 def _setup():

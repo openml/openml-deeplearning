@@ -610,6 +610,7 @@ class MXNetExtension(Extension):
             criterion_gen, optimizer_gen, \
             scheduler_gen, \
             batch_size, epoch_count, \
+            sanitize, \
             predict, predict_proba
 
         model_copy.collect_params().initialize(mxnet.init.Normal())
@@ -627,6 +628,7 @@ class MXNetExtension(Extension):
 
             if isinstance(task, OpenMLSupervisedTask):
                 X_train_mxnet = mxnet.nd.array(X_train)
+                X_train_mxnet = sanitize(X_train_mxnet)
                 y_train_mxnet = mxnet.nd.array(y_train)
 
                 train_dataset = mxnet.gluon.data.ArrayDataset(X_train_mxnet, y_train_mxnet)
@@ -668,6 +670,7 @@ class MXNetExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             X_test_mxnet = mxnet.nd.array(X_test)
+            X_test_mxnet = sanitize(X_test_mxnet)
 
             pred_y = model_copy(X_test_mxnet)
             pred_y = predict(pred_y, task)
@@ -691,6 +694,7 @@ class MXNetExtension(Extension):
 
             try:
                 X_test_mxnet = mxnet.nd.array(X_test)
+                X_test_mxnet = sanitize(X_test_mxnet)
 
                 proba_y = model_copy(X_test_mxnet)
                 proba_y = predict_proba(proba_y)
