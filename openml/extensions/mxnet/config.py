@@ -30,7 +30,7 @@ def _default_scheduler_gen(_: OpenMLTask) -> 'Optional[mxnet.lr_scheduler.LRSche
     return None
 
 
-# scheduler_gen the scheduler to be used for a given task
+# scheduler_gen returns the scheduler to be used for a given task
 scheduler_gen = _default_scheduler_gen  \
     # type: Callable[[OpenMLTask], Optional[mxnet.lr_scheduler.LRScheduler]]
 
@@ -98,6 +98,45 @@ def _default_sanitize(output: mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
 sanitize = _default_sanitize  # type: Callable[[mxnet.ndarray.NDArray], mxnet.ndarray.NDArray]
 
 
+# _default_metric_gen returns a composite metric composed of accuracy for classification tasks,
+# and composed of mean squared error, mean absolute error
+# and squared mean squared error for regression tasks
+def _default_metric_gen(task: OpenMLTask) -> 'mxnet.metric.EvalMetric':
+    if isinstance(task, OpenMLClassificationTask):
+        return mxnet.metric.CompositeEvalMetric(metrics=
+                                                [mxnet.metric.Accuracy()])
+    elif isinstance(task, OpenMLRegressionTask):
+        return mxnet.metric.CompositeEvalMetric(metrics=
+                                                [mxnet.metric.MSE(),
+                                                 mxnet.metric.MAE(),
+                                                 mxnet.metric.RMSE()])
+    else:
+        raise ValueError(task)
+
+
+# metric_gen returns the metric to be used for the given task
+metric_gen = _default_metric_gen  # type: Callable[[OpenMLTask], mxnet.metric.EvalMetric]
+
+
+# _default_progress_callback reports the current fold, rep, epoch, step, loss
+# and metric for every training iteration to the default logger
+def _default_progress_callback(fold: int, rep: int, epoch: int, step: int,
+                               loss: mxnet.ndarray.NDArray,
+                               metric: mxnet.metric.EvalMetric):
+    loss = loss.mean().asscalar()
+
+    metric_result = ', '.join('%s: %s' % (name, value) for (name, value) in zip(*metric.get()))
+
+    logger.info('[%d, %d, %d, %d] loss: %.4f, %s' %
+                (fold, rep, epoch, step, loss, metric_result))
+
+
+# progress_callback is called when a training step is finished, in order to
+# report the current progress
+progress_callback = _default_progress_callback  \
+    # type: Callable[[int, int, int, int, mxnet.ndarray.NDArray], None]
+
+
 def _setup():
     global logger
     global criterion_gen
@@ -107,6 +146,9 @@ def _setup():
     global epoch_count
     global predict
     global predict_proba
+    global sanitize
+    global metric_gen
+    global progress_callback
 
 
 _setup()

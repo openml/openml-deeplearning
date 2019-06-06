@@ -611,7 +611,9 @@ class MXNetExtension(Extension):
             scheduler_gen, \
             batch_size, epoch_count, \
             sanitize, \
-            predict, predict_proba
+            predict, predict_proba, \
+            metric_gen, \
+            progress_callback
 
         model_copy.collect_params().initialize(mxnet.init.Normal())
 
@@ -640,13 +642,21 @@ class MXNetExtension(Extension):
                 trainer = mxnet.gluon.Trainer(params=model_copy.collect_params(),
                                               optimizer=optimizer_gen(lr_scheduler, task))
 
+                iteration_metric = metric_gen(task)
+
                 for epoch in range(epoch_count):
+                    iteration_metric.reset()
+
                     for i, (data, label) in enumerate(train_data):
                         with mxnet.autograd.record():
                             output = model_copy(data)
                             loss = criterion(output, label)
+                            iteration_metric.update(labels=label, preds=output)
+
                         loss.backward()
                         trainer.step(batch_size)
+
+                        progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:

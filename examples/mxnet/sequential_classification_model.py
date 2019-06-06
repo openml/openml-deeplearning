@@ -4,6 +4,11 @@ import mxnet.gluon
 import openml
 import openml.extensions.mxnet
 
+import logging
+
+openml.config.logger.setLevel(logging.DEBUG)
+openml.extensions.mxnet.config.logger.setLevel(logging.DEBUG)
+
 model = mxnet.gluon.nn.HybridSequential()
 
 with model.name_scope():
