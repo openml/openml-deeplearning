@@ -1,4 +1,4 @@
 from .extension import OnnxExtension
 
 
-__all__ = ['OnnxExtension']
+__all__ = ['OnnxExtension', 'config']
