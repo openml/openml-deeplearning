@@ -12,6 +12,7 @@ openml.extensions.mxnet.config.logger.setLevel(logging.DEBUG)
 model = mxnet.gluon.nn.HybridSequential()
 
 with model.name_scope():
+    model.add(mxnet.gluon.nn.BatchNorm())
     model.add(mxnet.gluon.nn.Dense(units=1024, activation="relu"))
     model.add(mxnet.gluon.nn.Dropout(rate=0.4))
     model.add(mxnet.gluon.nn.Dense(units=512, activation="relu"))

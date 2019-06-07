@@ -103,13 +103,11 @@ sanitize = _default_sanitize  # type: Callable[[mxnet.ndarray.NDArray], mxnet.nd
 # and squared mean squared error for regression tasks
 def _default_metric_gen(task: OpenMLTask) -> 'mxnet.metric.EvalMetric':
     if isinstance(task, OpenMLClassificationTask):
-        return mxnet.metric.CompositeEvalMetric(metrics=
-                                                [mxnet.metric.Accuracy()])
+        return mxnet.metric.CompositeEvalMetric(metrics=[mxnet.metric.Accuracy()])
     elif isinstance(task, OpenMLRegressionTask):
-        return mxnet.metric.CompositeEvalMetric(metrics=
-                                                [mxnet.metric.MSE(),
-                                                 mxnet.metric.MAE(),
-                                                 mxnet.metric.RMSE()])
+        return mxnet.metric.CompositeEvalMetric(metrics=[mxnet.metric.MSE(),
+                                                         mxnet.metric.MAE(),
+                                                         mxnet.metric.RMSE()])
     else:
         raise ValueError(task)
 
@@ -134,7 +132,7 @@ def _default_progress_callback(fold: int, rep: int, epoch: int, step: int,
 # progress_callback is called when a training step is finished, in order to
 # report the current progress
 progress_callback = _default_progress_callback  \
-    # type: Callable[[int, int, int, int, mxnet.ndarray.NDArray], None]
+    # type: Callable[[int, int, int, int, mxnet.ndarray.NDArray, mxnet.metric.EvalMetric], None]
 
 
 def _setup():
