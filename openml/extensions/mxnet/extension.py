@@ -80,7 +80,8 @@ class MXNetExtension(Extension):
         -------
         bool
         """
-        return isinstance(model, mxnet.gluon.nn.HybridBlock)
+        from mxnet.gluon.nn import HybridBlock
+        return isinstance(model, HybridBlock)
 
     ################################################################################################
     # Methods for flow serialization and de-serialization

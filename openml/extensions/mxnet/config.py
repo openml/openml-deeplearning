@@ -9,9 +9,8 @@ from typing import Union, Callable, Optional
 # logger is the default logger for the MXNet extension
 logger = logging.getLogger(__name__)  # type: logging.Logger
 
-
 # _default_criterion_gen returns a loss criterion based on the task type - regressions use
-# mxnet.gluon.loss.L1Loss while classifications use mxnet.gluon.loss.SoftmaxCrossEntropyLoss
+#  mxnet.gluon.loss.L1Loss while classifications use mxnet.gluon.loss.SoftmaxCrossEntropyLoss
 def _default_criterion_gen(task: OpenMLTask) -> mxnet.gluon.loss.Loss:
     if isinstance(task, OpenMLRegressionTask):
         return mxnet.gluon.loss.L1Loss()

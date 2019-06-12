@@ -45,8 +45,10 @@ Extensions
    sklearn.SklearnExtension
    keras.KerasExtension
    pytorch.PytorchExtension
+   pytorch.config
    onnx.OnnxExtension
-
+   mxnet.MXNetExtension
+   mxnet.config
 .. currentmodule:: openml.extensions
 
 .. autosummary::
