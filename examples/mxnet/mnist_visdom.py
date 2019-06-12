@@ -1,3 +1,11 @@
+"""
+MXNet Visdom visualization example
+==================
+
+An example of how to configuration hooks can be used to draw the learning curve
+and the loss in real time.
+"""
+
 import mxnet
 
 import openml
@@ -11,7 +19,9 @@ import numpy as np
 openml.config.logger.setLevel(logging.DEBUG)
 openml.extensions.mxnet.config.logger.setLevel(logging.DEBUG)
 
-
+############################################################################
+# Create a wrapper around the Vidsom communication object.
+# Based on https://github.com/noagarcia/visdom-tutorial
 class VisdomLinePlotter(object):
     """Plots to Visdom"""
     def __init__(self, env_name='main'):
@@ -32,6 +42,9 @@ class VisdomLinePlotter(object):
             self.viz.line(X=np.array([x]), Y=np.array([y]), env=self.env,
                           win=self.plots[var_name], name=split_name, update='append')
 
+    # This is the actual interface of the progress reporting callback. The MXNet
+    # extension will call this function after every training iteration with the updated
+    # loss and accuracy values.
     def __call__(self, fold: int, rep: int, epoch: int, step: int,
                  loss: mxnet.ndarray.NDArray,
                  metric: mxnet.metric.EvalMetric):
@@ -43,10 +56,15 @@ class VisdomLinePlotter(object):
 
         self.plot('loss', 'fold-%d-rep-%d-epoch-%d' % (fold, rep, epoch),
                   'Class loss', epoch * 984 + step, loss)
+############################################################################
 
-
+############################################################################
+# Change the default progress callback to the Visdom plotter.
 openml.extensions.mxnet.config.progress_callback = VisdomLinePlotter()
+############################################################################
 
+############################################################################
+# A sequential network used for classification on the MNIST dataset.
 with mxnet.Context(mxnet.gpu(0)):
     model = mxnet.gluon.nn.HybridSequential()
     with model.name_scope():
@@ -65,7 +83,12 @@ with mxnet.Context(mxnet.gpu(0)):
             mxnet.gluon.nn.Dropout(rate=0.2),
             mxnet.gluon.nn.Dense(units=10)
         )
+############################################################################
 
+############################################################################
+# Download the OpenML task for the mnist 784 dataset.
     task = openml.tasks.get_task(3573)
+# Run the model
     run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
     run.publish()
+############################################################################
