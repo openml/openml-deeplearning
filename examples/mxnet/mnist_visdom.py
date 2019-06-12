@@ -34,14 +34,17 @@ class VisdomLinePlotter(openml.extensions.mxnet.Config):
 
     def plot(self, var_name, split_name, title_name, x, y):
         if var_name not in self.plots:
-            self.plots[var_name] = self.viz.line(X=np.array([x, x]),
-                                                 Y=np.array([y, y]),
-                                                 env=self.env, opts=dict(
-                legend=[split_name],
-                title=title_name,
-                xlabel='Iterations',
-                ylabel=var_name
-            ))
+            self.plots[var_name] = self.viz.line(
+                X=np.array([x, x]),
+                Y=np.array([y, y]),
+                env=self.env,
+                opts=dict(
+                    legend=[split_name],
+                    title=title_name,
+                    xlabel='Iterations',
+                    ylabel=var_name
+                )
+            )
         else:
             self.viz.line(X=np.array([x]), Y=np.array([y]), env=self.env,
                           win=self.plots[var_name], name=split_name, update='append')
@@ -50,8 +53,8 @@ class VisdomLinePlotter(openml.extensions.mxnet.Config):
     # extension will call this function after every training iteration with the updated
     # loss and accuracy values.
     def progress_callback(self, fold: int, rep: int, epoch: int, step: int,
-                 loss: mxnet.ndarray.NDArray,
-                 metric: mxnet.metric.EvalMetric):
+                          loss: mxnet.ndarray.NDArray,
+                          metric: mxnet.metric.EvalMetric):
         loss = loss.mean().asscalar()
 
         for (name, value) in zip(*metric.get()):

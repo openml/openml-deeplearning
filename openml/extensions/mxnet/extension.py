@@ -630,7 +630,8 @@ class MXNetExtension(Extension):
                 y_train_mxnet = mxnet.nd.array(y_train)
 
                 train_dataset = mxnet.gluon.data.ArrayDataset(X_train_mxnet, y_train_mxnet)
-                train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=active.batch_size,
+                train_data = mxnet.gluon.data.DataLoader(train_dataset,
+                                                         batch_size=active.batch_size,
                                                          shuffle=True)
 
                 criterion = active.criterion_gen(task)

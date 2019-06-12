@@ -157,11 +157,12 @@ class Config(object):
     def progress_callback(self, fold: int, rep: int, epoch: int, step: int,
                           loss: mxnet.ndarray.NDArray, metric: mxnet.metric.EvalMetric):
         """
-        progress_callback is called when a training step is finished, in order to report the current progress
+        progress_callback is called when a training step is finished, in order to report
+         the current progress
         """
         return _default_progress_callback(fold, rep, epoch, step, loss, metric)
 
-    def initializer_gen(self, task : OpenMLTask) -> 'Optional[mxnet.init.Initializer]':
+    def initializer_gen(self, task: OpenMLTask) -> 'Optional[mxnet.init.Initializer]':
         """
         initializer_gen returns the initializer to be used for a given OpenML task
         """
