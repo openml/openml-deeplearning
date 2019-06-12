@@ -9,6 +9,7 @@ from typing import Union, Callable, Optional
 # logger is the default logger for the MXNet extension
 logger = logging.getLogger(__name__)  # type: logging.Logger
 
+
 # _default_criterion_gen returns a loss criterion based on the task type - regressions use
 #  mxnet.gluon.loss.L1Loss while classifications use mxnet.gluon.loss.SoftmaxCrossEntropyLoss
 def _default_criterion_gen(task: OpenMLTask) -> mxnet.gluon.loss.Loss:
@@ -30,7 +31,7 @@ def _default_scheduler_gen(_: OpenMLTask) -> 'Optional[mxnet.lr_scheduler.LRSche
 
 
 # scheduler_gen returns the scheduler to be used for a given task
-scheduler_gen = _default_scheduler_gen  \
+scheduler_gen = _default_scheduler_gen \
     # type: Callable[[OpenMLTask], Optional[mxnet.lr_scheduler.LRScheduler]]
 
 
@@ -41,7 +42,7 @@ def _default_optimizer_gen(lr_scheduler: mxnet.lr_scheduler.LRScheduler, _: Open
 
 
 # optimizer_gen returns the optimizer to be used for a given OpenMLTask
-optimizer_gen = _default_optimizer_gen  \
+optimizer_gen = _default_optimizer_gen \
     # type: Callable[[mxnet.lr_scheduler.LRScheduler, OpenMLTask], mxnet.optimizer.Optimizer]
 
 # batch_size represents the processing batch size for training
@@ -130,7 +131,7 @@ def _default_progress_callback(fold: int, rep: int, epoch: int, step: int,
 
 # progress_callback is called when a training step is finished, in order to
 # report the current progress
-progress_callback = _default_progress_callback  \
+progress_callback = _default_progress_callback \
     # type: Callable[[int, int, int, int, mxnet.ndarray.NDArray, mxnet.metric.EvalMetric], None]
 
 

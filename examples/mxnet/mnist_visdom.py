@@ -19,11 +19,13 @@ import numpy as np
 openml.config.logger.setLevel(logging.DEBUG)
 openml.extensions.mxnet.config.logger.setLevel(logging.DEBUG)
 
+
 ############################################################################
 # Create a wrapper around the Vidsom communication object.
 # Based on https://github.com/noagarcia/visdom-tutorial
+
 class VisdomLinePlotter(object):
-    """Plots to Visdom"""
+
     def __init__(self, env_name='main'):
         self.viz = Visdom()
         self.env = env_name
@@ -31,7 +33,8 @@ class VisdomLinePlotter(object):
 
     def plot(self, var_name, split_name, title_name, x, y):
         if var_name not in self.plots:
-            self.plots[var_name] = self.viz.line(X=np.array([x, x]), Y=np.array([y, y]),
+            self.plots[var_name] = self.viz.line(X=np.array([x, x]),
+                                                 Y=np.array([y, y]),
                                                  env=self.env, opts=dict(
                 legend=[split_name],
                 title=title_name,
@@ -56,11 +59,15 @@ class VisdomLinePlotter(object):
 
         self.plot('loss', 'fold-%d-rep-%d-epoch-%d' % (fold, rep, epoch),
                   'Class loss', epoch * 984 + step, loss)
+
+
 ############################################################################
 
 ############################################################################
 # Change the default progress callback to the Visdom plotter.
 openml.extensions.mxnet.config.progress_callback = VisdomLinePlotter()
+
+
 ############################################################################
 
 ############################################################################
@@ -83,12 +90,12 @@ with mxnet.Context(mxnet.gpu(0)):
             mxnet.gluon.nn.Dropout(rate=0.2),
             mxnet.gluon.nn.Dense(units=10)
         )
-############################################################################
+    ############################################################################
 
-############################################################################
-# Download the OpenML task for the mnist 784 dataset.
+    ############################################################################
+    # Download the OpenML task for the mnist 784 dataset.
     task = openml.tasks.get_task(3573)
-# Run the model
+    # Run the model
     run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
     run.publish()
 ############################################################################
