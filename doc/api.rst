@@ -45,10 +45,10 @@ Extensions
    sklearn.SklearnExtension
    keras.KerasExtension
    pytorch.PytorchExtension
-   pytorch.config
    onnx.OnnxExtension
    mxnet.MXNetExtension
-   mxnet.config
+   mxnet.Config
+
 .. currentmodule:: openml.extensions
 
 .. autosummary::
@@ -58,7 +58,6 @@ Extensions
     get_extension_by_flow
     get_extension_by_model
     register_extension
-
 
 Modules
 -------

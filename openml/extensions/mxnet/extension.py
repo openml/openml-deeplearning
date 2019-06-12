@@ -607,14 +607,7 @@ class MXNetExtension(Extension):
 
         model_copy = copy.deepcopy(model)
 
-        from .config import \
-            criterion_gen, optimizer_gen, \
-            scheduler_gen, \
-            batch_size, epoch_count, \
-            sanitize, \
-            predict, predict_proba, \
-            metric_gen, \
-            progress_callback
+        from .config import active
 
         model_copy.collect_params().initialize(mxnet.init.Normal())
 
@@ -631,21 +624,21 @@ class MXNetExtension(Extension):
 
             if isinstance(task, OpenMLSupervisedTask):
                 X_train_mxnet = mxnet.nd.array(X_train)
-                X_train_mxnet = sanitize(X_train_mxnet)
+                X_train_mxnet = active.sanitize(X_train_mxnet)
                 y_train_mxnet = mxnet.nd.array(y_train)
 
                 train_dataset = mxnet.gluon.data.ArrayDataset(X_train_mxnet, y_train_mxnet)
-                train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=batch_size,
+                train_data = mxnet.gluon.data.DataLoader(train_dataset, batch_size=active.batch_size,
                                                          shuffle=True)
 
-                criterion = criterion_gen(task)
-                lr_scheduler = scheduler_gen(task)
+                criterion = active.criterion_gen(task)
+                lr_scheduler = active.scheduler_gen(task)
                 trainer = mxnet.gluon.Trainer(params=model_copy.collect_params(),
-                                              optimizer=optimizer_gen(lr_scheduler, task))
+                                              optimizer=active.optimizer_gen(lr_scheduler, task))
 
-                iteration_metric = metric_gen(task)
+                iteration_metric = active.metric_gen(task)
 
-                for epoch in range(epoch_count):
+                for epoch in range(active.epoch_count):
                     iteration_metric.reset()
 
                     for i, (data, label) in enumerate(train_data):
@@ -655,9 +648,9 @@ class MXNetExtension(Extension):
                             iteration_metric.update(labels=label, preds=output)
 
                         loss.backward()
-                        trainer.step(batch_size)
+                        trainer.step(active.batch_size)
 
-                        progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
+                        active.progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -681,10 +674,10 @@ class MXNetExtension(Extension):
         # it returns the clusters
         if isinstance(task, OpenMLSupervisedTask):
             X_test_mxnet = mxnet.nd.array(X_test)
-            X_test_mxnet = sanitize(X_test_mxnet)
+            X_test_mxnet = active.sanitize(X_test_mxnet)
 
             pred_y = model_copy(X_test_mxnet)
-            pred_y = predict(pred_y, task)
+            pred_y = active.predict(pred_y, task)
             pred_y = pred_y.asnumpy()
         else:
             raise ValueError(task)
@@ -705,10 +698,10 @@ class MXNetExtension(Extension):
 
             try:
                 X_test_mxnet = mxnet.nd.array(X_test)
-                X_test_mxnet = sanitize(X_test_mxnet)
+                X_test_mxnet = active.sanitize(X_test_mxnet)
 
                 proba_y = model_copy(X_test_mxnet)
-                proba_y = predict_proba(proba_y)
+                proba_y = active.predict_proba(proba_y)
                 proba_y = proba_y.asnumpy()
             except AttributeError:
                 if task.class_labels is not None:

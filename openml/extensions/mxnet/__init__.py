@@ -1,4 +1,4 @@
 from .extension import MXNetExtension
-from . import config
+from .config import Config
 
-__all__ = ['MXNetExtension', 'config']
+__all__ = ['MXNetExtension', 'Config']

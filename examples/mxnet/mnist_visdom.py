@@ -24,9 +24,10 @@ openml.extensions.mxnet.config.logger.setLevel(logging.DEBUG)
 # Create a wrapper around the Vidsom communication object.
 # Based on https://github.com/noagarcia/visdom-tutorial
 
-class VisdomLinePlotter(object):
+class VisdomLinePlotter(openml.extensions.mxnet.Config):
 
     def __init__(self, env_name='main'):
+        super().__init__()
         self.viz = Visdom()
         self.env = env_name
         self.plots = {}
@@ -48,7 +49,7 @@ class VisdomLinePlotter(object):
     # This is the actual interface of the progress reporting callback. The MXNet
     # extension will call this function after every training iteration with the updated
     # loss and accuracy values.
-    def __call__(self, fold: int, rep: int, epoch: int, step: int,
+    def progress_callback(self, fold: int, rep: int, epoch: int, step: int,
                  loss: mxnet.ndarray.NDArray,
                  metric: mxnet.metric.EvalMetric):
         loss = loss.mean().asscalar()
@@ -65,8 +66,7 @@ class VisdomLinePlotter(object):
 
 ############################################################################
 # Change the default progress callback to the Visdom plotter.
-openml.extensions.mxnet.config.progress_callback = VisdomLinePlotter()
-
+openml.extensions.mxnet.config.active = VisdomLinePlotter()
 
 ############################################################################
 

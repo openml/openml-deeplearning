@@ -4,10 +4,7 @@ import mxnet.gluon
 
 from openml import OpenMLTask, OpenMLClassificationTask, OpenMLRegressionTask
 
-from typing import Union, Callable, Optional
-
-# logger is the default logger for the MXNet extension
-logger = logging.getLogger(__name__)  # type: logging.Logger
+from typing import Union, Optional
 
 
 # _default_criterion_gen returns a loss criterion based on the task type - regressions use
@@ -21,18 +18,9 @@ def _default_criterion_gen(task: OpenMLTask) -> mxnet.gluon.loss.Loss:
         raise ValueError(task)
 
 
-# loss_gen returns the loss criterion based on the task type
-criterion_gen = _default_criterion_gen  # type: Callable[[OpenMLTask], mxnet.gluon.loss.Loss]
-
-
 # _default_scheduler_gen returns the None scheduler for a given task
 def _default_scheduler_gen(_: OpenMLTask) -> 'Optional[mxnet.lr_scheduler.LRScheduler]':
     return None
-
-
-# scheduler_gen returns the scheduler to be used for a given task
-scheduler_gen = _default_scheduler_gen \
-    # type: Callable[[OpenMLTask], Optional[mxnet.lr_scheduler.LRScheduler]]
 
 
 # _default_optimizer_gen returns the mxnet.optimizer.Adam optimizer for the given task
@@ -40,16 +28,6 @@ def _default_optimizer_gen(lr_scheduler: mxnet.lr_scheduler.LRScheduler, _: Open
         -> mxnet.optimizer.Optimizer:
     return mxnet.optimizer.Adam(lr_scheduler=lr_scheduler)
 
-
-# optimizer_gen returns the optimizer to be used for a given OpenMLTask
-optimizer_gen = _default_optimizer_gen \
-    # type: Callable[[mxnet.lr_scheduler.LRScheduler, OpenMLTask], mxnet.optimizer.Optimizer]
-
-# batch_size represents the processing batch size for training
-batch_size = 64  # type: int
-
-# epoch_count represents the number of epochs the model should be trained for
-epoch_count = 32  # type: int
 
 # backend_type represents the possible MXNet backends
 backend_type = Union[mxnet.ndarray.NDArray, mxnet.symbol.Symbol]
@@ -70,19 +48,11 @@ def _default_predict(output: backend_type,
     return output
 
 
-# predict turns the outputs of the model into actual predictions
-predict = _default_predict  # type: Callable[[backend_type, OpenMLTask], backend_type]
-
-
 # _default_predict_proba turns the outputs into probabilities using softmax
 def _default_predict_proba(output: backend_type) -> backend_type:
     output_axis = len(output.shape) - 1
     output = output.softmax(axis=output_axis)
     return output
-
-
-# predict_proba turns the outputs of the model into probabilities for each class
-predict_proba = _default_predict_proba  # type: Callable[[backend_type], backend_type]
 
 
 # _default sanitizer replaces NaNs with 1e-6
@@ -91,11 +61,6 @@ def _default_sanitize(output: mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
                                  mxnet.ndarray.ones_like(output) * 1e-6,
                                  output)
     return output
-
-
-# sanitize sanitizes the input data in order to ensure that models can be
-# trained safely
-sanitize = _default_sanitize  # type: Callable[[mxnet.ndarray.NDArray], mxnet.ndarray.NDArray]
 
 
 # _default_metric_gen returns a composite metric composed of accuracy for classification tasks,
@@ -112,8 +77,8 @@ def _default_metric_gen(task: OpenMLTask) -> 'mxnet.metric.EvalMetric':
         raise ValueError(task)
 
 
-# metric_gen returns the metric to be used for the given task
-metric_gen = _default_metric_gen  # type: Callable[[OpenMLTask], mxnet.metric.EvalMetric]
+# logger is the default logger for the MXNet extension
+logger = logging.getLogger(__name__)  # type: logging.Logger
 
 
 # _default_progress_callback reports the current fold, rep, epoch, step, loss
@@ -129,24 +94,74 @@ def _default_progress_callback(fold: int, rep: int, epoch: int, step: int,
                 (fold, rep, epoch, step, loss, metric_result))
 
 
-# progress_callback is called when a training step is finished, in order to
-# report the current progress
-progress_callback = _default_progress_callback \
-    # type: Callable[[int, int, int, int, mxnet.ndarray.NDArray, mxnet.metric.EvalMetric], None]
+class Config(object):
+    '''
+    Represents the configuration of the OpenML MXNet Extension
+    '''
+    def __init__(self):
+        #: batch_size represents the processing batch size for training
+        self.batch_size = 64  # type: int
+
+        #: epoch_count represents the number of epochs the model should be trained for
+        self.epoch_count = 32  # type: int
+
+    def criterion_gen(self, task: OpenMLTask) -> mxnet.gluon.loss.Loss:
+        '''
+       loss_gen returns the loss criterion based on the task type
+        '''
+        return _default_criterion_gen(task)
+
+    def scheduler_gen(self, task : OpenMLTask) -> mxnet.lr_scheduler.LRScheduler:
+        '''
+        scheduler_gen returns the scheduler to be used for a given task
+        '''
+        return _default_scheduler_gen(task)
+
+    def optimizer_gen(self, lr_scheduler: mxnet.lr_scheduler.LRScheduler, task: OpenMLTask) \
+            -> mxnet.optimizer.Optimizer:
+        '''
+        optimizer_gen returns the optimizer to be used for a given OpenMLTask
+        '''
+        return _default_optimizer_gen(lr_scheduler, task)
+
+    def predict(self, output: backend_type, task: OpenMLTask) -> 'backend_type':
+        '''
+        predict turns the outputs of the model into actual predictions
+        '''
+        return _default_predict(output, task)
+
+    def predict_proba(self, output : backend_type) -> backend_type:
+        '''
+        predict_proba turns the outputs of the model into probabilities for each class
+        '''
+        return _default_predict_proba(output)
+
+    def sanitize(self, output : mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
+        '''
+        sanitize sanitizes the input data in order to ensure that models can be trained safely
+        '''
+        return _default_sanitize(output)
+
+    def metric_gen(self, task : OpenMLTask) -> mxnet.metric.EvalMetric:
+        '''
+        metric_gen returns the metric to be used for the given task
+        '''
+        return _default_metric_gen(task)
+
+    def progress_callback(self, fold : int, rep : int, epoch : int, step : int,
+                          loss : mxnet.ndarray.NDArray, metric : mxnet.metric.EvalMetric):
+        '''
+       progress_callback is called when a training step is finished, in order to report the current progress
+        '''
+        return _default_progress_callback(fold, rep, epoch, step, loss, metric)
+
+
+active = Config()
 
 
 def _setup():
     global logger
-    global criterion_gen
-    global optimizer_gen
-    global scheduler_gen
-    global batch_size
-    global epoch_count
-    global predict
-    global predict_proba
-    global sanitize
-    global metric_gen
-    global progress_callback
+    global active
 
 
 _setup()
