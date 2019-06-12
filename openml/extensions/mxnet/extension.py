@@ -609,7 +609,9 @@ class MXNetExtension(Extension):
 
         from .config import active
 
-        model_copy.collect_params().initialize(mxnet.init.Normal())
+        initializer = active.initializer_gen(task)
+        if initializer is not None:
+            model_copy.collect_params().initialize(initializer)
 
         # Runtime can be measured if the model is run sequentially
         can_measure_cputime = self._can_measure_cputime(model_copy)

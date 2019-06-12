@@ -94,10 +94,16 @@ def _default_progress_callback(fold: int, rep: int, epoch: int, step: int,
                 (fold, rep, epoch, step, loss, metric_result))
 
 
+# _default_initializer_gen returns mxnet.init.Normal for all tasks
+def _default_initializer_gen(_: OpenMLTask) -> 'Optional[mxnet.init.Initializer]':
+    return mxnet.init.Normal()
+
+
 class Config(object):
-    '''
+    """
     Represents the configuration of the OpenML MXNet Extension
-    '''
+    """
+
     def __init__(self):
         #: batch_size represents the processing batch size for training
         self.batch_size = 64  # type: int
@@ -106,54 +112,60 @@ class Config(object):
         self.epoch_count = 32  # type: int
 
     def criterion_gen(self, task: OpenMLTask) -> mxnet.gluon.loss.Loss:
-        '''
+        """
        loss_gen returns the loss criterion based on the task type
-        '''
+        """
         return _default_criterion_gen(task)
 
-    def scheduler_gen(self, task : OpenMLTask) -> mxnet.lr_scheduler.LRScheduler:
-        '''
+    def scheduler_gen(self, task: OpenMLTask) -> mxnet.lr_scheduler.LRScheduler:
+        """
         scheduler_gen returns the scheduler to be used for a given task
-        '''
+        """
         return _default_scheduler_gen(task)
 
     def optimizer_gen(self, lr_scheduler: mxnet.lr_scheduler.LRScheduler, task: OpenMLTask) \
             -> mxnet.optimizer.Optimizer:
-        '''
+        """
         optimizer_gen returns the optimizer to be used for a given OpenMLTask
-        '''
+        """
         return _default_optimizer_gen(lr_scheduler, task)
 
     def predict(self, output: backend_type, task: OpenMLTask) -> 'backend_type':
-        '''
+        """
         predict turns the outputs of the model into actual predictions
-        '''
+        """
         return _default_predict(output, task)
 
-    def predict_proba(self, output : backend_type) -> backend_type:
-        '''
+    def predict_proba(self, output: backend_type) -> backend_type:
+        """
         predict_proba turns the outputs of the model into probabilities for each class
-        '''
+        """
         return _default_predict_proba(output)
 
-    def sanitize(self, output : mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
-        '''
+    def sanitize(self, output: mxnet.ndarray.NDArray) -> mxnet.ndarray.NDArray:
+        """
         sanitize sanitizes the input data in order to ensure that models can be trained safely
-        '''
+        """
         return _default_sanitize(output)
 
-    def metric_gen(self, task : OpenMLTask) -> mxnet.metric.EvalMetric:
-        '''
+    def metric_gen(self, task: OpenMLTask) -> mxnet.metric.EvalMetric:
+        """
         metric_gen returns the metric to be used for the given task
-        '''
+        """
         return _default_metric_gen(task)
 
-    def progress_callback(self, fold : int, rep : int, epoch : int, step : int,
-                          loss : mxnet.ndarray.NDArray, metric : mxnet.metric.EvalMetric):
-        '''
-       progress_callback is called when a training step is finished, in order to report the current progress
-        '''
+    def progress_callback(self, fold: int, rep: int, epoch: int, step: int,
+                          loss: mxnet.ndarray.NDArray, metric: mxnet.metric.EvalMetric):
+        """
+        progress_callback is called when a training step is finished, in order to report the current progress
+        """
         return _default_progress_callback(fold, rep, epoch, step, loss, metric)
+
+    def initializer_gen(self, task : OpenMLTask) -> 'Optional[mxnet.init.Initializer]':
+        """
+        initializer_gen returns the initializer to be used for a given OpenML task
+        """
+        return _default_initializer_gen(task)
 
 
 active = Config()
