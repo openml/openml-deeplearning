@@ -9,6 +9,7 @@ import json
 import plotly.graph_objs as go
 import openml
 from openml.tasks import OpenMLRegressionTask, OpenMLClassificationTask
+from openml.exceptions import OpenMLServerException
 
 ERROR_RUN_DATA_KEY = 'error'
 LOADING_TEXT_FORMAT = 'Loading{}...'
@@ -53,7 +54,7 @@ app.layout = html.Div(children=[
     html.Div(children=[
         html.Div(id='run-id-info'),
         html.Div(id='flow-id-info'),
-        html.Div(id='run-data', style={'display': 'none'}),  # TODO: Remove style
+        html.Div(id='run-data'),
         html.Div(id='flow-data'),
         dcc.Checklist(
             id='load-flow-check',
@@ -67,17 +68,15 @@ app.layout = html.Div(children=[
             id='error-run-check',
             options=[{'label': 'error', 'value': 'error'}],
             values=[]),
-        html.Div(
-          id='loaded-run-metric'),
         dcc.Checklist(
             id='error-flow-check',
             options=[{'label': 'error', 'value': 'error'}],
             values=[]),
-        dcc.Checklist(
-            id='loaded-flow-check',
-            options=[{'label': 'flow', 'value': 'flow'}],
-            values=[]),
-    ], style={'display': 'none'}),  # Hidden HTML elements used to transfer data  # TODO: change
+        html.Div(
+            id='loaded-run-metric'),
+        html.Div(
+            id='loaded-flow-id'),
+    ], style={'display': 'none'}),  # Hidden HTML elements used to transfer data
     html.Div(id='run-graph-div', children=[
         html.H3(id='run-graph-text',
                 children=LOADING_TEXT_GENERAL,
@@ -103,7 +102,7 @@ app.layout = html.Div(children=[
 
 
 def has_error_or_is_loading(n_clicks, data_json, nr_clicks):
-    if data_json is None or int(nr_clicks) < n_clicks:  # New run is being loaded
+    if data_json is None or nr_clicks < n_clicks:  # New run is being loaded
         return True
 
     data = json.loads(data_json)
@@ -128,7 +127,7 @@ def get_info_text_styles(load_values, error_values):
 
 
 def get_loading_info(n_clicks, item_id, nr_clicks):
-    if int(nr_clicks) < n_clicks:  # User is loading new flow or run
+    if int(nr_clicks) < int(n_clicks):  # User is loading new flow or run
         if item_id is None:
             return []
 
@@ -160,15 +159,15 @@ def get_visibility_style(n_clicks, data_json, nr_clicks, curr_style):
 
 def create_figure(data, y_label):
     return {
-               'data': data,
-               'layout': go.Layout(
-                   xaxis={'title': 'Iterations'},
-                   yaxis={'title': y_label},
-                   margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                   # legend={'x': 0, 'y': 1},
-                   # hovermode='closest'
-               )
-           }
+        'data': data,
+        'layout': go.Layout(
+            xaxis={'title': 'Iterations'},
+            yaxis={'title': y_label},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            # legend={'x': 0, 'y': 1},
+            # hovermode='closest'
+        )
+    }
 
 
 def extract_graph_data(run_data, key):
@@ -207,7 +206,7 @@ def update_flow_info_texts_visibility(load_values, error_values):
               [Input('run-metric-dropdown', 'value'),
                Input('loaded-run-metric', 'children')],
               [State('run-data', 'children')])
-def update_run_graph_texts(metric, loaded_metric, run_data_json):
+def update_run_graph_text(metric, loaded_metric, run_data_json):
     if run_data_json is None or metric == '':  # There is no data
         return ''
 
@@ -220,36 +219,19 @@ def update_run_graph_texts(metric, loaded_metric, run_data_json):
 
 
 @app.callback(Output('flow-graph-text', 'children'),
-              [Input('load-flow-button', 'n_clicks'),
-               Input('loaded-flow-check', 'values')],
-              [State('nr-flow-clicks', 'children'),
-               State('flow-data', 'children')])
-def update_flow_text(n_clicks, loaded_values, nr_clicks, flow_data_json):
-    if int(nr_clicks) < n_clicks or len(loaded_values) == 0:  # User is loading new flow
-        return LOADING_TEXT_FLOW_GRAPH
-    else:  # Data has finished loading
-        flow_data = json.loads(flow_data_json)
+              [Input('flow-id-info', 'children'),
+               Input('loaded-flow-id', 'children')],
+              [State('flow-data', 'children')])
+def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
+    if flow_data_json is None or flow_id == '':  # There is no data
+        return ''
 
-        if 'flow' in loaded_values:
-            graph_text = FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data['flow_id'])
-        else:
-            graph_text = LOADING_TEXT_FLOW_GRAPH
+    flow_data = json.loads(flow_data_json)
 
-        return graph_text
-
-
-@app.callback(Output('loaded-flow-check', 'values'),
-              [Input('load-flow-button', 'n_clicks'),
-               Input('flow-graph', 'children')],
-              [State('nr-flow-clicks', 'children')])
-def update_loaded_flow_check(n_clicks, network_graph, nr_clicks):
-    if int(nr_clicks) < n_clicks:  # User is loading new flow
-        return []
-    else:  # Graph has finished loading
-        loaded = []
-        if network_graph is not None:
-            loaded.append('flow')
-        return loaded
+    if flow_id != loaded_id:
+        return LOADING_TEXT_FLOW_INFO
+    else:
+        return FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data['flow_id'])
 
 
 @app.callback([Output('run-id-info', 'children'),
@@ -260,7 +242,7 @@ def init_run_loading(n_clicks, run_id):
     if run_id is None:
         return None, n_clicks
 
-    return int(run_id), n_clicks
+    return run_id, n_clicks
 
 
 @app.callback([Output('flow-id-info', 'children'),
@@ -271,7 +253,7 @@ def init_flow_loading(n_clicks, flow_id):
     if flow_id is None:
         return None, n_clicks
 
-    return int(flow_id), n_clicks
+    return flow_id, n_clicks
 
 
 @app.callback(Output('load-run-check', 'values'),
@@ -280,13 +262,7 @@ def init_flow_loading(n_clicks, flow_id):
               [State('run-id', 'value'),
                State('nr-run-clicks', 'children')])
 def update_run_loading_info(n_clicks, run_data_json, run_id, nr_clicks):
-    if int(nr_clicks) < n_clicks:  # User is loading new run
-        if run_id is None:
-            return []
-
-        return ['load']
-    else:  # Run data is loaded
-        return []
+    return get_loading_info(n_clicks, run_id, nr_clicks)
 
 
 @app.callback(Output('load-flow-check', 'values'),
@@ -309,16 +285,15 @@ def load_run(run_id):
 
     try:
         run = openml.runs.get_run(run_id)
-        flow = openml.flows.get_flow(run.flow_id)
         task = openml.tasks.get_task(run.task_id)
-    except:
+    except OpenMLServerException:
         return json.dumps({ERROR_RUN_DATA_KEY: 'There was an error retrieving the run.'}), \
-               ['error'], [], ''
+            ['error'], [], ''
 
     if not isinstance(task, (OpenMLClassificationTask, OpenMLRegressionTask)):
         return json.dumps({ERROR_RUN_DATA_KEY: 'Associated task must be classification or '
                                                'regression.'}), \
-               ['error'], [], ''
+            ['error'], [], ''
 
     # Read the data # TODO: Obtain actual training data file
     df = pd.read_csv('export.csv')
@@ -336,7 +311,6 @@ def load_run(run_id):
     repn = df['repn'].max() + 1
     data = {
         'run_id': run_id,
-        'flow_id': flow.flow_id,
         'task_id': task.task_id
     }
     dropdown_options = []
@@ -352,19 +326,19 @@ def load_run(run_id):
     # Split the folds and repeats data
     for i in range(folds):
         for j in range(repn):
-                name = 'fold_{}_rep_{}'.format(i, j)
-                fold_rep_data = \
-                    df[(df['foldn'] == i) & (df['repn'] == j)]
+            name = 'fold_{}_rep_{}'.format(i, j)
+            fold_rep_data = \
+                df[(df['foldn'] == i) & (df['repn'] == j)]
 
-                x = [row['epoch'] * iter_per_epoch + row['iter']
-                     for index, row in fold_rep_data.iterrows()]
+            x = [row['epoch'] * iter_per_epoch + row['iter']
+                 for index, row in fold_rep_data.iterrows()]
 
-                for metric in metrics:
-                    data[metric].append({
-                        'x': x,
-                        'y': fold_rep_data[metric].tolist(),
-                        'name': name
-                    })
+            for metric in metrics:
+                data[metric].append({
+                    'x': x,
+                    'y': fold_rep_data[metric].tolist(),
+                    'name': name
+                })
 
     return json.dumps(data), [], dropdown_options, 'loss'
 
@@ -417,34 +391,30 @@ def update_flow_graph_visibility(n_clicks, flow_data_json, nr_clicks, curr_style
               [State('run-data', 'children'),
                State('nr-run-clicks', 'children')])
 def update_run_graph(n_clicks, metric, run_data_json, nr_clicks):
-    if run_data_json is None or metric == '' or int(nr_clicks) < n_clicks:
-        # There is no data, no metric is selected, or user is loading a new run
-        # The figure must be empty and nothing is loaded
+    if has_error_or_is_loading(n_clicks, run_data_json, nr_clicks) or metric == '':
         return {}, ''
 
     run_data = json.loads(run_data_json)
-
-    if ERROR_RUN_DATA_KEY in run_data.keys():
-        return {}, ''
 
     data = extract_graph_data(run_data, metric)
 
     return create_figure(data, METRIC_TO_LABEL[metric]), metric
 
 
-@app.callback(Output('flow-graph', 'children'),
-              [Input('flow-data', 'children')])
-def update_flow_graph(flow_data_json):
-    if flow_data_json is None:
-        return None
+@app.callback([Output('flow-graph', 'children'),
+               Output('loaded-flow-id', 'children')],
+              [Input('load-flow-button', 'n_clicks'),
+               Input('flow-data', 'children')],
+              [State('nr-flow-clicks', 'children')])
+def update_flow_graph(n_clicks, flow_data_json, nr_clicks):
+    if has_error_or_is_loading(n_clicks, flow_data_json, nr_clicks):
+        return None, ''
 
     flow_data = json.loads(flow_data_json)
 
-    if ERROR_RUN_DATA_KEY in flow_data.keys():
-        return None
-
-    # TODO: Actual graph and stuff
-    return html.Iframe(src='/static/graph.svg', style={'width': '100%', 'height': '90vh'})
+    # TODO: Export actual graph
+    return html.Iframe(src='/static/graph.svg', style={'width': '100%', 'height': '90vh'}), \
+        flow_data['flow_id']
 
 
 @app.server.route('/static/<resource>')
