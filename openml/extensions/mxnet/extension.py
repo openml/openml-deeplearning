@@ -91,7 +91,7 @@ class MXNetExtension(Extension):
 
         Parameters
         ----------
-        flow : mixed
+        flow : OpenMLFlow
             the object to deserialize (can be flow object, or any serialized
             parameter value that is accepted by)
 
@@ -101,7 +101,7 @@ class MXNetExtension(Extension):
 
         Returns
         -------
-        mixed
+        Any
         """
         if not self._is_mxnet_flow(flow):
             raise ValueError('Only mxnet flows can be reinstantiated')
@@ -127,12 +127,10 @@ class MXNetExtension(Extension):
     def _serialize_mxnet(self, o: Any, parent_model: Optional[Any] = None) -> Any:
         rval = None  # type: Any
 
-        # TODO: assert that only on first recursion lvl `parent_model` can be None
         if self.is_estimator(o):
             # is the main model or a submodel
             rval = self._serialize_model(o)
         elif isinstance(o, (list, tuple)):
-            # TODO: explain what type of parameter is here
             rval = [self._serialize_mxnet(element, parent_model) for element in o]
             if isinstance(o, tuple):
                 rval = tuple(rval)
@@ -142,7 +140,6 @@ class MXNetExtension(Extension):
             # base parameter values
             rval = o
         elif isinstance(o, dict):
-            # TODO: explain what type of parameter is here
             if not isinstance(o, OrderedDict):
                 o = OrderedDict([(key, value) for key, value in sorted(o.items())])
 
@@ -155,7 +152,6 @@ class MXNetExtension(Extension):
                 key = self._serialize_mxnet(key, parent_model)
                 value = self._serialize_mxnet(value, parent_model)
                 rval[key] = value
-            rval = rval
         else:
             raise TypeError(o, type(o))
 
@@ -264,7 +260,6 @@ class MXNetExtension(Extension):
                           tags=['openml-python', 'mxnet',
                                 'python', mxnet_version_formatted],
                           language='English',
-                          # TODO fill in dependencies!
                           dependencies=dependencies)
 
         return flow
@@ -601,10 +596,6 @@ class MXNetExtension(Extension):
             if X_test is None:
                 raise TypeError('argument X_test must not be of type None')
 
-        # TODO: if possible, give a warning if model is already fitted (acceptable
-        # in case of custom experimentation,
-        # but not desirable if we want to upload to OpenML).
-
         model_copy = copy.deepcopy(model)
 
         from .config import active
@@ -673,8 +664,7 @@ class MXNetExtension(Extension):
         modelpredict_start_cputime = time.process_time()
         modelpredict_start_walltime = time.time()
 
-        # In supervised learning this returns the predictions for Y, in clustering
-        # it returns the clusters
+        # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
             X_test_mxnet = mxnet.nd.array(X_test)
             X_test_mxnet = active.sanitize(X_test_mxnet)
