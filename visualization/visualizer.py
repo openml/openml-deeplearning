@@ -179,7 +179,7 @@ def create_figure(data, y_label):
     }
 
 
-def extract_graph_data(run_data, key):
+def extract_run_graph_data(run_data, key):
     data = []
 
     for item in run_data[key]:
@@ -232,8 +232,11 @@ def update_run_graph_text(metric, loaded_metric, run_data_json):
                Input('loaded-flow-id', 'children')],
               [State('flow-data', 'children')])
 def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
-    if flow_data_json is None or flow_id is None:  # There is no data
+    if flow_id is None:  # There is no data
         return EMPTY_TEXT
+
+    if flow_data_json is None:
+        return LOADING_TEXT_FLOW_INFO
 
     flow_data = json.loads(flow_data_json)
 
@@ -405,7 +408,7 @@ def update_run_graph(n_clicks, metric, run_data_json, nr_loads):
 
     run_data = json.loads(run_data_json)
 
-    data = extract_graph_data(run_data, metric)
+    data = extract_run_graph_data(run_data, metric)
 
     return create_figure(data, METRIC_TO_LABEL[metric]), metric
 
