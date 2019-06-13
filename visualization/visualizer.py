@@ -11,7 +11,16 @@ import openml
 from openml.tasks import OpenMLRegressionTask, OpenMLClassificationTask
 from openml.exceptions import OpenMLServerException
 
-ERROR_RUN_DATA_KEY = 'error'
+RUN_ID_KEY = 'run_id'
+FLOW_ID_KEY = 'flow_id'
+TASK_ID_KEY = 'task_id'
+ERROR_KEY = 'error'
+DISPLAY_NONE = 'none'
+DISPLAY_VISIBLE = ''
+EMPTY_TEXT = ''
+EMPTY_LOADED = ''
+EMPTY_SELECTION = ''
+
 LOADING_TEXT_FORMAT = 'Loading{}...'
 LOADING_TEXT_GENERAL = LOADING_TEXT_FORMAT.format('')
 LOADING_TEXT_RUN_INFO = LOADING_TEXT_FORMAT.format(' run information')
@@ -19,6 +28,7 @@ LOADING_TEXT_FLOW_INFO = LOADING_TEXT_FORMAT.format(' flow information')
 LOADING_TEXT_FLOW_GRAPH = LOADING_TEXT_FORMAT.format(' flow graph')
 RUN_GRAPH_TEXT_TEMPLATE = '{} for run {}'
 FLOW_GRAPH_TEXT_TEMPLATE = '{} for flow {}'
+
 METRIC_TO_LABEL = {
     'mse': 'Mean Square Error',
     'loss': 'Loss',
@@ -40,8 +50,8 @@ app.layout = html.Div(children=[
         dcc.Input(id='flow-id', placeholder='Enter flow id', type='number'),
         html.Button(id='load-flow-button', n_clicks=0, children='Load flow', style={'margin':
                                                                                     '0 10px'}),
-        html.Div(id='nr-run-clicks', children='0', style={'display': 'none'}),
-        html.Div(id='nr-flow-clicks', children='0', style={'display': 'none'})
+        html.Div(id='nr-run-clicks', children='0', style={'display': DISPLAY_NONE}),
+        html.Div(id='nr-flow-clicks', children='0', style={'display': DISPLAY_NONE})
     ], style={'text-align': 'center'}),  # HTML elements for entering ids and load buttons
     html.Div(children=[
         html.H3(id='info-run-error-text', children='Error', style={'text-align': 'center'}),
@@ -66,17 +76,17 @@ app.layout = html.Div(children=[
             values=[]),
         dcc.Checklist(
             id='error-run-check',
-            options=[{'label': 'error', 'value': 'error'}],
+            options=[{'label': ERROR_KEY, 'value': ERROR_KEY}],
             values=[]),
         dcc.Checklist(
             id='error-flow-check',
-            options=[{'label': 'error', 'value': 'error'}],
+            options=[{'label': ERROR_KEY, 'value': ERROR_KEY}],
             values=[]),
         html.Div(
             id='loaded-run-metric'),
         html.Div(
             id='loaded-flow-id'),
-    ], style={'display': 'none'}),  # Hidden HTML elements used to transfer data
+    ], style={'display': DISPLAY_NONE}),  # Hidden HTML elements used to transfer data
     html.Div(id='run-graph-div', children=[
         html.H3(id='run-graph-text',
                 children=LOADING_TEXT_GENERAL,
@@ -107,21 +117,18 @@ def has_error_or_is_loading(n_clicks, data_json, nr_clicks):
 
     data = json.loads(data_json)
 
-    if ERROR_RUN_DATA_KEY in data.keys():
-        return True
-
-    return False
+    return ERROR_KEY in data.keys()
 
 
 def get_info_text_styles(load_values, error_values):
-    load_style = {'display': 'none', 'text-align': 'center'}
-    error_style = {'display': 'none', 'text-align': 'center'}
+    load_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
+    error_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
 
     if len(load_values) != 0:
-        load_style['display'] = ''
+        load_style['display'] = DISPLAY_VISIBLE
 
     if len(error_values) != 0:
-        error_style['display'] = ''
+        error_style['display'] = DISPLAY_VISIBLE
 
     return load_style, error_style
 
@@ -138,21 +145,21 @@ def get_loading_info(n_clicks, item_id, nr_clicks):
 
 def get_error_text(data_json):
     if data_json is None:
-        return ''
+        return EMPTY_TEXT
 
     data = json.loads(data_json)
 
-    if ERROR_RUN_DATA_KEY in data.keys():
-        return data[ERROR_RUN_DATA_KEY]
+    if ERROR_KEY in data.keys():
+        return data[ERROR_KEY]
 
-    return ''
+    return EMPTY_TEXT
 
 
 def get_visibility_style(n_clicks, data_json, nr_clicks, curr_style):
     if has_error_or_is_loading(n_clicks, data_json, nr_clicks):
-        curr_style['display'] = 'none'
+        curr_style['display'] = DISPLAY_NONE
     else:
-        curr_style['display'] = ''
+        curr_style['display'] = DISPLAY_VISIBLE
 
     return curr_style
 
@@ -207,15 +214,15 @@ def update_flow_info_texts_visibility(load_values, error_values):
                Input('loaded-run-metric', 'children')],
               [State('run-data', 'children')])
 def update_run_graph_text(metric, loaded_metric, run_data_json):
-    if run_data_json is None or metric == '':  # There is no data
-        return ''
+    if run_data_json is None or metric == EMPTY_TEXT:  # There is no data
+        return EMPTY_TEXT
 
     run_data = json.loads(run_data_json)
 
     if metric != loaded_metric:
         return LOADING_TEXT_RUN_INFO
     else:
-        return RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[metric], run_data['run_id'])
+        return RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[metric], run_data[RUN_ID_KEY])
 
 
 @app.callback(Output('flow-graph-text', 'children'),
@@ -223,15 +230,15 @@ def update_run_graph_text(metric, loaded_metric, run_data_json):
                Input('loaded-flow-id', 'children')],
               [State('flow-data', 'children')])
 def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
-    if flow_data_json is None or flow_id == '':  # There is no data
-        return ''
+    if flow_data_json is None or flow_id is None:  # There is no data
+        return EMPTY_TEXT
 
     flow_data = json.loads(flow_data_json)
 
     if flow_id != loaded_id:
         return LOADING_TEXT_FLOW_INFO
     else:
-        return FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data['flow_id'])
+        return FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data[FLOW_ID_KEY])
 
 
 @app.callback([Output('run-id-info', 'children'),
@@ -281,19 +288,19 @@ def update_flow_loading_info(n_clicks, flow_data_json, flow_id, nr_clicks):
               [Input('run-id-info', 'children')])
 def load_run(run_id):
     if run_id is None:
-        return None, [], [], ''
+        return None, [], [], EMPTY_SELECTION
 
     try:
         run = openml.runs.get_run(run_id)
         task = openml.tasks.get_task(run.task_id)
     except OpenMLServerException:
-        return json.dumps({ERROR_RUN_DATA_KEY: 'There was an error retrieving the run.'}), \
-            ['error'], [], ''
+        return json.dumps({ERROR_KEY: 'There was an error retrieving the run.'}), \
+            [ERROR_KEY], [], EMPTY_SELECTION
 
     if not isinstance(task, (OpenMLClassificationTask, OpenMLRegressionTask)):
-        return json.dumps({ERROR_RUN_DATA_KEY: 'Associated task must be classification or '
-                                               'regression.'}), \
-            ['error'], [], ''
+        return json.dumps({ERROR_KEY: 'Associated task must be classification or '
+                                      'regression.'}), \
+            [ERROR_KEY], [], EMPTY_SELECTION
 
     # Read the data # TODO: Obtain actual training data file
     df = pd.read_csv('export.csv')
@@ -310,8 +317,8 @@ def load_run(run_id):
     folds = df['foldn'].max() + 1
     repn = df['repn'].max() + 1
     data = {
-        'run_id': run_id,
-        'task_id': task.task_id
+        RUN_ID_KEY: run_id,
+        TASK_ID_KEY: task.task_id
     }
     dropdown_options = []
 
@@ -351,7 +358,7 @@ def load_flow(flow_id):
         return None, []
 
     # TODO: Retrieve flow info
-    return json.dumps({'flow_id': flow_id}), []
+    return json.dumps({FLOW_ID_KEY: flow_id}), []
 
 
 @app.callback(Output('info-run-error-text', 'children'),
@@ -391,8 +398,8 @@ def update_flow_graph_visibility(n_clicks, flow_data_json, nr_clicks, curr_style
               [State('run-data', 'children'),
                State('nr-run-clicks', 'children')])
 def update_run_graph(n_clicks, metric, run_data_json, nr_clicks):
-    if has_error_or_is_loading(n_clicks, run_data_json, nr_clicks) or metric == '':
-        return {}, ''
+    if has_error_or_is_loading(n_clicks, run_data_json, nr_clicks) or metric == EMPTY_TEXT:
+        return {}, EMPTY_LOADED
 
     run_data = json.loads(run_data_json)
 
@@ -408,13 +415,13 @@ def update_run_graph(n_clicks, metric, run_data_json, nr_clicks):
               [State('nr-flow-clicks', 'children')])
 def update_flow_graph(n_clicks, flow_data_json, nr_clicks):
     if has_error_or_is_loading(n_clicks, flow_data_json, nr_clicks):
-        return None, ''
+        return None, EMPTY_LOADED
 
     flow_data = json.loads(flow_data_json)
 
     # TODO: Export actual graph
     return html.Iframe(src='/static/graph.svg', style={'width': '100%', 'height': '90vh'}), \
-        flow_data['flow_id']
+        flow_data[FLOW_ID_KEY]
 
 
 @app.server.route('/static/<resource>')
