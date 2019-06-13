@@ -14,7 +14,6 @@ from visualization.visualizer import (
     update_run_error_text,
     update_run_graph_visibility,
     update_run_graph,
-    LOADING_TEXT_GENERAL,
     LOADING_TEXT_RUN_INFO,
     RUN_GRAPH_TEXT_TEMPLATE,
     METRIC_TO_LABEL
@@ -103,15 +102,15 @@ class TestVisualizationRun(VisualizationTestBase):
             self.assertEqual(loads_result, n_clicks)
 
     def test_update_run_loading_info(self):
-        # There is no id, so data is not being loaded
+        # There is no id, so run data is not being loaded
         # (data param is used to trigger the callback and does not influence result)
         more_clicks_than_loaded_but_no_id_result = \
             update_run_loading_info(1, self.simple_data, None, 0)
         result = deserialize_loading_info_result(more_clicks_than_loaded_but_no_id_result)
         self.assertEqual(result, self.empty_loading)
 
-        # Load button has been clicked and the data is still not loaded
-        # (but there is an id, which indicates it is being loaded)
+        # Load button has been clicked and the run data is still not loaded
+        # (but there is a run id, which indicates it is being loaded)
         # (data param is used to trigger the callback and does not influence result)
         more_clicks_than_loaded_and_id_result = update_run_loading_info(1, self.simple_data, 1, 0)
         result = deserialize_loading_info_result(more_clicks_than_loaded_and_id_result)
