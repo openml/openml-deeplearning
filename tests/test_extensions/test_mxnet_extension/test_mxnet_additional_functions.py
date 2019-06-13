@@ -16,6 +16,7 @@ else:
     from sklearn.impute import SimpleImputer as Imputer
 
 
+# Mock Sklearn model
 class SklearnModel(sklearn.base.BaseEstimator):
     def __init__(self, boolean, integer, floating_point_value):
         self.boolean = boolean
@@ -26,6 +27,7 @@ class SklearnModel(sklearn.base.BaseEstimator):
         pass
 
 
+# Mock MXNet model
 class MXNetModel(nn.HybridSequential):
 
     def hybrid_forward(self, F, x):
@@ -82,14 +84,19 @@ class TestMXNetExtensionAdditionalFunctions(unittest.TestCase):
             ]
         )
 
+        # Convert MXNet dummy model to flow
         self.mxnet_flow = self.extension.model_to_flow(self.mxnet_dummy_model)
-        self.mxnet_flow_external_version = self.extension._is_mxnet_flow(self.mxnet_flow)
+        self.mxnet_flow_bool = self.extension._is_mxnet_flow(self.mxnet_flow)
 
+        # Convert sklearn dummy model to flow
         self.sklearn_flow = SklearnExtension().model_to_flow(self.sklearn_dummy_model)
-        self.sklearn_flow_external_version = self.extension._is_mxnet_flow(self.sklearn_flow)
+        self.sklearn_flow_bool = self.extension._is_mxnet_flow(self.sklearn_flow)
 
-        self.assertTrue(self.mxnet_flow_external_version)
-        self.assertFalse(self.sklearn_flow_external_version)
+        # Check whether the MXNet flow is correctly recognized
+        self.assertTrue(self.mxnet_flow_bool)
+
+        # Test that the Sklearn flow is not an MXNet flow
+        self.assertFalse(self.sklearn_flow_bool)
 
     @mock.patch('warnings.warn')
     def test__check_dependencies(self, warnings_mock):

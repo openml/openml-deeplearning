@@ -19,11 +19,15 @@ class TestMXNetExtensionFlowSerialization(TestBase):
     def setUp(self, n_levels: int = 1):
         super().setUp(n_levels=2)
         self.extension = MXNetExtension()
+
+        # Test server is out of date, so production server is used
         config.server = self.production_server
 
         mx.name.NameManager._current.value = mx.name.NameManager()
 
     def test_serialize_sequential_model(self):
+
+        # Define a basic HybridSequential classification model with 10 neurons on the output layer
         with mock.patch.object(self.extension, '_check_dependencies') as check_dependencies_mock:
             model = nn.HybridSequential()
             with model.name_scope():
@@ -36,8 +40,11 @@ class TestMXNetExtensionFlowSerialization(TestBase):
                     nn.Dense(84, activation="relu"),
                     nn.Dense(10)
                 )
+
+            # Initialize the model with a Constant initializer
             model.collect_params().initialize(mx.init.Constant(0))
 
+            # Define the constant values to be used as ground truth
             fixture_name = 'mxnet.gluon.nn.basic_layers.HybridSequential'
             fixture_description = 'Automatically created MXNet flow.'
             version_fixture = 'mxnet==%s\nnumpy>=1.6.1\nscipy>=0.9' \
@@ -146,8 +153,10 @@ class TestMXNetExtensionFlowSerialization(TestBase):
                               '"node_row_ptr": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, '
                               '14, 15, 16, 17, 18, 19, 20, 21, 22]}')])
 
+            # Convert the MXNet model to an OpenMLFlow
             serialization = self.extension.model_to_flow(model)
 
+            # Compare individual parameters of the obtained flow against the ground truth
             self.assertIn(fixture_name, serialization.name)
             self.assertEqual(serialization.class_name[:len(fixture_name)], fixture_name)
             self.assertEqual(serialization.description, fixture_description)

@@ -23,6 +23,10 @@ class TestMXNetExtensionRunFunctions(TestBase):
         self.extension = MXNetExtension()
 
     def test_run_model_on_fold_classification(self):
+        """
+        Method testing run_model_on_fold on a classification task
+        :return: None
+        """
 
         # Test tasks
         task_lst = [10101, 9914, 145804]
@@ -77,6 +81,10 @@ class TestMXNetExtensionRunFunctions(TestBase):
                 self.assertIsNone(trace)
 
     def test_run_model_on_fold_regression(self):
+        """
+        Method testing run_model_on_fold on a regression task
+        :return: None
+        """
 
         # Test tasks
         task_lst = [4823, 52948, 2285]
