@@ -122,11 +122,11 @@ def has_error_or_is_loading(n_clicks, data_json, nr_loads):
     return ERROR_KEY in data.keys()
 
 
-def get_info_text_styles(load_values, error_values):
+def get_info_text_styles(loading_values, error_values):
     load_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
     error_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
 
-    if len(load_values) != 0:
+    if len(loading_values) != 0:
         load_style['display'] = DISPLAY_VISIBLE
 
     if len(error_values) != 0:
@@ -251,9 +251,6 @@ def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
               [Input('load-run-button', 'n_clicks')],
               [State('run-id', 'value')])
 def init_run_loading(n_clicks, run_id):
-    if run_id is None:
-        return None, n_clicks
-
     return run_id, n_clicks
 
 
@@ -262,9 +259,6 @@ def init_run_loading(n_clicks, run_id):
               [Input('load-flow-button', 'n_clicks')],
               [State('flow-id', 'value')])
 def init_flow_loading(n_clicks, flow_id):
-    if flow_id is None:
-        return None, n_clicks
-
     return flow_id, n_clicks
 
 
