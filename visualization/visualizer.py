@@ -11,6 +11,8 @@ import openml
 from openml.tasks import OpenMLRegressionTask, OpenMLClassificationTask
 from openml.exceptions import OpenMLServerException
 
+STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+
 RUN_ID_KEY = 'run_id'
 FLOW_ID_KEY = 'flow_id'
 TASK_ID_KEY = 'task_id'
@@ -426,7 +428,6 @@ def update_flow_graph(n_clicks, flow_data_json, nr_clicks):
 
 @app.server.route('/static/<resource>')
 def serve_static(resource):
-    STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     return flask.send_from_directory(STATIC_PATH, resource)
 
 
