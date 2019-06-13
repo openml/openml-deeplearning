@@ -43,8 +43,7 @@ def _default_scheduler_gen(optim: torch.optim.Optimizer, _: OpenMLTask) -> Any:
     return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optim)
 
 
-# scheduler_gen the scheduler to be used for a given torch.optim.Optimizer and signals if the
-# steps should occur after batch, or after every epoch
+# scheduler_gen the scheduler to be used for a given torch.optim.Optimizer
 scheduler_gen = _default_scheduler_gen  # type: Callable[[torch.optim.Optimizer, OpenMLTask], Any]
 
 # batch_size represents the processing batch size for training

@@ -45,7 +45,7 @@ extensions = [
     'numpydoc'
 ]
 
-autodoc_mock_imports = ['torch']
+autodoc_mock_imports = ['torch', 'mxnet']
 
 autosummary_generate = True
 numpydoc_show_class_members = False
