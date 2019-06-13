@@ -12,10 +12,11 @@ class VisualizationTestBase(unittest.TestCase):
 
     def setUp(self):
         self.run_id = 1
+        self.flow_id = 2
 
         self.error_data = '{"%s": "%s"}' % (ERROR_KEY, ERROR_MESSAGE)
         self.empty_data = '{}'
-        self.simple_data = '{"run_id": %s}' % self.run_id
+        self.simple_data = '{"run_id": %s, "flow_id": %s}' % (self.run_id, self.flow_id)
         self.non_empty_graph_data = go.Scatter(x=[1], y=[1], mode='lines', name='data')
         self.none_data = None
 
