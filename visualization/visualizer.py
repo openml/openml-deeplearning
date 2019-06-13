@@ -52,8 +52,8 @@ app.layout = html.Div(children=[
         dcc.Input(id='flow-id', placeholder='Enter flow id', type='number'),
         html.Button(id='load-flow-button', n_clicks=0, children='Load flow', style={'margin':
                                                                                     '0 10px'}),
-        html.Div(id='nr-run-clicks', children='0', style={'display': DISPLAY_NONE}),
-        html.Div(id='nr-flow-clicks', children='0', style={'display': DISPLAY_NONE})
+        html.Div(id='nr-run-loads', children='0', style={'display': DISPLAY_NONE}),
+        html.Div(id='nr-flow-loads', children='0', style={'display': DISPLAY_NONE})
     ], style={'text-align': 'center'}),  # HTML elements for entering ids and load buttons
     html.Div(children=[
         html.H3(id='info-run-error-text', children='Error', style={'text-align': 'center'}),
@@ -113,8 +113,8 @@ app.layout = html.Div(children=[
 ])
 
 
-def has_error_or_is_loading(n_clicks, data_json, nr_clicks):
-    if data_json is None or nr_clicks < n_clicks:  # New run is being loaded
+def has_error_or_is_loading(n_clicks, data_json, nr_loads):
+    if data_json is None or nr_loads < n_clicks:  # New run is being loaded
         return True
 
     data = json.loads(data_json)
@@ -135,8 +135,8 @@ def get_info_text_styles(load_values, error_values):
     return load_style, error_style
 
 
-def get_loading_info(n_clicks, item_id, nr_clicks):
-    if int(nr_clicks) < int(n_clicks):  # User is loading new flow or run
+def get_loading_info(n_clicks, item_id, nr_loads):
+    if int(nr_loads) < int(n_clicks):  # User is loading new flow or run
         if item_id is None:
             return []
 
@@ -157,8 +157,8 @@ def get_error_text(data_json):
     return EMPTY_TEXT
 
 
-def get_visibility_style(n_clicks, data_json, nr_clicks, curr_style):
-    if has_error_or_is_loading(n_clicks, data_json, nr_clicks):
+def get_visibility_style(n_clicks, data_json, nr_loads, curr_style):
+    if has_error_or_is_loading(n_clicks, data_json, nr_loads):
         curr_style['display'] = DISPLAY_NONE
     else:
         curr_style['display'] = DISPLAY_VISIBLE
@@ -244,7 +244,7 @@ def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
 
 
 @app.callback([Output('run-id-info', 'children'),
-               Output('nr-run-clicks', 'children')],
+               Output('nr-run-loads', 'children')],
               [Input('load-run-button', 'n_clicks')],
               [State('run-id', 'value')])
 def init_run_loading(n_clicks, run_id):
@@ -255,7 +255,7 @@ def init_run_loading(n_clicks, run_id):
 
 
 @app.callback([Output('flow-id-info', 'children'),
-               Output('nr-flow-clicks', 'children')],
+               Output('nr-flow-loads', 'children')],
               [Input('load-flow-button', 'n_clicks')],
               [State('flow-id', 'value')])
 def init_flow_loading(n_clicks, flow_id):
@@ -269,18 +269,18 @@ def init_flow_loading(n_clicks, flow_id):
               [Input('load-run-button', 'n_clicks'),
                Input('run-data', 'children')],
               [State('run-id', 'value'),
-               State('nr-run-clicks', 'children')])
-def update_run_loading_info(n_clicks, run_data_json, run_id, nr_clicks):
-    return get_loading_info(n_clicks, run_id, nr_clicks)
+               State('nr-run-loads', 'children')])
+def update_run_loading_info(n_clicks, run_data_json, run_id, nr_loads):
+    return get_loading_info(n_clicks, run_id, nr_loads)
 
 
 @app.callback(Output('load-flow-check', 'values'),
               [Input('load-flow-button', 'n_clicks'),
                Input('flow-data', 'children')],
               [State('flow-id', 'value'),
-               State('nr-flow-clicks', 'children')])
-def update_flow_loading_info(n_clicks, flow_data_json, flow_id, nr_clicks):
-    return get_loading_info(n_clicks, flow_id, nr_clicks)
+               State('nr-flow-loads', 'children')])
+def update_flow_loading_info(n_clicks, flow_data_json, flow_id, nr_loads):
+    return get_loading_info(n_clicks, flow_id, nr_loads)
 
 
 @app.callback([Output('run-data', 'children'),
@@ -378,19 +378,19 @@ def update_flow_error_text(flow_data_json):
 @app.callback(Output('run-graph-div', 'style'),
               [Input('load-run-button', 'n_clicks'),
                Input('run-data', 'children')],
-              [State('nr-run-clicks', 'children'),
+              [State('nr-run-loads', 'children'),
                State('run-graph-div', 'style')])
-def update_run_graph_visibility(n_clicks, run_data_json, nr_clicks, curr_style):
-    return get_visibility_style(n_clicks, run_data_json, nr_clicks, curr_style)
+def update_run_graph_visibility(n_clicks, run_data_json, nr_loads, curr_style):
+    return get_visibility_style(n_clicks, run_data_json, nr_loads, curr_style)
 
 
 @app.callback(Output('flow-graph-div', 'style'),
               [Input('load-flow-button', 'n_clicks'),
                Input('flow-data', 'children')],
-              [State('nr-flow-clicks', 'children'),
+              [State('nr-flow-loads', 'children'),
                State('flow-graph-div', 'style')])
-def update_flow_graph_visibility(n_clicks, flow_data_json, nr_clicks, curr_style):
-    return get_visibility_style(n_clicks, flow_data_json, nr_clicks, curr_style)
+def update_flow_graph_visibility(n_clicks, flow_data_json, nr_loads, curr_style):
+    return get_visibility_style(n_clicks, flow_data_json, nr_loads, curr_style)
 
 
 @app.callback([Output('run-graph', 'figure'),
@@ -398,9 +398,9 @@ def update_flow_graph_visibility(n_clicks, flow_data_json, nr_clicks, curr_style
               [Input('load-run-button', 'n_clicks'),
                Input('run-metric-dropdown', 'value')],
               [State('run-data', 'children'),
-               State('nr-run-clicks', 'children')])
-def update_run_graph(n_clicks, metric, run_data_json, nr_clicks):
-    if has_error_or_is_loading(n_clicks, run_data_json, nr_clicks) or metric == EMPTY_TEXT:
+               State('nr-run-loads', 'children')])
+def update_run_graph(n_clicks, metric, run_data_json, nr_loads):
+    if has_error_or_is_loading(n_clicks, run_data_json, nr_loads) or metric == EMPTY_TEXT:
         return {}, EMPTY_LOADED
 
     run_data = json.loads(run_data_json)
@@ -414,9 +414,9 @@ def update_run_graph(n_clicks, metric, run_data_json, nr_clicks):
                Output('loaded-flow-id', 'children')],
               [Input('load-flow-button', 'n_clicks'),
                Input('flow-data', 'children')],
-              [State('nr-flow-clicks', 'children')])
-def update_flow_graph(n_clicks, flow_data_json, nr_clicks):
-    if has_error_or_is_loading(n_clicks, flow_data_json, nr_clicks):
+              [State('nr-flow-loads', 'children')])
+def update_flow_graph(n_clicks, flow_data_json, nr_loads):
+    if has_error_or_is_loading(n_clicks, flow_data_json, nr_loads):
         return None, EMPTY_LOADED
 
     flow_data = json.loads(flow_data_json)
