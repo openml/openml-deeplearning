@@ -1,5 +1,5 @@
 """
-Keras functional model example
+Keras functional classification model example
 ==================
 
 An example of a functional (non-sequential) network used as an OpenML flow.
