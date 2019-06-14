@@ -514,7 +514,13 @@ class MXNetExtension(Extension):
         fold_no: int,
         y_train: Optional[np.ndarray] = None,
         X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional[OpenMLRunTrace]]:
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        'OrderedDict[str, float]',
+        Optional[OpenMLRunTrace],
+        Optional[Any]
+    ]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction
         information.
 
@@ -547,14 +553,17 @@ class MXNetExtension(Extension):
 
         Returns
         -------
-
-        pred_y : np.ndarray
-
-        proba_y :np.ndarray
-
+        predictions : np.ndarray
+            Model predictions.
+        probabilities :  Optional, np.ndarray
+            Predicted probabilities (only applicable for supervised classification tasks).
         user_defined_measures : OrderedDict[str, float]
-
-        trace : Optional[OpenMLRunTrace]
+            User defined measures that were generated on this fold
+        trace : Optional, OpenMLRunTrace
+            Hyperparameter optimization trace (only applicable for supervised tasks with
+            hyperparameter optimization).
+        additional_information: Optional, Any
+            Additional information provided by the extension to be converted into additional files.
         """
 
         def _prediction_to_probabilities(y: np.ndarray, classes: List[Any]) -> np.ndarray:
@@ -727,9 +736,29 @@ class MXNetExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        trace = None
+        return pred_y, proba_y, user_defined_measures, None, None
 
-        return pred_y, proba_y, user_defined_measures, trace
+    def compile_additional_information(
+            self,
+            task: 'OpenMLTask',
+            additional_information: List[Tuple[int, int, Any]]
+    ) -> Dict[str, Tuple[str, str]]:
+        """Compiles additional information provided by the extension during the runs into a final
+        set of files.
+
+        Parameters
+        ----------
+        task : OpenMLTask
+            The task the model was run on.
+        additional_information: List[Tuple[int, int, Any]]
+            A list of (fold, repetition, additional information) tuples obtained during training.
+
+        Returns
+        -------
+        files : Dict[str, Tuple[str, str]]
+            A dictionary of files with their file name and contents.
+        """
+        return dict()
 
     def obtain_parameter_values(
         self,

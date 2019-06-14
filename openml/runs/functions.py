@@ -434,6 +434,7 @@ def _run_task_get_arffcontent(
             proba_y,
             user_defined_measures_fold,
             trace,
+            addinfo,
         ) = extension._run_model_on_fold(
             model=model,
             task=task,
