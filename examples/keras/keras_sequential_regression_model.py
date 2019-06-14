@@ -1,8 +1,8 @@
 """
-Keras sequential model example
+Keras sequential regression example
 ==================
 
-An example of a sequential network used as an OpenML flow.
+An example of a sequential network used to solve a regression task.
 """
 
 import keras
@@ -15,18 +15,18 @@ model = keras.models.Sequential([
     keras.layers.BatchNormalization(),
     keras.layers.Dense(units=1024, activation=keras.activations.relu),
     keras.layers.Dropout(rate=0.4),
-    keras.layers.Dense(units=2, activation=keras.activations.softmax),
+    keras.layers.Dense(units=1, activation=keras.activations.linear),
 ])
 
-# We will compile using the Adam optimizer while targeting accuracy.
+# We will compile using the Adam optimizer while targeting mean absolute error.
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+              loss='mean_absolute_error',
+              metrics=['mae', 'mse'])
 ############################################################################
 
 ############################################################################
-# Download the OpenML task for the german credit card dataset.
-task = openml.tasks.get_task(31)
+# Download the OpenML task for the Friedman dataset.
+task = openml.tasks.get_task(4958)
 ############################################################################
 # Run the Keras model on the task (requires an API key).
 run = openml.runs.run_model_on_task(model, task, avoid_duplicate_runs=False)
