@@ -1,9 +1,6 @@
 from visualization.tests.base import (
     VisualizationTestBase,
-    MEAN_SQUARE_ERROR,
-    MEAN_ABSOLUTE_ERROR,
     ERROR_MESSAGE,
-    ERROR_KEY,
     DISPLAY_KEY
 )
 from visualization.visualizer import (
@@ -18,7 +15,6 @@ from visualization.visualizer import (
     LOADING_TEXT_GENERAL,
     LOADING_TEXT_FLOW_INFO,
     FLOW_GRAPH_TEXT_TEMPLATE,
-    METRIC_TO_LABEL
 )
 from visualization.tests.utils import (
     deserialize_style,
@@ -61,7 +57,31 @@ class TestVisualizationFlow(VisualizationTestBase):
         self.assertEqual(error_style[DISPLAY_KEY], self.display_visible)
 
     def test_update_flow_graph_text(self):
-        pass
+        # There is no data, but the there is a flow id so data is loading and the appropriate
+        # loading text should be displayed
+        none_data_same_id_and_loaded_result = \
+            update_flow_graph_text(self.flow_id, self.flow_id, self.none_data)
+        result = deserialize_text_result(none_data_same_id_and_loaded_result)
+        self.assertEqual(result, LOADING_TEXT_FLOW_INFO)
+
+        # There is no flow id, so the text should be empty
+        data_no_id_result = update_flow_graph_text(None, None, self.simple_data)
+        result = deserialize_text_result(data_no_id_result)
+        self.assertEqual(result, '')
+
+        # Flow id has changed so new graph is being loaded and the loading text should be displayed
+        data_id_different_from_loaded_result = \
+            update_flow_graph_text(self.flow_id, self.flow_id + 1, self.simple_data)
+        result = deserialize_text_result(data_id_different_from_loaded_result)
+        self.assertEqual(result, LOADING_TEXT_FLOW_INFO)
+
+        # The flow is loaded so the text for a loaded flow should be displayed
+        data_flow_same_as_loaded_result = \
+            update_flow_graph_text(self.flow_id, self.flow_id, self.simple_data)
+        result = deserialize_text_result(data_flow_same_as_loaded_result)
+        self.assertEqual(
+            result,
+            FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', self.flow_id))
 
     def test_init_flow_loading(self):
         # The function is used to pass data along, so the result should be same as input params
@@ -98,7 +118,7 @@ class TestVisualizationFlow(VisualizationTestBase):
         self.assertEqual(result, self.non_empty_loading)
 
     def test_load_flow(self):
-        pass
+        raise NotImplementedError()
 
     def test_update_flow_error_text(self):
         # There is no flow data, so error message should be empty string
@@ -221,4 +241,4 @@ class TestVisualizationFlow(VisualizationTestBase):
                          self.display_hidden)
 
     def test_update_flow_graph(self):
-        pass
+        raise NotImplementedError()

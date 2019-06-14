@@ -117,7 +117,7 @@ class TestVisualizationRun(VisualizationTestBase):
         self.assertEqual(result, self.non_empty_loading)
 
     def test_load_run(self):
-        pass
+        raise NotImplementedError()
 
     def test_update_run_error_text(self):
         # There is no run data, so error message should be empty string
@@ -240,4 +240,4 @@ class TestVisualizationRun(VisualizationTestBase):
                          self.display_hidden)
 
     def test_update_run_graph(self):
-        pass
+        raise NotImplementedError()
