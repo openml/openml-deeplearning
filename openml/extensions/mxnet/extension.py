@@ -612,6 +612,8 @@ class MXNetExtension(Extension):
 
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
+        reported_metrics = None
+
         try:
             # for measuring runtime. Only available since Python 3.3
             modelfit_start_cputime = time.process_time()
@@ -634,6 +636,8 @@ class MXNetExtension(Extension):
 
                 iteration_metric = active.metric_gen(task)
 
+                reported_metrics = []
+
                 for epoch in range(active.epoch_count):
                     iteration_metric.reset()
 
@@ -647,6 +651,10 @@ class MXNetExtension(Extension):
                         trainer.step(active.batch_size)
 
                         active.progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
+
+                        reported_metrics.append(
+                            (epoch, i, loss.mean().asscalar(), iteration_metric.get())
+                        )
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -736,7 +744,7 @@ class MXNetExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        return pred_y, proba_y, user_defined_measures, None, None
+        return pred_y, proba_y, user_defined_measures, None, reported_metrics
 
     def compile_additional_information(
             self,

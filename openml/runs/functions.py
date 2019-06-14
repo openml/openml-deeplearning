@@ -220,7 +220,7 @@ def run_flow_on_task(
         add_local_measures=add_local_measures,
     )
 
-    data_content, trace, fold_evaluations, sample_evaluations = res
+    data_content, trace, additional_information, fold_evaluations, sample_evaluations = res
 
     run = OpenMLRun(
         task_id=task.task_id,
@@ -233,6 +233,7 @@ def run_flow_on_task(
         data_content=data_content,
         flow=flow,
         setup_string=flow.extension.create_setup_string(flow.model),
+        additional_information=additional_information,
     )
 
     if (upload_flow or avoid_duplicate_runs) and flow.flow_id is not None:
@@ -382,11 +383,13 @@ def _run_task_get_arffcontent(
 ) -> Tuple[
     List[List],
     Optional[OpenMLRunTrace],
+    Optional[Dict[str, Tuple[str, str]]],
     'OrderedDict[str, OrderedDict]',
     'OrderedDict[str, OrderedDict]',
 ]:
     arff_datacontent = []  # type: List[List]
     traces = []  # type: List[OpenMLRunTrace]
+    additionals = []  # type: List[Any]
     # stores fold-based evaluation measures. In case of a sample based task,
     # this information is multiple times overwritten, but due to the ordering
     # of tne loops, eventually it contains the information based on the full
@@ -446,6 +449,8 @@ def _run_task_get_arffcontent(
         )
         if trace is not None:
             traces.append(trace)
+        if addinfo is not None:
+            additionals.append((fold_no, rep_no, addinfo))
 
         # add client-side calculated metrics. These is used on the server as
         # consistency check, only useful for supervised tasks
@@ -525,9 +530,14 @@ def _run_task_get_arffcontent(
     else:
         trace = None
 
+    additional_information = None
+    if len(additionals) > 0:
+        additional_information = extension.compile_additional_information(task, additionals)
+
     return (
         arff_datacontent,
         trace,
+        additional_information,
         user_defined_measures_per_fold,
         user_defined_measures_per_sample,
     )
