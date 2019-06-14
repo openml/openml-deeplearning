@@ -766,7 +766,39 @@ class MXNetExtension(Extension):
         files : Dict[str, Tuple[str, str]]
             A dictionary of files with their file name and contents.
         """
-        return dict()
+
+        from io import StringIO
+        import csv
+        from .config import active
+
+        (metric_names, _) = active.metric_gen(task).get()
+
+        with StringIO() as training_data_str:
+            fieldnames = ['foldn', 'repn', 'epoch', 'iter', 'loss'] + metric_names
+            training_data = \
+                csv.DictWriter(training_data_str,
+                               fieldnames=fieldnames)
+
+            training_data.writeheader()
+
+            for (fold_no, rep_no, addinfo) in additional_information:
+                for (epoch_no, iteration_no, loss, metrics) in addinfo:
+                    iteration = {
+                        'foldn': fold_no,
+                        'repn': rep_no,
+                        'epoch': epoch_no,
+                        'iter': iteration_no,
+                        'loss': loss,
+                    }
+
+                    for (metric_name, metric_value) in zip(*metrics):
+                        iteration[metric_name] = metric_value
+
+                    training_data.writerow(iteration)
+
+            return {
+                'training': ('training.csv', training_data_str.getvalue()),
+            }
 
     def obtain_parameter_values(
         self,
