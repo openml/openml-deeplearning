@@ -1,5 +1,6 @@
 import os
 import flask
+import urllib3
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -13,6 +14,9 @@ from openml.exceptions import OpenMLServerException
 
 STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 
+TRAINING_DATA_URL_FORMAT = 'https://www.openml.org/data/download/{}/training.csv'
+
+TRAINING_DATA_KEY = 'training'
 RUN_ID_KEY = 'run_id'
 FLOW_ID_KEY = 'flow_id'
 TASK_ID_KEY = 'task_id'
@@ -36,7 +40,7 @@ METRIC_TO_LABEL = {
     'loss': 'Loss',
     'mae': 'Mean Absolute Error',
     'rmse': 'Root Mean Square Error',
-    'acc': 'Accuracy'
+    'accuracy': 'Accuracy'
 }
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -195,6 +199,34 @@ def extract_run_graph_data(run_data, key):
     return data
 
 
+def get_training_data(url, run_id):
+    # Create a request to the url
+    http = urllib3.PoolManager()
+    request = http.request('GET', url, preload_content=False)
+
+    # Compute the path to the file
+    csv_file_path = os.path.join(STATIC_PATH, 'training_{}.csv'.format(run_id))
+
+    # Read the data from the URL and store it in a file
+    with open(csv_file_path, 'wb') as out:
+        while True:
+            data = request.read()
+            if not data:
+                break
+            out.write(data)
+
+    # Release the connection
+    request.release_conn()
+
+    # Read the data from the file
+    df = pd.read_csv(csv_file_path)
+
+    # Remove the leftover file
+    os.remove(csv_file_path)
+
+    return df
+
+
 @app.callback([Output('info-run-loading-text', 'style'),
                Output('info-run-error-text', 'style')],
               [Input('load-run-check', 'values'),
@@ -291,6 +323,18 @@ def load_run(run_id):
 
     try:
         run = openml.runs.get_run(run_id)
+
+        # Check if the run contains training data and display an error if it does not
+        if TRAINING_DATA_KEY not in run.output_files.keys():
+            return json.dumps({ERROR_KEY: 'Run does not contain training information.'}), \
+                   [ERROR_KEY], [], EMPTY_SELECTION
+
+        # Generate the url for the training data file
+        data_url = TRAINING_DATA_URL_FORMAT.format(run.output_files[TRAINING_DATA_KEY])
+
+        # Obtain the training data
+        df = get_training_data(data_url, run.run_id)
+
         task = openml.tasks.get_task(run.task_id)
     except OpenMLServerException:
         return json.dumps({ERROR_KEY: 'There was an error retrieving the run.'}), \
@@ -301,13 +345,13 @@ def load_run(run_id):
                                       'regression.'}), \
             [ERROR_KEY], [], EMPTY_SELECTION
 
-    # Read the data # TODO: Obtain actual training data file
-    df = pd.read_csv('export.csv')
+    # # Read the data # TODO: Obtain actual training data file
+    # df = pd.read_csv('training2.csv')
 
     metrics = ['loss']
     # TODO: Extract options from data instead
     if isinstance(task, OpenMLClassificationTask):
-        metrics.append('acc')
+        metrics.append('accuracy')
     if isinstance(task, OpenMLRegressionTask):
         metrics.append('mse')  # mean square error
         metrics.append('mae')  # mean absolute error
