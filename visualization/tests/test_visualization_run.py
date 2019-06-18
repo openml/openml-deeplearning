@@ -5,19 +5,22 @@ from visualization.tests.base import (
     ERROR_MESSAGE,
     DISPLAY_KEY
 )
+
+from visualization.constants import (
+    LOADING_TEXT_RUN_INFO,
+    RUN_GRAPH_TEXT_TEMPLATE,
+    METRIC_TO_LABEL
+)
+
 from visualization.visualizer import (
     update_run_info_texts_visibility,
     update_run_graph_text,
     init_run_loading,
     update_run_loading_info,
-    load_run,
     update_run_error_text,
-    update_run_graph_visibility,
-    update_run_graph,
-    LOADING_TEXT_RUN_INFO,
-    RUN_GRAPH_TEXT_TEMPLATE,
-    METRIC_TO_LABEL
+    update_run_graph_visibility
 )
+
 from visualization.tests.utils import (
     deserialize_style,
     deserialize_text_result,

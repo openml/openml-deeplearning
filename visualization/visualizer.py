@@ -1,85 +1,67 @@
 import os
-import urllib3
 import json
 from google.protobuf import json_format
 
 import flask
-import numpy
-import pandas as pd
-import plotly.graph_objs as go
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 import openml
-from openml.tasks import OpenMLRegressionTask, OpenMLClassificationTask
 from openml.exceptions import OpenMLServerException
+from openml.tasks import OpenMLRegressionTask, OpenMLClassificationTask
 
-import onnx
 import keras
+import onnx
 import torch
 import mxnet as mx
-import mxnet.contrib.onnx as onnx_mxnet
-import tensorflow as tf
-import tensorflow.keras.backend as backend
-from mxnet import autograd, sym
-from keras import layers, models
-
-import onnxmltools
 from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
 
-# Import in order to register the extensions
-from openml.extensions.keras import KerasExtension
-from openml.extensions.pytorch import PytorchExtension
-from openml.extensions.onnx import OnnxExtension
-from openml.extensions.mxnet import MXNetExtension
+from visualization.utils import (
+    has_error_or_is_loading,
+    get_info_text_styles,
+    get_loading_info,
+    get_error_text,
+    get_visibility_style,
+    create_figure,
+    extract_run_graph_data,
+    get_training_data,
+    get_onnx_model,
+    simplyfy_pydot_graph,
+    add_lists_element_wise
+)
 
+from visualization.constants import (
+    DISPLAY_NONE,
+    ERROR_KEY,
+    LOADING_TEXT_RUN_INFO,
+    LOADING_TEXT_FLOW_INFO,
+    LOADING_TEXT_GENERAL,
+    LOADING_TEXT_FLOW_GRAPH,
+    METRIC_TO_LABEL,
+    FLOW_GRAPH_TEXT_TEMPLATE,
+    RUN_ID_KEY,
+    RUN_GRAPH_TEXT_TEMPLATE,
+    EMPTY_TEXT,
+    GRAPH_EXPORT_STYLE,
+    ONNX_MODEL_KEY,
+    TASK_ID_KEY,
+    TRAINING_DATA_KEY,
+    TRAINING_DATA_URL_FORMAT,
+    EMPTY_LOADED,
+    EMPTY_SELECTION,
+    STATIC_PATH,
+    FLOW_ID_KEY
+)
 
-STATIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-ONNX_MODEL_PATH = os.path.join(STATIC_PATH, 'model.onnx')
-
-TRAINING_DATA_URL_FORMAT = 'https://www.openml.org/data/download/{}/training.csv'
-
-TRAINING_DATA_KEY = 'training'
-RUN_ID_KEY = 'run_id'
-FLOW_ID_KEY = 'flow_id'
-TASK_ID_KEY = 'task_id'
-ERROR_KEY = 'error'
-ONNX_MODEL_KEY = 'model'
-DISPLAY_NONE = 'none'
-DISPLAY_VISIBLE = ''
-EMPTY_TEXT = ''
-EMPTY_LOADED = ''
-EMPTY_SELECTION = ''
-
-LOADING_TEXT_FORMAT = 'Loading{}...'
-LOADING_TEXT_GENERAL = LOADING_TEXT_FORMAT.format('')
-LOADING_TEXT_RUN_INFO = LOADING_TEXT_FORMAT.format(' run information')
-LOADING_TEXT_FLOW_INFO = LOADING_TEXT_FORMAT.format(' flow information')
-LOADING_TEXT_FLOW_GRAPH = LOADING_TEXT_FORMAT.format(' flow graph')
-RUN_GRAPH_TEXT_TEMPLATE = '{} for run {}'
-FLOW_GRAPH_TEXT_TEMPLATE = '{} for flow {}'
-
-METRIC_TO_LABEL = {
-    'mse': 'Mean Square Error',
-    'loss': 'Loss',
-    'mae': 'Mean Absolute Error',
-    'rmse': 'Root Mean Square Error',
-    'accuracy': 'Accuracy'
-}
-
-GRAPH_EXPORT_STYLE = {
-    'shape': 'box',
-    'color': '#0F9D58',
-    'style': 'filled',
-    'fontcolor': '#FFFFFF'
-}
-
+# Use the external Dash stylesheet
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+# Create the Dash app
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+# Define the layout of the app
 app.layout = html.Div(children=[
     html.H1(children='Flow and run visualization', style={'text-align': 'center'}),  # HTML title
     html.Div(children=[
@@ -150,235 +132,21 @@ app.layout = html.Div(children=[
 ])
 
 
-def has_error_or_is_loading(n_clicks, data_json, nr_loads):
-    if data_json is None or nr_loads < n_clicks:  # New run is being loaded
-        return True
-
-    data = json.loads(data_json)
-
-    return ERROR_KEY in data.keys()
+# Define callback for retrieving files from the static folder
+@app.server.route('/static/<resource>')
+def serve_static(resource):
+    return flask.send_from_directory(STATIC_PATH, resource)
 
 
-def get_info_text_styles(loading_values, error_values):
-    load_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
-    error_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
-
-    if len(loading_values) != 0:
-        load_style['display'] = DISPLAY_VISIBLE
-
-    if len(error_values) != 0:
-        error_style['display'] = DISPLAY_VISIBLE
-
-    return load_style, error_style
-
-
-def get_loading_info(n_clicks, item_id, nr_loads):
-    if int(nr_loads) < int(n_clicks):  # User is loading new flow or run
-        if item_id is None:
-            return []
-
-        return ['load']
-    else:  # Data has finished loading
-        return []
-
-
-def get_error_text(data_json):
-    if data_json is None:
-        return EMPTY_TEXT
-
-    data = json.loads(data_json)
-
-    if ERROR_KEY in data.keys():
-        return data[ERROR_KEY]
-
-    return EMPTY_TEXT
-
-
-def get_visibility_style(n_clicks, data_json, nr_loads, curr_style):
-    if has_error_or_is_loading(n_clicks, data_json, nr_loads):
-        curr_style['display'] = DISPLAY_NONE
-    else:
-        curr_style['display'] = DISPLAY_VISIBLE
-
-    return curr_style
-
-
-def create_figure(data, y_label):
-    return {
-        'data': data,
-        'layout': go.Layout(
-            xaxis={'title': 'Iterations'},
-            yaxis={'title': y_label},
-            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-            # legend={'x': 0, 'y': 1},
-            # hovermode='closest'
-        )
-    }
-
-
-def extract_run_graph_data(run_data, key):
-    data = []
-
-    for item in run_data[key]:
-        data.append(
-            go.Scatter(
-                x=item['x'],
-                y=item['y'],
-                mode='lines',
-                name=item['name']
-            )
-        )
-
-    return data
-
-
-# TODO: Unit tests
-def get_training_data(url, run_id):
-    # Create a request to the url
-    http = urllib3.PoolManager()
-    request = http.request('GET', url, preload_content=False)
-
-    # Compute the path to the file
-    csv_file_path = os.path.join(STATIC_PATH, 'training_{}.csv'.format(run_id))
-
-    # Read the data from the URL and store it in a file
-    with open(csv_file_path, 'wb') as out:
-        while True:
-            data = request.read()
-            if not data:
-                break
-            out.write(data)
-
-    # Release the connection
-    request.release_conn()
-
-    # Read the data from the file
-    df = pd.read_csv(csv_file_path)
-
-    # Remove the leftover file
-    os.remove(csv_file_path)
-
-    return df
-
-
-# TODO: Unit tests
-def get_onnx_model(model):
-    if isinstance(model, keras.models.Model):
-        # Create a session to avoid problems with names
-        session = tf.Session()
-        backend.set_session(session)
-
-        with session.as_default():
-            with session.graph.as_default():
-                # If the model is sequential, it must be executed once and converted
-                # to a function one prior to exporting the ONNX model
-                if isinstance(model, keras.models.Sequential):
-                    model.compile('Adam')
-
-                    # Generate a random input just to execute the model once
-                    dummy_input = numpy.random.rand(2, 2)
-                    model.predict(dummy_input)
-
-                    # Find the input and output layers to construct the functional model
-                    input_layer = layers.Input(batch_shape=model.layers[0].input_shape)
-                    prev_layer = input_layer
-                    for layer in model.layers:
-                        prev_layer = layer(prev_layer)
-
-                    # Create a functional model equivalent to the sequential model
-                    model = models.Model([input_layer], [prev_layer])
-
-                # Export the functional keras model
-                onnx_model = onnxmltools.convert_keras(model, target_opset=7)
-    elif isinstance(model, torch.nn.Module):
-        input_shape_found = False
-
-        # Try to find the input shape and export the model
-        for i in range(1, 5000):
-            try:
-                dummy_input = torch.randn(i, i, dtype=torch.float)
-                torch.onnx.export(model, dummy_input, ONNX_MODEL_PATH)
-                input_shape_found = True
-            except RuntimeError:
-                pass
-
-            # There was no error, so the input shape has been correctly guessed
-            # and the ONNX model was exported so we can stop iterating
-            if input_shape_found:
-                break
-
-        # If the input shape could not be guessed, return None
-        # and an error message will be displayed to the user
-        if not input_shape_found:
-            return None
-
-        # Load the exported ONNX model file and remove the left-over file
-        onnx_model = onnx.load_model(ONNX_MODEL_PATH)
-        os.remove(ONNX_MODEL_PATH)
-    elif isinstance(model, mx.gluon.nn.HybridBlock):
-        # Initialize the MXNet model and create some dummy input
-        model.collect_params().initialize(mx.init.Normal())
-        dummy_input = numpy.random.rand(2, 2)
-
-        # Propagate the input forward so the model can be fully initialized
-        with mx.autograd.record():
-            model(mx.nd.array(dummy_input))
-
-        # Once initialized, export the ONNX equivalent of the model
-        onnx_mxnet.export_model(
-            sym=model(sym.var('data')),
-            params={k: v._reduce() for k, v in model.collect_params().items()},
-            input_shape=[(64, 2)],
-            onnx_file_path=ONNX_MODEL_PATH)
-
-        # Load the exported ONNX model file and remove the left-over file
-        onnx_model = onnx.load_model(ONNX_MODEL_PATH)
-        os.remove(ONNX_MODEL_PATH)
-    elif isinstance(model, onnx.ModelProto):
-        # The model is already an ONNX one
-        onnx_model = model
-    else:
-        # The model was not produced by Keras, PyTorch, MXNet or ONNX and cannot be visualized
-        # This point should not be reachable, as retrieval of the flow reinitializes the model
-        # and that ensures if can be handled by MXNetExtension, OnnxExtension, PytorchExtension
-        # or KerasExtension and therefore the model was produced by one of the libraries.
-        return None
-
-    return onnx_model
-
-
-# TODO: Unit test
-def simplyfy_pydot_graph(pydot_graph):
-    for k, v in pydot_graph.obj_dict['nodes'].items():
-        if "(op" in k:
-            orig_name = v[0]['name']
-            v[0]['name'] = orig_name.rsplit('\\n')[0] + '\"'
-    for k, v in pydot_graph.obj_dict['edges'].items():
-        edge = v[0]
-        lst = []
-        for idx, rv in enumerate(edge['points']):
-            if "(op" in rv:
-                lst.append(rv.rsplit('\\n')[0] + '\"')
-            else:
-                lst.append(rv)
-        edge['points'] = lst
-
-    return pydot_graph
-
+####################################################################################################
+# Callbacks for runs
+####################################################################################################
 
 @app.callback([Output('info-run-loading-text', 'style'),
                Output('info-run-error-text', 'style')],
               [Input('load-run-check', 'values'),
                Input('error-run-check', 'values')])
 def update_run_info_texts_visibility(load_values, error_values):
-    return get_info_text_styles(load_values, error_values)
-
-
-@app.callback([Output('info-flow-loading-text', 'style'),
-               Output('info-flow-error-text', 'style')],
-              [Input('load-flow-check', 'values'),
-               Input('error-flow-check', 'values')])
-def update_flow_info_texts_visibility(load_values, error_values):
     return get_info_text_styles(load_values, error_values)
 
 
@@ -398,39 +166,12 @@ def update_run_graph_text(metric, loaded_metric, run_data_json):
         return RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[metric], run_data[RUN_ID_KEY])
 
 
-@app.callback(Output('flow-graph-text', 'children'),
-              [Input('flow-id-info', 'children'),
-               Input('loaded-flow-id', 'children')],
-              [State('flow-data', 'children')])
-def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
-    if flow_id is None:  # There is no data
-        return EMPTY_TEXT
-
-    if flow_data_json is None:
-        return LOADING_TEXT_FLOW_INFO
-
-    flow_data = json.loads(flow_data_json)
-
-    if flow_id != loaded_id:
-        return LOADING_TEXT_FLOW_INFO
-    else:
-        return FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data[FLOW_ID_KEY])
-
-
 @app.callback([Output('run-id-info', 'children'),
                Output('nr-run-loads', 'children')],
               [Input('load-run-button', 'n_clicks')],
               [State('run-id', 'value')])
 def init_run_loading(n_clicks, run_id):
     return run_id, n_clicks
-
-
-@app.callback([Output('flow-id-info', 'children'),
-               Output('nr-flow-loads', 'children')],
-              [Input('load-flow-button', 'n_clicks')],
-              [State('flow-id', 'value')])
-def init_flow_loading(n_clicks, flow_id):
-    return flow_id, n_clicks
 
 
 @app.callback(Output('load-run-check', 'values'),
@@ -440,15 +181,6 @@ def init_flow_loading(n_clicks, flow_id):
                State('nr-run-loads', 'children')])
 def update_run_loading_info(n_clicks, run_data_json, run_id, nr_loads):
     return get_loading_info(n_clicks, run_id, nr_loads)
-
-
-@app.callback(Output('load-flow-check', 'values'),
-              [Input('load-flow-button', 'n_clicks'),
-               Input('flow-data', 'children')],
-              [State('flow-id', 'value'),
-               State('nr-flow-loads', 'children')])
-def update_flow_loading_info(n_clicks, flow_data_json, flow_id, nr_loads):
-    return get_loading_info(n_clicks, flow_id, nr_loads)
 
 
 @app.callback([Output('run-data', 'children'),
@@ -500,11 +232,18 @@ def load_run(run_id):
         TASK_ID_KEY: task.task_id
     }
     dropdown_options = []
+    means = {}
+    fold_rep_count = 0
 
     for metric in metrics:
-        # Create keys for each metric in the parsed data and simultaneously
-        # create the options for the dropdown menu
+        # Create keys for each metric in the parsed data
         data[metric] = []
+        # Create a dictionary for each metric in which means will be computed
+        means[metric] = {
+            'x': None,
+            'sum': []
+        }
+        # Create the options for the dropdown menu
         dropdown_options.append({'label': METRIC_TO_LABEL[metric], 'value': metric})
 
     iter_per_epoch = len(df['iter'].unique())
@@ -512,7 +251,13 @@ def load_run(run_id):
     # Split the folds and repeats data
     for i in range(folds):
         for j in range(repn):
+            # Counter is incremented and later used to compute mean value across folds and reps
+            fold_rep_count += 1
+
+            # Format the name of the line in the graph
             name = 'fold_{}_rep_{}'.format(i, j)
+
+            # Filter the data for the given fold and rep
             fold_rep_data = \
                 df[(df['foldn'] == i) & (df['repn'] == j)]
 
@@ -520,54 +265,37 @@ def load_run(run_id):
                  for index, row in fold_rep_data.iterrows()]
 
             for metric in metrics:
+                y = fold_rep_data[metric].tolist()
+
+                # Add the current line to the sum for the given metric
+                # Used to compute mean values
+                means[metric]['sum'] = add_lists_element_wise(means[metric]['sum'], y)
+                means[metric]['x'] = x
+
+                # Add the parsed metric data to the list of data
                 data[metric].append({
                     'x': x,
-                    'y': fold_rep_data[metric].tolist(),
+                    'y': y,
                     'name': name
                 })
 
+    for (metric, sum_dict) in means.items():
+        y = [(x / fold_rep_count) for x in sum_dict['sum']]
+        x = sum_dict['x']
+
+        data[metric].append({
+            'x': x,
+            'y': y,
+            'name': 'Mean'
+        })
+
     return json.dumps(data), [], dropdown_options, 'loss'
-
-
-@app.callback([Output('flow-data', 'children'),
-               Output('error-flow-check', 'values')],
-              [Input('flow-id-info', 'children')])
-def load_flow(flow_id):
-    if flow_id is None:
-        return None, []
-
-    try:
-        flow = openml.flows.get_flow(flow_id, reinstantiate=True)
-    except (OpenMLServerException, ValueError) as e:
-        return json.dumps({ERROR_KEY: 'There was an error retrieving the flow - {}.'.format(e)}), \
-                   [ERROR_KEY]
-
-    # TODO: Add check for MXNet if it will be visualizeable
-    if not isinstance(flow.model, (keras.models.Model, onnx.ModelProto, torch.nn.Module,
-                                   mx.gluon.nn.HybridBlock)):
-        return json.dumps({ERROR_KEY: 'The model corresponding to the flow cannot be '
-                                      'visualized.'}), [ERROR_KEY]
-
-    model = get_onnx_model(flow.model)
-
-    if model is None:
-        return json.dumps({ERROR_KEY: 'The flow could not be visualized.'}), [ERROR_KEY]
-
-    model_dict = json_format.MessageToDict(model)
-
-    return json.dumps({FLOW_ID_KEY: flow_id, ONNX_MODEL_KEY: model_dict}), []
 
 
 @app.callback(Output('info-run-error-text', 'children'),
               [Input('run-data', 'children')])
 def update_run_error_text(run_data_json):
     return get_error_text(run_data_json)
-
-
-@app.callback(Output('info-flow-error-text', 'children'),
-              [Input('flow-data', 'children')])
-def update_flow_error_text(flow_data_json):
-    return get_error_text(flow_data_json)
 
 
 @app.callback(Output('run-graph-div', 'style'),
@@ -577,15 +305,6 @@ def update_flow_error_text(flow_data_json):
                State('run-graph-div', 'style')])
 def update_run_graph_visibility(n_clicks, run_data_json, nr_loads, curr_style):
     return get_visibility_style(n_clicks, run_data_json, nr_loads, curr_style)
-
-
-@app.callback(Output('flow-graph-div', 'style'),
-              [Input('load-flow-button', 'n_clicks'),
-               Input('flow-data', 'children')],
-              [State('nr-flow-loads', 'children'),
-               State('flow-graph-div', 'style')])
-def update_flow_graph_visibility(n_clicks, flow_data_json, nr_loads, curr_style):
-    return get_visibility_style(n_clicks, flow_data_json, nr_loads, curr_style)
 
 
 @app.callback([Output('run-graph', 'figure'),
@@ -603,6 +322,97 @@ def update_run_graph(n_clicks, metric, run_data_json, nr_loads):
     data = extract_run_graph_data(run_data, metric)
 
     return create_figure(data, METRIC_TO_LABEL[metric]), metric
+
+
+####################################################################################################
+# Callbacks for flows
+####################################################################################################
+
+@app.callback([Output('info-flow-loading-text', 'style'),
+               Output('info-flow-error-text', 'style')],
+              [Input('load-flow-check', 'values'),
+               Input('error-flow-check', 'values')])
+def update_flow_info_texts_visibility(load_values, error_values):
+    return get_info_text_styles(load_values, error_values)
+
+
+@app.callback(Output('flow-graph-text', 'children'),
+              [Input('flow-id-info', 'children'),
+               Input('loaded-flow-id', 'children')],
+              [State('flow-data', 'children')])
+def update_flow_graph_text(flow_id, loaded_id, flow_data_json):
+    if flow_id is None:  # There is no data
+        return EMPTY_TEXT
+
+    if flow_data_json is None:
+        return LOADING_TEXT_FLOW_INFO
+
+    flow_data = json.loads(flow_data_json)
+
+    if flow_id != loaded_id:
+        return LOADING_TEXT_FLOW_INFO
+    else:
+        return FLOW_GRAPH_TEXT_TEMPLATE.format('Graph', flow_data[FLOW_ID_KEY])
+
+
+@app.callback([Output('flow-id-info', 'children'),
+               Output('nr-flow-loads', 'children')],
+              [Input('load-flow-button', 'n_clicks')],
+              [State('flow-id', 'value')])
+def init_flow_loading(n_clicks, flow_id):
+    return flow_id, n_clicks
+
+
+@app.callback(Output('load-flow-check', 'values'),
+              [Input('load-flow-button', 'n_clicks'),
+               Input('flow-data', 'children')],
+              [State('flow-id', 'value'),
+               State('nr-flow-loads', 'children')])
+def update_flow_loading_info(n_clicks, flow_data_json, flow_id, nr_loads):
+    return get_loading_info(n_clicks, flow_id, nr_loads)
+
+
+@app.callback([Output('flow-data', 'children'),
+               Output('error-flow-check', 'values')],
+              [Input('flow-id-info', 'children')])
+def load_flow(flow_id):
+    if flow_id is None:
+        return None, []
+
+    try:
+        flow = openml.flows.get_flow(flow_id, reinstantiate=True)
+    except (OpenMLServerException, ValueError) as e:
+        return json.dumps({ERROR_KEY: 'There was an error retrieving the flow - {}.'.format(e)}), \
+                   [ERROR_KEY]
+
+    if not isinstance(flow.model, (keras.models.Model, onnx.ModelProto, torch.nn.Module,
+                                   mx.gluon.nn.HybridBlock)):
+        return json.dumps({ERROR_KEY: 'The model corresponding to the flow cannot be '
+                                      'visualized.'}), [ERROR_KEY]
+
+    model = get_onnx_model(flow.model)
+
+    if model is None:
+        return json.dumps({ERROR_KEY: 'The flow could not be visualized.'}), [ERROR_KEY]
+
+    model_dict = json_format.MessageToDict(model)
+
+    return json.dumps({FLOW_ID_KEY: flow_id, ONNX_MODEL_KEY: model_dict}), []
+
+
+@app.callback(Output('info-flow-error-text', 'children'),
+              [Input('flow-data', 'children')])
+def update_flow_error_text(flow_data_json):
+    return get_error_text(flow_data_json)
+
+
+@app.callback(Output('flow-graph-div', 'style'),
+              [Input('load-flow-button', 'n_clicks'),
+               Input('flow-data', 'children')],
+              [State('nr-flow-loads', 'children'),
+               State('flow-graph-div', 'style')])
+def update_flow_graph_visibility(n_clicks, flow_data_json, nr_loads, curr_style):
+    return get_visibility_style(n_clicks, flow_data_json, nr_loads, curr_style)
 
 
 @app.callback([Output('flow-graph', 'children'),
@@ -642,10 +452,6 @@ def update_flow_graph(n_clicks, flow_data_json, nr_loads):
         flow_data[FLOW_ID_KEY]
 
 
-@app.server.route('/static/<resource>')
-def serve_static(resource):
-    return flask.send_from_directory(STATIC_PATH, resource)
-
-
+# Run the Dash app server
 if __name__ == '__main__':
     app.run_server(debug=True)

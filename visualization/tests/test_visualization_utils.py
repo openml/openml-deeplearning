@@ -1,10 +1,12 @@
 import plotly.graph_objs as go
+
 from visualization.tests.base import (
     VisualizationTestBase,
     ERROR_MESSAGE,
     DISPLAY_KEY
 )
-from visualization.visualizer import (
+
+from visualization.utils import (
     has_error_or_is_loading,
     get_info_text_styles,
     get_loading_info,

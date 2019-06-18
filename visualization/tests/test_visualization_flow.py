@@ -3,19 +3,21 @@ from visualization.tests.base import (
     ERROR_MESSAGE,
     DISPLAY_KEY
 )
+
+from visualization.constants import (
+    LOADING_TEXT_FLOW_INFO,
+    FLOW_GRAPH_TEXT_TEMPLATE
+)
+
 from visualization.visualizer import (
     update_flow_info_texts_visibility,
     update_flow_graph_text,
     init_flow_loading,
     update_flow_loading_info,
-    load_flow,
     update_flow_error_text,
-    update_flow_graph_visibility,
-    update_flow_graph,
-    LOADING_TEXT_GENERAL,
-    LOADING_TEXT_FLOW_INFO,
-    FLOW_GRAPH_TEXT_TEMPLATE,
+    update_flow_graph_visibility
 )
+
 from visualization.tests.utils import (
     deserialize_style,
     deserialize_text_result,
