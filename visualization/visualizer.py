@@ -198,7 +198,7 @@ def load_run(run_id):
         # Check if the run contains training data and display an error if it does not
         if TRAINING_DATA_KEY not in run.output_files.keys():
             return json.dumps({ERROR_KEY: 'Run does not contain training information.'}), \
-                   [ERROR_KEY], [], EMPTY_SELECTION
+                [ERROR_KEY], [], EMPTY_SELECTION
 
         # Generate the url for the training data file
         data_url = TRAINING_DATA_URL_FORMAT.format(run.output_files[TRAINING_DATA_KEY])
@@ -383,7 +383,7 @@ def load_flow(flow_id):
         flow = openml.flows.get_flow(flow_id, reinstantiate=True)
     except (OpenMLServerException, ValueError) as e:
         return json.dumps({ERROR_KEY: 'There was an error retrieving the flow - {}.'.format(e)}), \
-                   [ERROR_KEY]
+            [ERROR_KEY]
 
     if not isinstance(flow.model, (keras.models.Model, onnx.ModelProto, torch.nn.Module,
                                    mx.gluon.nn.HybridBlock)):
