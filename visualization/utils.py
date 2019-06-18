@@ -14,14 +14,14 @@ import mxnet as mx
 import mxnet.contrib.onnx as onnx_mxnet
 import tensorflow as tf
 import tensorflow.keras.backend as backend
-from mxnet import autograd, sym
+from mxnet import sym
 from keras import layers, models
 
 # Import in order to register the extensions
-from openml.extensions.keras import KerasExtension
-from openml.extensions.pytorch import PytorchExtension
-from openml.extensions.onnx import OnnxExtension
-from openml.extensions.mxnet import MXNetExtension
+from openml.extensions.keras import KerasExtension  # noqa: F401
+from openml.extensions.pytorch import PytorchExtension  # noqa: F401
+from openml.extensions.onnx import OnnxExtension  # noqa: F401
+from openml.extensions.mxnet import MXNetExtension  # noqa: F401
 
 from visualization.constants import (
     ERROR_KEY,
