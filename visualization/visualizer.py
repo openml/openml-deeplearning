@@ -54,11 +54,15 @@ from visualization.constants import (
     STATIC_PATH,
     FLOW_ID_KEY,
     ACCURACY_KEY,
-    MSE_KEY,
-    MAE_KEY,
-    RMSE_KEY,
+    MEAN_SQUARE_ERROR_KEY,
+    MEAN_ABSOLUTE_ERROR_KEY,
+    ROOT_MEAN_SQUARE_ERROR_KEY,
     LOSS_KEY
 )
+
+# Create the static folder if id does not exist
+if not os.path.exists(STATIC_PATH):
+    os.mkdir(STATIC_PATH)
 
 # Use the external Dash stylesheet
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -231,12 +235,12 @@ def load_run(run_id):
         if ACCURACY_KEY in df_columns:
             metrics.append(ACCURACY_KEY)
     if isinstance(task, OpenMLRegressionTask):
-        if MSE_KEY in df_columns:
-            metrics.append(MSE_KEY)  # mean square error
-        if MAE_KEY in df_columns:
-            metrics.append(MAE_KEY)  # mean absolute error
-        if RMSE_KEY in df_columns:
-            metrics.append(RMSE_KEY)  # root mean square error
+        if MEAN_SQUARE_ERROR_KEY in df_columns:
+            metrics.append(MEAN_SQUARE_ERROR_KEY)  # mean square error
+        if MEAN_ABSOLUTE_ERROR_KEY in df_columns:
+            metrics.append(MEAN_ABSOLUTE_ERROR_KEY)  # mean absolute error
+        if ROOT_MEAN_SQUARE_ERROR_KEY in df_columns:
+            metrics.append(ROOT_MEAN_SQUARE_ERROR_KEY)  # root mean square error
 
     folds = df['foldn'].max() + 1
     repn = df['repn'].max() + 1

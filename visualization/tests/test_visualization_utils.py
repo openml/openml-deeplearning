@@ -35,8 +35,8 @@ from visualization.constants import (
     STATIC_PATH,
     ONNX_MODEL_PATH,
     EMPTY_TEXT,
-    MSE_KEY,
-    MAE_KEY
+    MEAN_SQUARE_ERROR_KEY,
+    MEAN_ABSOLUTE_ERROR_KEY
 )
 
 DATA_KEY = 'data'
@@ -225,17 +225,17 @@ class TestVisualizationUtils(VisualizationTestBase):
 
     def test_extract_run_graph_data(self):
         data = {
-            MSE_KEY: [
+            MEAN_SQUARE_ERROR_KEY: [
                 {'x': [1], 'y': [1], 'name': 'Name1'},
                 {'x': [2], 'y': [2], 'name': 'Name2'}
             ],
-            MAE_KEY: [
+            MEAN_ABSOLUTE_ERROR_KEY: [
                 {'x': [3], 'y': [3], 'name': 'Name3'}
             ]
         }
 
-        mean_square_error_data = extract_run_graph_data(data, MSE_KEY)
-        mean_absolute_error_data = extract_run_graph_data(data, MAE_KEY)
+        mean_square_error_data = extract_run_graph_data(data, MEAN_SQUARE_ERROR_KEY)
+        mean_absolute_error_data = extract_run_graph_data(data, MEAN_ABSOLUTE_ERROR_KEY)
 
         # Assert the resulted values are lists
         self.assertIsInstance(mean_square_error_data, list)
