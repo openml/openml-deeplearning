@@ -1,3 +1,5 @@
+import json
+
 from visualization.tests.base import (
     VisualizationTestBase,
     MEAN_SQUARE_ERROR,
@@ -9,7 +11,11 @@ from visualization.tests.base import (
 from visualization.constants import (
     LOADING_TEXT_RUN_INFO,
     RUN_GRAPH_TEXT_TEMPLATE,
-    METRIC_TO_LABEL
+    METRIC_TO_LABEL,
+    EMPTY_SELECTION,
+    ERROR_KEY,
+    EMPTY_LOADED,
+    RUN_ID_KEY
 )
 
 from visualization.visualizer import (
@@ -18,7 +24,9 @@ from visualization.visualizer import (
     init_run_loading,
     update_run_loading_info,
     update_run_error_text,
-    update_run_graph_visibility
+    update_run_graph_visibility,
+    load_run,
+    update_run_graph
 )
 
 from visualization.tests.utils import (
@@ -26,12 +34,32 @@ from visualization.tests.utils import (
     deserialize_text_result,
     deserialize_loading_info_result,
     deserialize_id_loads_result,
-    deserialize_info_texts_visibility_result
+    deserialize_info_texts_visibility_result,
+    deserialize_load_run_result,
+    deserialize_update_run_graph_result
 )
+
+
+LOSS_KEY = 'loss'
 
 
 class TestVisualizationRun(VisualizationTestBase):
     def setUp(self):
+        super().setUp()
+
+        self.training_data_run = 10228688
+        self.clustering_run = 7951657
+        self.no_training_data_run = 10228348
+
+        self.loss_data = {
+            RUN_ID_KEY: self.run_id,
+            LOSS_KEY: [{
+                'x': [1, 2, 3],
+                'y': [1, 2, 3],
+                'name': ''
+            }]
+        }
+
         super().setUp()
 
     def test_update_run_info_texts_visibility(self):
@@ -120,7 +148,99 @@ class TestVisualizationRun(VisualizationTestBase):
         self.assertEqual(result, self.non_empty_loading)
 
     def test_load_run(self):
-        raise NotImplementedError()
+        # Passing None for run id should return None data, empty error check
+        # empty dropdown options and empty dropdown value
+        result_json = load_run(None)
+        data_json, error_check, dropdown_options, dropdown_value = \
+            deserialize_load_run_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 0)
+
+        # Check that dropdown options are empty and the selection is empty
+        self.assertIsInstance(dropdown_options, list)
+        self.assertIsInstance(dropdown_value, str)
+        self.assertEqual(len(dropdown_options), 0)
+        self.assertEqual(dropdown_value, EMPTY_SELECTION)
+
+        self.assertIsNone(data_json)
+
+        # Passing a non-existent run id should return an error
+        result_json = load_run(0)
+        data_json, error_check, dropdown_options, dropdown_value = \
+            deserialize_load_run_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 1)
+
+        # Check that dropdown options are empty and the selection is empty
+        self.assertIsInstance(dropdown_options, list)
+        self.assertIsInstance(dropdown_value, str)
+        self.assertEqual(len(dropdown_options), 0)
+        self.assertEqual(dropdown_value, EMPTY_SELECTION)
+
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertTrue(ERROR_KEY in data.keys())
+
+        # Passing the id of a run without associated with a task that is neither
+        # classification nor regression should return an error
+        result_json = load_run(self.clustering_run)
+        data_json, error_check, dropdown_options, dropdown_value = \
+            deserialize_load_run_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 1)
+
+        # Check that dropdown options are empty and the selection is empty
+        self.assertIsInstance(dropdown_options, list)
+        self.assertIsInstance(dropdown_value, str)
+        self.assertEqual(len(dropdown_options), 0)
+        self.assertEqual(dropdown_value, EMPTY_SELECTION)
+
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertTrue(ERROR_KEY in data.keys())
+
+        # Passing the id of a run which does not have training data should return an error
+        result_json = load_run(self.no_training_data_run)
+        data_json, error_check, dropdown_options, dropdown_value = \
+            deserialize_load_run_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 1)
+
+        # Check that dropdown options are empty and the selection is empty
+        self.assertIsInstance(dropdown_options, list)
+        self.assertIsInstance(dropdown_value, str)
+        self.assertEqual(len(dropdown_options), 0)
+        self.assertEqual(dropdown_value, EMPTY_SELECTION)
+
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertTrue(ERROR_KEY in data.keys())
+        self.assertTrue('training' in data[ERROR_KEY])
+
+        # Passing the id of a run which has training data should return no error,
+        # valid dropdown options and valid dropdown selection
+        result_json = load_run(self.training_data_run)
+        data_json, error_check, dropdown_options, dropdown_value = \
+            deserialize_load_run_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 0)
+
+        # Check that dropdown options are empty and the selection is empty
+        self.assertIsInstance(dropdown_options, list)
+        self.assertIsInstance(dropdown_value, str)
+        self.assertGreater(len(dropdown_options), 0)
+        self.assertGreater(len(dropdown_value), 0)
+
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertFalse(ERROR_KEY in data.keys())
+
+        # Make sure all options are present in the data
+        for option in dropdown_options:
+            self.assertTrue(option['value'] in data.keys())
+
+        # Make sure the selected dropdown value is present in the data
+        self.assertTrue(dropdown_value in data.keys())
 
     def test_update_run_error_text(self):
         # There is no run data, so error message should be empty string
@@ -243,4 +363,48 @@ class TestVisualizationRun(VisualizationTestBase):
                          self.display_hidden)
 
     def test_update_run_graph(self):
-        raise NotImplementedError()
+        # If there is data error or data is loading or the selected metric is empty
+        # the returned figure should be empty dict and there should be nothing loaded
+
+        # Call with loading data.
+        result_json = update_run_graph(1, LOSS_KEY, "{}", 0)
+        figure, loaded = deserialize_update_run_graph_result(result_json)
+        self.assertIsInstance(figure, dict)
+        self.assertDictEqual(figure, {})
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, EMPTY_LOADED)
+
+        # Call with empty selection.
+        result_json = update_run_graph(1, EMPTY_SELECTION, "{}", 1)
+        figure, loaded = deserialize_update_run_graph_result(result_json)
+        self.assertIsInstance(figure, dict)
+        self.assertDictEqual(figure, {})
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, EMPTY_LOADED)
+
+        # Call with error data.
+        result_json = update_run_graph(1, LOSS_KEY, '{"%s": "%s"}' % (ERROR_KEY, ERROR_MESSAGE), 1)
+        figure, loaded = deserialize_update_run_graph_result(result_json)
+        self.assertIsInstance(figure, dict)
+        self.assertDictEqual(figure, {})
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, EMPTY_LOADED)
+
+        # Call with actual data
+        run_data_json = json.dumps(self.loss_data)
+        result_json = update_run_graph(1, LOSS_KEY, run_data_json, 1)
+        figure, loaded = deserialize_update_run_graph_result(result_json)
+
+        # Check that the loaded value corresponds to the passed metric and that
+        # the figure contains the data from run_data_json
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, LOSS_KEY)
+        self.assertIsNotNone(figure)
+        self.assertIsInstance(figure, dict)
+        self.assertTrue('data' in figure.keys())
+        self.assertTrue('layout' in figure.keys())
+        self.assertEqual(len(figure['data']), 1)
+        self.assertEqual(figure['data'][0]['x'], self.loss_data['loss'][0]['x'])
+        self.assertEqual(figure['data'][0]['y'], self.loss_data['loss'][0]['y'])
+        self.assertEqual(figure['data'][0]['name'], self.loss_data['loss'][0]['name'])
+        self.assertEqual(figure['data'][0]['mode'], 'lines')

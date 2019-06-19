@@ -1,3 +1,8 @@
+import os
+import json
+from google.protobuf import json_format
+import dash_html_components as html
+
 from visualization.tests.base import (
     VisualizationTestBase,
     ERROR_MESSAGE,
@@ -6,7 +11,12 @@ from visualization.tests.base import (
 
 from visualization.constants import (
     LOADING_TEXT_FLOW_INFO,
-    FLOW_GRAPH_TEXT_TEMPLATE
+    FLOW_GRAPH_TEXT_TEMPLATE,
+    ERROR_KEY,
+    EMPTY_LOADED,
+    FLOW_ID_KEY,
+    STATIC_PATH,
+    ONNX_MODEL_KEY
 )
 
 from visualization.visualizer import (
@@ -15,7 +25,9 @@ from visualization.visualizer import (
     init_flow_loading,
     update_flow_loading_info,
     update_flow_error_text,
-    update_flow_graph_visibility
+    update_flow_graph_visibility,
+    load_flow,
+    update_flow_graph
 )
 
 from visualization.tests.utils import (
@@ -23,13 +35,28 @@ from visualization.tests.utils import (
     deserialize_text_result,
     deserialize_loading_info_result,
     deserialize_id_loads_result,
-    deserialize_info_texts_visibility_result
+    deserialize_info_texts_visibility_result,
+    deserialize_load_flow_result,
+    deserialize_update_flow_graph_result
 )
+
+# The path for the dot and svg files
+DOT_PATH_FORMAT = os.path.join(STATIC_PATH, 'graph_{}.dot')
+SVG_PATH_FORMAT = os.path.join(STATIC_PATH, 'graph_{}.svg')
 
 
 class TestVisualizationFlow(VisualizationTestBase):
     def setUp(self):
         super().setUp()
+
+        self.dot_path = DOT_PATH_FORMAT.format(self.flow_id)
+        self.svg_path = SVG_PATH_FORMAT.format(self.flow_id)
+
+    def tearDown(self):
+        if os.path.exists(self.dot_path):
+            os.remove(self.dot_path)
+        if os.path.exists(self.svg_path):
+            os.remove(self.svg_path)
 
     def test_update_flow_info_texts_visibility(self):
         # There are no errors and nothing is loading so texts should be invisible
@@ -120,7 +147,39 @@ class TestVisualizationFlow(VisualizationTestBase):
         self.assertEqual(result, self.non_empty_loading)
 
     def test_load_flow(self):
-        raise NotImplementedError()
+        # Passing None for flow id should return None data and empty error check
+        result_json = load_flow(None)
+        data_json, error_check = deserialize_load_flow_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 0)
+        self.assertIsNone(data_json)
+
+        # Passing a non-existent flow id should return an error
+        result_json = load_flow(0)
+        data_json, error_check = deserialize_load_flow_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 1)
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertTrue(ERROR_KEY in data.keys())
+
+        # Passing the id of an sklearn flow should return an error
+        result_json = load_flow(5503)
+        data_json, error_check = deserialize_load_flow_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 1)
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertTrue(ERROR_KEY in data.keys())
+
+        # Passing the id of an Keras flow should return no error
+        result_json = load_flow(9780)
+        data_json, error_check = deserialize_load_flow_result(result_json)
+        self.assertIsInstance(error_check, list)
+        self.assertEqual(len(error_check), 0)
+        self.assertIsNotNone(data_json)
+        data = json.loads(data_json)
+        self.assertFalse(ERROR_KEY in data.keys())
 
     def test_update_flow_error_text(self):
         # There is no flow data, so error message should be empty string
@@ -243,4 +302,42 @@ class TestVisualizationFlow(VisualizationTestBase):
                          self.display_hidden)
 
     def test_update_flow_graph(self):
-        raise NotImplementedError()
+        # If there is data error or data is loading.
+        # The returned html component should be None and there should be nothing loaded.
+
+        # Call with loading data.
+        result_json = update_flow_graph(1, {}, 0)
+        graph, loaded = deserialize_update_flow_graph_result(result_json)
+        self.assertIsNone(graph)
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, EMPTY_LOADED)
+
+        # Call with error data.
+        result_json = update_flow_graph(1, '{"%s": "%s"}' % (ERROR_KEY, ERROR_MESSAGE), 1)
+        graph, loaded = deserialize_update_flow_graph_result(result_json)
+        self.assertIsNone(graph)
+        self.assertIsInstance(loaded, str)
+        self.assertEqual(loaded, EMPTY_LOADED)
+
+        # Call with actual data
+        model_dict = json_format.MessageToDict(self.onnx_model)
+        flow_data = {FLOW_ID_KEY: self.flow_id, ONNX_MODEL_KEY: model_dict}
+        flow_data_json = json.dumps(flow_data)
+
+        # Check that no svg and dot files exist prior to the call
+        self.assertFalse(os.path.exists(self.dot_path))
+        self.assertFalse(os.path.exists(self.svg_path))
+        result_json = update_flow_graph(1, flow_data_json, 1)
+        graph, loaded = deserialize_update_flow_graph_result(result_json)
+
+        # Check that there is no left-over dot file
+        self.assertFalse(os.path.exists(self.dot_path))
+        # Check that an svg file has been created
+        self.assertTrue(os.path.exists(self.svg_path))
+
+        # Check that the correct loaded value is present and that the graph is
+        # a dictionary used to produce an Iframe
+        self.assertIsInstance(loaded, int)
+        self.assertEqual(loaded, self.flow_id)
+        self.assertIsNotNone(graph)
+        self.assertEqual(graph['type'], 'Iframe')
