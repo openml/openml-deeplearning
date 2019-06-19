@@ -71,7 +71,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                     X_test=X_test,
                 )
 
-                y_hat, y_hat_proba, user_defined_measures, trace = res
+                y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
                 # predictions
                 self.assertIsInstance(y_hat, np.ndarray)
@@ -135,7 +135,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                     X_test=X_test,
                 )
 
-                y_hat, y_hat_proba, user_defined_measures, trace = res
+                y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
                 # predictions
                 self.assertIsInstance(y_hat, np.ndarray)
@@ -187,7 +187,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                     X_test=X_test,
                 )
 
-                y_hat, y_hat_proba, user_defined_measures, trace = res
+                y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
                 # predictions
                 self.assertIsInstance(y_hat, np.ndarray)
@@ -242,7 +242,7 @@ class TestKerasExtensionRunFunctions(TestBase):
                     X_test=X_test,
                 )
 
-                y_hat, y_hat_proba, user_defined_measures, trace = res
+                y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
                 # predictions
                 self.assertIsInstance(y_hat, np.ndarray)

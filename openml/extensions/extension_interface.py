@@ -155,7 +155,13 @@ class Extension(ABC):
         fold_no: int,
         y_train: Optional[np.ndarray] = None,
         X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional['OpenMLRunTrace']]:
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        'OrderedDict[str, float]',
+        Optional['OpenMLRunTrace'],
+        Optional[Any]
+    ]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction information.
 
         Returns the data that is necessary to construct the OpenML Run object. Is used by
@@ -190,6 +196,30 @@ class Extension(ABC):
         trace : Optional, OpenMLRunTrace
             Hyperparameter optimization trace (only applicable for supervised tasks with
             hyperparameter optimization).
+        additional_information: Optional, Any
+            Additional information provided by the extension to be converted into additional files.
+        """
+
+    @abstractmethod
+    def compile_additional_information(
+            self,
+            task: 'OpenMLTask',
+            additional_information: List[Tuple[int, int, Any]]
+    ) -> Dict[str, Tuple[str, str]]:
+        """Compiles additional information provided by the extension during the runs into a final
+        set of files.
+
+        Parameters
+        ----------
+        task : OpenMLTask
+            The task the model was run on.
+        additional_information: List[Tuple[int, int, Any]]
+            A list of (fold, repetition, additional information) tuples obtained during training.
+
+        Returns
+        -------
+        files : Dict[str, Tuple[str, str]]
+            A dictionary of files with their file name and contents.
         """
 
     @abstractmethod
