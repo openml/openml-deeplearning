@@ -1,9 +1,21 @@
+import os
+
+from openml.extensions.pytorch.layers import Functional
+import onnx
+import keras
+import torch
+import pandas as pd
 import plotly.graph_objs as go
 
 from visualization.tests.base import (
     VisualizationTestBase,
     ERROR_MESSAGE,
     DISPLAY_KEY
+)
+
+from visualization.tests.utils import (
+    SklearnModel,
+    get_mxnet_model
 )
 
 from visualization.utils import (
@@ -13,13 +25,32 @@ from visualization.utils import (
     get_error_text,
     get_visibility_style,
     create_figure,
-    extract_run_graph_data
+    extract_run_graph_data,
+    add_lists_element_wise,
+    get_training_data,
+    get_onnx_model
+)
+
+from visualization.constants import (
+    STATIC_PATH,
+    ONNX_MODEL_PATH
 )
 
 
 class TestVisualizationUtils(VisualizationTestBase):
     def setUp(self):
         super().setUp()
+
+        self.sklearn_model = SklearnModel('true', '1', '0.1')
+        self.keras_model = keras.models.Sequential([
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(units=20, activation=keras.activations.relu)
+        ])
+        self.pytorch_model = torch.nn.Sequential(
+            Functional(function=torch.Tensor.reshape, shape=(-1, 1, 28, 28)),
+            torch.nn.BatchNorm2d(num_features=1)
+        )
+        self.mxnet_model = get_mxnet_model()
 
     def test_has_error_or_is_loading(self):
         # Nothing is being displayed, so assume loading
@@ -214,3 +245,96 @@ class TestVisualizationUtils(VisualizationTestBase):
             self.assertIsInstance(item, go.Scatter)
         for item in mean_absolute_error_data:
             self.assertIsInstance(item, go.Scatter)
+
+    def test_add_lists_element_wise(self):
+        # Adding two empty lists should result in an empty list
+        result = add_lists_element_wise([], [])
+        self.assertListEqual(result, [])
+
+        # Adding an empty first list to a non-empty second list should work correctly
+        result = add_lists_element_wise([], [1, 2, 3])
+        self.assertListEqual(result, [1, 2, 3])
+
+        # Adding a non-empty first list to an empty second list should work correctly
+        result = add_lists_element_wise([1, 2, 3], [])
+        self.assertListEqual(result, [1, 2, 3])
+
+        # Adding two non-empty lists where first one is longer should work correctly
+        result = add_lists_element_wise([1, 2, 3], [4, 5])
+        self.assertListEqual(result, [5, 7, 3])
+
+        # Adding two non-empty lists where second one is longer should work correctly
+        result = add_lists_element_wise([1, 2], [3, 4, 5])
+        self.assertListEqual(result, [4, 6, 5])
+
+        # Adding two lists of equal length should work correctly
+        result = add_lists_element_wise([1, 2, 3], [4, 5, 6])
+        self.assertListEqual(result, [5, 7, 9])
+
+        # Adding the two lists should not modify them
+        list1_orig = [1, 2, 3]
+        list2_orig = [3, 4, 5]
+        list1_copy = list1_orig.copy()
+        list2_copy = list2_orig.copy()
+
+        add_lists_element_wise(list1_copy, list2_copy)
+        self.assertListEqual(list1_orig, list1_copy)
+        self.assertListEqual(list2_orig, list2_copy)
+
+    def test_get_training_data(self):
+        # Retriving a url which is not to a training data should result in none
+        result = get_training_data('https://www.google.com', self.run_id)
+        self.assertIsNone(result)
+
+        # Retrieving a url which is of a training data, should
+        # return the data as a pandas DataFrame
+        result = get_training_data('https://www.openml.org/data/download/21378680/training.csv',
+                                   self.run_id)
+
+        csv_file_path = os.path.join(STATIC_PATH, 'training_{}.csv'.format(self.run_id))
+        csv_file_exists = os.path.exists(csv_file_path)
+
+        # Ensure the file is deleted after retrieval
+        self.assertFalse(csv_file_exists)
+
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, pd.DataFrame)
+
+    def test_get_onnx_model(self):
+        # After every call it is asserted that there are no left-over
+        # ONNX files in the static directory
+
+        # Passing a keras model should return an onnx model
+        result = get_onnx_model(self.keras_model)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, onnx.ModelProto)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))
+
+        # Passing a pytorch model should return an onnx model
+        result = get_onnx_model(self.pytorch_model)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, onnx.ModelProto)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))
+
+        # Passing a mxnet model should return an onnx model
+        result = get_onnx_model(self.mxnet_model)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, onnx.ModelProto)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))
+
+        # Passing an onnx model should return the passed model
+        result = get_onnx_model(self.onnx_model)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, onnx.ModelProto)
+        self.assertEqual(result, self.onnx_model)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))
+
+        # Passing an sklearn model should return None
+        result = get_onnx_model(self.sklearn_model)
+        self.assertIsNone(result)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))
+
+        # Passing None should return None
+        result = get_onnx_model(None)
+        self.assertIsNone(result)
+        self.assertFalse(os.path.exists(ONNX_MODEL_PATH))

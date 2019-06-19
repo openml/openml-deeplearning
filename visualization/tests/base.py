@@ -1,3 +1,4 @@
+import onnx
 import unittest
 import plotly.graph_objs as go
 
@@ -31,3 +32,5 @@ class VisualizationTestBase(unittest.TestCase):
 
         self.visible_style = {DISPLAY_KEY: ''}
         self.hidden_style = {DISPLAY_KEY: 'none'}
+
+        self.onnx_model = onnx.ModelProto()
