@@ -112,7 +112,9 @@ class TestVisualizationRun(VisualizationTestBase):
             update_run_graph_text(MEAN_SQUARE_ERROR_KEY, MEAN_SQUARE_ERROR_KEY, self.simple_data)
         result = deserialize_text_result(data_metric_same_as_loaded_result)
         self.assertEqual(
-            result, RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[MEAN_SQUARE_ERROR_KEY], self.run_id))
+            result,
+            RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[MEAN_SQUARE_ERROR_KEY], self.run_id)
+        )
 
     def test_init_run_loading(self):
         # The function is used to pass data along, so the result should be same as input params
