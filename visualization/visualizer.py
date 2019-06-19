@@ -314,7 +314,7 @@ def update_run_graph_visibility(n_clicks, run_data_json, nr_loads, curr_style):
               [State('run-data', 'children'),
                State('nr-run-loads', 'children')])
 def update_run_graph(n_clicks, metric, run_data_json, nr_loads):
-    if has_error_or_is_loading(n_clicks, run_data_json, nr_loads) or metric == EMPTY_TEXT:
+    if has_error_or_is_loading(n_clicks, run_data_json, nr_loads) or metric == EMPTY_SELECTION:
         return {}, EMPTY_LOADED
 
     run_data = json.loads(run_data_json)
