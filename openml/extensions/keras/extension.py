@@ -5,7 +5,6 @@ import logging
 import pickle
 import re
 import sys
-import time
 import warnings
 import zlib
 from collections import OrderedDict  # noqa: F401
@@ -42,7 +41,6 @@ DEPENDENCIES_PATTERN = re.compile(
 SIMPLE_NUMPY_TYPES = [nptype for type_cat, nptypes in np.sctypes.items()
                       for nptype in nptypes if type_cat != 'others']
 SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
-
 
 LAYER_PATTERN = re.compile(r'layer\d+\_(.*)')
 
@@ -87,7 +85,7 @@ class KerasExtension(Extension):
     # Methods for flow serialization and de-serialization
 
     def flow_to_model(self, flow: 'OpenMLFlow', initialize_with_defaults: bool = False) -> Any:
-        """Initializes a keras model based on a flow.
+        """Initializes a Keras model based on a flow.
 
         Parameters
         ----------
@@ -112,7 +110,8 @@ class KerasExtension(Extension):
             initialize_with_defaults: bool = False,
             recursion_depth: int = 0,
     ) -> Any:
-        """Recursive function to deserialize a keras flow.
+        """
+        Recursive function to deserialize a keras flow.
 
         This function delegates all work to the respective functions to deserialize special data
         structures etc.
@@ -124,7 +123,7 @@ class KerasExtension(Extension):
             parameter value that is accepted by)
 
         components : dict
-
+            empty
 
         initialize_with_defaults : bool, optional (default=False)
             If this flag is set, the hyperparameter values of flows will be
@@ -203,7 +202,7 @@ class KerasExtension(Extension):
         return rval
 
     def model_to_flow(self, model: Any) -> 'OpenMLFlow':
-        """Transform a keras model to a flow for uploading it to OpenML.
+        """Transform a Keras model to a flow for uploading it to OpenML.
 
         Parameters
         ----------
@@ -219,12 +218,10 @@ class KerasExtension(Extension):
     def _serialize_keras(self, o: Any, parent_model: Optional[Any] = None) -> Any:
         rval = None  # type: Any
 
-        # TODO: assert that only on first recursion lvl `parent_model` can be None
         if self.is_estimator(o):
             # is the main model or a submodel
             rval = self._serialize_model(o)
         elif isinstance(o, (list, tuple)):
-            # TODO: explain what type of parameter is here
             rval = [self._serialize_keras(element, parent_model) for element in o]
             if isinstance(o, tuple):
                 rval = tuple(rval)
@@ -234,7 +231,6 @@ class KerasExtension(Extension):
             # base parameter values
             rval = o
         elif isinstance(o, dict):
-            # TODO: explain what type of parameter is here
             if not isinstance(o, OrderedDict):
                 o = OrderedDict([(key, value) for key, value in sorted(o.items())])
 
@@ -263,8 +259,6 @@ class KerasExtension(Extension):
         List
         """
 
-        # This can possibly be done by a package such as pyxb, but I could not get
-        # it to work properly.
         import keras
         import scipy
         import numpy
@@ -290,7 +284,6 @@ class KerasExtension(Extension):
         str
         """
         run_environment = " ".join(self.get_version_information())
-        # fixme str(model) might contain (...)
         return run_environment + " " + str(model)
 
     @classmethod
@@ -306,7 +299,7 @@ class KerasExtension(Extension):
 
         Parameters
         ----------
-        model : keras neural network
+        model : Keras neural network
 
         Returns
         -------
@@ -327,22 +320,8 @@ class KerasExtension(Extension):
             'x'
         )
 
-        # will be part of the name (in brackets)
-        sub_components_names = ""
-        for key in subcomponents:
-            if key in subcomponents_explicit:
-                sub_components_names += "," + key + "=" + subcomponents[key].name
-            else:
-                sub_components_names += "," + subcomponents[key].name
-
-        if sub_components_names:
-            # slice operation on string in order to get rid of leading comma
-            name = '%s(%s)' % (class_name, sub_components_names[1:])
-        else:
-            name = class_name
-
-        # Get the external versions of all sub-components
         external_version = self._get_external_version_string(model, subcomponents)
+        name = class_name
 
         dependencies = '\n'.join([
             self._format_external_version(
@@ -368,7 +347,6 @@ class KerasExtension(Extension):
 
                                 ],
                           language='English',
-                          # TODO fill in dependencies!
                           dependencies=dependencies)
 
         return flow
@@ -396,13 +374,16 @@ class KerasExtension(Extension):
         for visitee in sub_components.values():
             for external_version in visitee.external_version.split(','):
                 external_versions.add(external_version)
+
         return ','.join(list(sorted(external_versions)))
 
     def _from_parameters(self, parameters: 'OrderedDict[str, Any]') -> Any:
-        # Get a Keras model from flow parameters
+        """ Get a Keras model from flow parameters """
+
         # Create a dict and recursively fill it with model components
         # First do this for non-layer items, then layer items.
         config = {}
+
         # Add the expected configuration parameters back to the configuration dictionary,
         # as long as they are not layers, since they need to be deserialized separately
         for k, v in parameters.items():
@@ -504,127 +485,19 @@ class KerasExtension(Extension):
         'OrderedDict[str, OpenMLFlow]',
         Set,
     ]:
-        # This function contains four "global" states and is quite long and
-        # complicated. If it gets to complicated to ensure it's correctness,
-        # it would be best to make it a class with the four "global" states being
-        # the class attributes and the if/elif/else in the for-loop calls to
-        # separate class methods
-
-        # stores all entities that should become subcomponents
+        # Stores all entities that should become subcomponents (unused)
         sub_components = OrderedDict()  # type: OrderedDict[str, OpenMLFlow]
-        # stores the keys of all subcomponents that should become
-        sub_components_explicit = set()
+        # Stores the keys of all subcomponents that should become (unused)
+        sub_components_explicit = set()  # type: Set
         parameters = OrderedDict()  # type: OrderedDict[str, Optional[str]]
         parameters_meta_info = OrderedDict()  # type: OrderedDict[str, Optional[Dict]]
 
         model_parameters = self._get_parameters(model)
         for k, v in sorted(model_parameters.items(), key=lambda t: t[0]):
             rval = self._serialize_keras(v, model)
+            rval = json.dumps(rval)
 
-            def flatten_all(list_):
-                """ Flattens arbitrary depth lists of lists (e.g. [[1,2],[3,[1]]] -> [1,2,3,1]). """
-                for el in list_:
-                    if isinstance(el, (list, tuple)):
-                        yield from flatten_all(el)
-                    else:
-                        yield el
-
-            is_non_empty_list_of_lists_with_same_type = (
-                isinstance(rval, (list, tuple))
-                and len(rval) > 0
-                and isinstance(rval[0], (list, tuple))
-                and all([isinstance(rval_i, type(rval[0])) for rval_i in rval])
-            )
-
-            # Check that all list elements are of simple types.
-            nested_list_of_simple_types = (
-                is_non_empty_list_of_lists_with_same_type
-                and all([isinstance(el, SIMPLE_TYPES) for el in flatten_all(rval)])
-            )
-
-            if is_non_empty_list_of_lists_with_same_type and not nested_list_of_simple_types:
-                # If a list of lists is identified that include 'non-simple' types (e.g. objects),
-                # we assume they are sub networks or custom layers
-                parameter_value = list()  # type: List
-                reserved_keywords = set(self._get_parameters(model).keys())
-
-                for sub_component_tuple in rval:
-                    identifier = sub_component_tuple[0]
-                    sub_component = sub_component_tuple[1]
-                    sub_component_type = type(sub_component_tuple)
-                    if not 2 <= len(sub_component_tuple) <= 3:
-                        msg = 'Length of tuple does not match assumptions'
-                        raise ValueError(msg)
-                    if not isinstance(sub_component, (OpenMLFlow, type(None))):
-                        msg = 'Second item of tuple does not match assumptions. ' \
-                              'Expected OpenMLFlow, got %s' % type(sub_component)
-                        raise TypeError(msg)
-
-                    if identifier in reserved_keywords:
-                        parent_model = "{}.{}".format(model.__module__,
-                                                      model.__class__.__name__)
-                        msg = 'Found element shadowing official ' \
-                              'parameter for %s: %s' % (parent_model,
-                                                        identifier)
-                        raise PyOpenMLError(msg)
-
-                    if sub_component is None:
-                        # In a FeatureUnion it is legal to have a None step
-
-                        pv = [identifier, None]
-                        if sub_component_type is tuple:
-                            parameter_value.append(tuple(pv))
-                        else:
-                            parameter_value.append(pv)
-
-                    else:
-                        # Add the component to the list of components, add a
-                        # component reference as a placeholder to the list of
-                        # parameters, which will be replaced by the real component
-                        # when deserializing the parameter
-                        sub_components_explicit.add(identifier)
-                        sub_components[identifier] = sub_component
-                        component_reference = OrderedDict()  # type: Dict[str, Union[str, Dict]]
-                        component_reference['oml-python:serialized_object'] = 'component_reference'
-                        cr_value = OrderedDict()  # type: Dict[str, Any]
-                        cr_value['key'] = identifier
-                        cr_value['step_name'] = identifier
-                        if len(sub_component_tuple) == 3:
-                            cr_value['argument_1'] = sub_component_tuple[2]
-                        component_reference['value'] = cr_value
-                        parameter_value.append(component_reference)
-
-                # Here (and in the elif and else branch below) are the only
-                # places where we encode a value as json to make sure that all
-                # parameter values still have the same type after
-                # deserialization
-                if isinstance(rval, tuple):
-                    parameter_json = json.dumps(tuple(parameter_value))
-                else:
-                    parameter_json = json.dumps(parameter_value)
-                parameters[k] = parameter_json
-
-            elif isinstance(rval, OpenMLFlow):
-
-                sub_components[k] = rval
-                sub_components_explicit.add(k)
-                component_reference = OrderedDict()
-                component_reference['oml-python:serialized_object'] = 'component_reference'
-                cr_value = OrderedDict()
-                cr_value['key'] = k
-                cr_value['step_name'] = None
-                component_reference['value'] = cr_value
-                cr = self._serialize_keras(component_reference, model)
-                parameters[k] = json.dumps(cr)
-
-            else:
-                # a regular hyperparameter
-                if not (hasattr(rval, '__len__') and len(rval) == 0):
-                    rval = json.dumps(rval)
-                    parameters[k] = rval
-                else:
-                    parameters[k] = None
-
+            parameters[k] = rval
             parameters_meta_info[k] = OrderedDict((('description', None), ('data_type', None)))
 
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
@@ -684,7 +557,7 @@ class KerasExtension(Extension):
         Parameters
         ----------
         dependencies : str
-                       a string representing the required dependencies
+            a string representing the required dependencies
 
         Returns
         -------
@@ -732,50 +605,14 @@ class KerasExtension(Extension):
         Parameters
         ----------
         model_package_name : str
-                           the name of the required package
+            the name of the required package
         model_package_version_number : str
-                           the version of the required package
+            the version of the required package
         Returns
         -------
         str
         """
         return '%s==%s' % (model_package_name, model_package_version_number)
-
-    def _can_measure_cputime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a single core (if so, openml-python can measure cpu-times)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-
-        return False
-
-    def _can_measure_wallclocktime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a preset number of cores (if so, openml-python can measure wall-clock time)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-
-        return False
 
     ################################################################################################
     # Methods for performing runs with extension modules
@@ -908,37 +745,16 @@ class KerasExtension(Extension):
             if X_test is None:
                 raise TypeError('argument X_test must not be of type None')
 
-        # TODO: if possible, give a warning if model is already fitted (acceptable
-        # in case of custom experimentation,
-        # but not desirable if we want to upload to OpenML).
-
         # This might look like a hack, and it is, but it maintains the compilation status,
         # in contrast to clone_model, and also is faster than using get_config + load_from_config
         # since it avoids string parsing
         model_copy = pickle.loads(pickle.dumps(model))
 
-        # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_copy)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
-
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
         try:
-            # for measuring runtime. Only available since Python 3.3
-            modelfit_start_cputime = time.process_time()
-            modelfit_start_walltime = time.time()
-
             if isinstance(task, OpenMLSupervisedTask):
                 model_copy.fit(X_train, y_train)
-
-            modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
-            if can_measure_cputime:
-                user_defined_measures['usercpu_time_millis_training'] = modelfit_dur_cputime
-
-            modelfit_dur_walltime = (time.time() - modelfit_start_walltime) * 1000
-            if can_measure_wallclocktime:
-                user_defined_measures['wall_clock_time_millis_training'] = modelfit_dur_walltime
-
         except AttributeError as e:
             # typically happens when training a regressor on classification task
             raise PyOpenMLError(str(e))
@@ -946,11 +762,7 @@ class KerasExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
             model_classes = keras.backend.argmax(y_train, axis=-1)
 
-        modelpredict_start_cputime = time.process_time()
-        modelpredict_start_walltime = time.time()
-
-        # In supervised learning this returns the predictions for Y, in clustering
-        # it returns the clusters
+        # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
             pred_y = model_copy.predict(X_test)
             if isinstance(task, OpenMLClassificationTask):
@@ -960,18 +772,6 @@ class KerasExtension(Extension):
             pred_y = keras.backend.eval(pred_y)
         else:
             raise ValueError(task)
-
-        if can_measure_cputime:
-            modelpredict_duration_cputime = (time.process_time()
-                                             - modelpredict_start_cputime) * 1000
-            user_defined_measures['usercpu_time_millis_testing'] = modelpredict_duration_cputime
-            user_defined_measures['usercpu_time_millis'] = (modelfit_dur_cputime
-                                                            + modelpredict_duration_cputime)
-        if can_measure_wallclocktime:
-            modelpredict_duration_walltime = (time.time() - modelpredict_start_walltime) * 1000
-            user_defined_measures['wall_clock_time_millis_testing'] = modelpredict_duration_walltime
-            user_defined_measures['wall_clock_time_millis'] = (modelfit_dur_walltime
-                                                               + modelpredict_duration_walltime)
 
         if isinstance(task, OpenMLClassificationTask):
 
@@ -1071,22 +871,6 @@ class KerasExtension(Extension):
 
         def extract_parameters(_flow, _flow_dict, component_model,
                                _main_call=False, main_id=None):
-            def is_subcomponent_specification(values):
-                # checks whether the current value can be a specification of
-                # subcomponents, as for example the value for steps parameter.
-                # These are always lists/tuples of lists/tuples, size bigger
-                # than 2 and an OpenMLFlow item involved.
-                if not isinstance(values, (tuple, list)):
-                    return False
-                for item in values:
-                    if not isinstance(item, (tuple, list)):
-                        return False
-                    if len(item) < 2:
-                        return False
-                    if not isinstance(item[1], openml.flows.OpenMLFlow):
-                        return False
-                return True
-
             # _flow is openml flow object, _param dict maps from flow name to flow
             # id for the main call, the param dict can be overridden (useful for
             # unit tests / sentinels) this way, for flows without subflows we do
@@ -1119,44 +903,8 @@ class KerasExtension(Extension):
                 if isinstance(current_param_values, openml.flows.OpenMLFlow):
                     continue
 
-                if is_subcomponent_specification(current_param_values):
-                    # complex parameter value, with subcomponents
-                    parsed_values = list()
-                    for subcomponent in current_param_values:
-                        # keras stores usually tuples in the form
-                        # (name (str), subcomponent (mixed), argument
-                        # (mixed)). OpenML replaces the subcomponent by an
-                        # OpenMLFlow object.
-                        if len(subcomponent) < 2 or len(subcomponent) > 3:
-                            raise ValueError('Component reference should be '
-                                             'size {2,3}. ')
-
-                        subcomponent_identifier = subcomponent[0]
-                        subcomponent_flow = subcomponent[1]
-                        if not isinstance(subcomponent_identifier, str):
-                            raise TypeError('Subcomponent identifier should be '
-                                            'string')
-                        if not isinstance(subcomponent_flow,
-                                          openml.flows.OpenMLFlow):
-                            raise TypeError('Subcomponent flow should be string')
-
-                        current = {
-                            "oml-python:serialized_object": "component_reference",
-                            "value": {
-                                "key": subcomponent_identifier,
-                                "step_name": subcomponent_identifier
-                            }
-                        }
-                        if len(subcomponent) == 3:
-                            if not isinstance(subcomponent[2], list):
-                                raise TypeError('Subcomponent argument should be'
-                                                'list')
-                            current['value']['argument_1'] = subcomponent[2]
-                        parsed_values.append(current)
-                    parsed_values = json.dumps(parsed_values)
-                else:
-                    # vanilla parameter value
-                    parsed_values = json.dumps(current_param_values)
+                # vanilla parameter value
+                parsed_values = json.dumps(current_param_values)
 
                 _current['oml:value'] = parsed_values
                 if _main_call:
@@ -1183,7 +931,7 @@ class KerasExtension(Extension):
             flow: OpenMLFlow,
     ) -> str:
         """
-        Converts the name of an OpenMLParameter into the keras name, given a flow.
+        Converts the name of an OpenMLParameter into the Keras name, given a flow.
 
         Parameters
         ----------
@@ -1196,7 +944,7 @@ class KerasExtension(Extension):
         Returns
         -------
         keras_parameter_name: str
-            The name the parameter will have once used in keras
+            The name the parameter will have once used in Keras
         """
         if not isinstance(openml_parameter, openml.setups.OpenMLParameter):
             raise ValueError('openml_parameter should be an instance of OpenMLParameter')
@@ -1215,7 +963,7 @@ class KerasExtension(Extension):
             trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
-        optimization model.
+        optimization model (UNUSED)
 
         Parameters
         ----------
