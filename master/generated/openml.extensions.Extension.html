@@ -155,6 +155,29 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="openml.extensions.Extension.compile_additional_information">
+<em class="property">abstract </em><code class="sig-name descname">compile_additional_information</code><span class="sig-paren">(</span><em class="sig-param">self, task: 'OpenMLTask', additional_information: List[Tuple[int, int, Any]]</em><span class="sig-paren">)</span> &#x2192; Dict[str, Tuple[str, str]]<a class="headerlink" href="#openml.extensions.Extension.compile_additional_information" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compiles additional information provided by the extension during the runs into a final
+set of files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>task</strong><span class="classifier">OpenMLTask</span></dt><dd><p>The task the model was run on.</p>
+</dd>
+<dt><strong>additional_information: List[Tuple[int, int, Any]]</strong></dt><dd><p>A list of (fold, repetition, additional information) tuples obtained during training.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>files</strong><span class="classifier">Dict[str, Tuple[str, str]]</span></dt><dd><p>A dictionary of files with their file name and contents.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="openml.extensions.Extension.create_setup_string">
 <em class="property">abstract </em><code class="sig-name descname">create_setup_string</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#openml.extensions.Extension.create_setup_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a string which can be used to reinstantiate the given model.</p>
@@ -332,7 +355,7 @@ If None, use the model specified in <code class="docutils literal notranslate"><
     </p>
     <p>
         &copy; Copyright 2014-2019, the OpenML-Python team..<br/>
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.0.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.<br/>
     </p>
   </div>
 </footer>

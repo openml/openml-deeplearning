@@ -46,6 +46,8 @@ Extensions
    keras.KerasExtension
    pytorch.PytorchExtension
    onnx.OnnxExtension
+   mxnet.MXNetExtension
+   mxnet.Config
 
 .. currentmodule:: openml.extensions
 
@@ -56,7 +58,6 @@ Extensions
     get_extension_by_flow
     get_extension_by_model
     register_extension
-
 
 Modules
 -------

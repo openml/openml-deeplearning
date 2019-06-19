@@ -1,0 +1,6 @@
+:mod:`openml.extensions.mxnet`.Config
+============================================
+
+.. currentmodule:: openml.extensions.mxnet
+
+.. autoclass:: Config

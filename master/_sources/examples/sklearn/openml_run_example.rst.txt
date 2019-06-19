@@ -91,7 +91,7 @@ Run the scikit-learn model on the task (requires an API key).
 
  .. code-block:: none
 
-    URL for run: https://test.openml.org/api/v1/xml/run/10507
+    URL for run: https://test.openml.org/api/v1/xml/run/26310
 
 
 

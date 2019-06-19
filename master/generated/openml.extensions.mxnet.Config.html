@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>openml.extensions.mxnet.Config &#8212; OpenML 0.8.0 documentation</title>
+    <link rel="stylesheet" href="../_static/bootstrap-sphinx.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/codehighlightstyle.css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.11.0.min.js "></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-3.3.7/js/bootstrap.min.js "></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js "></script>
+
+  </head><body>
+  
+  <a href="https://github.com/openml/openml-python"
+     class="visible-desktop hidden-xs"><img
+    id="gh-banner"
+    style="position: absolute; top: 50px; right: 0; border: 0;"
+    src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"
+    alt="Fork me on GitHub"></a>
+  <script>
+    // Adjust banner height.
+    $(function () {
+      var navHeight = $(".navbar .container").css("height");
+      $("#gh-banner").css("top", navHeight);
+    });
+  </script>
+
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          OpenML</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.8.0</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../index.html">Start</a></li>
+                <li><a href="../usage.html">User Guide</a></li>
+                <li><a href="../api.html">API</a></li>
+                <li><a href="../examples/index.html">Examples</a></li>
+                <li><a href="../contributing.html">Contributing</a></li>
+                <li><a href="../progress.html">Changelog</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"></ul>
+</li>
+              
+            
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+      <div class="col-md-3">
+        <div id="sidebar" class="bs-sidenav" role="complementary"><ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">openml.extensions.mxnet</span></code>.Config</a></li>
+</ul>
+
+        </div>
+      </div>
+    <div class="body col-md-9 content" role="main">
+      
+  <div class="section" id="openml-extensions-mxnet-config">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">openml.extensions.mxnet</span></code>.Config<a class="headerlink" href="#openml-extensions-mxnet-config" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="openml.extensions.mxnet.Config">
+<em class="property">class </em><code class="sig-prename descclassname">openml.extensions.mxnet.</code><code class="sig-name descname">Config</code><a class="headerlink" href="#openml.extensions.mxnet.Config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents the configuration of the OpenML MXNet Extension</p>
+<dl class="attribute">
+<dt id="openml.extensions.mxnet.Config.batch_size">
+<code class="sig-name descname">batch_size</code><em class="property"> = None</em><a class="headerlink" href="#openml.extensions.mxnet.Config.batch_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>batch_size represents the processing batch size for training</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.criterion_gen">
+<code class="sig-name descname">criterion_gen</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; mxnet.gluon.loss.Loss<a class="headerlink" href="#openml.extensions.mxnet.Config.criterion_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>loss_gen returns the loss criterion based on the task type</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="openml.extensions.mxnet.Config.epoch_count">
+<code class="sig-name descname">epoch_count</code><em class="property"> = None</em><a class="headerlink" href="#openml.extensions.mxnet.Config.epoch_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>epoch_count represents the number of epochs the model should be trained for</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.initializer_gen">
+<code class="sig-name descname">initializer_gen</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; 'Optional[mxnet.init.Initializer]'<a class="headerlink" href="#openml.extensions.mxnet.Config.initializer_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>initializer_gen returns the initializer to be used for a given OpenML task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.metric_gen">
+<code class="sig-name descname">metric_gen</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; mxnet.metric.EvalMetric<a class="headerlink" href="#openml.extensions.mxnet.Config.metric_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>metric_gen returns the metric to be used for the given task</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.optimizer_gen">
+<code class="sig-name descname">optimizer_gen</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">lr_scheduler: mxnet.lr_scheduler.LRScheduler</em>, <em class="sig-param">task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; mxnet.optimizer.Optimizer<a class="headerlink" href="#openml.extensions.mxnet.Config.optimizer_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>optimizer_gen returns the optimizer to be used for a given OpenMLTask</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">self, output: Union[mxnet.ndarray.NDArray, mxnet.symbol.Symbol], task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; 'backend_type'<a class="headerlink" href="#openml.extensions.mxnet.Config.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>predict turns the outputs of the model into actual predictions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.predict_proba">
+<code class="sig-name descname">predict_proba</code><span class="sig-paren">(</span><em class="sig-param">self, output: Union[mxnet.ndarray.NDArray, mxnet.symbol.Symbol]</em><span class="sig-paren">)</span> &#x2192; Union[mxnet.ndarray.NDArray, mxnet.symbol.Symbol]<a class="headerlink" href="#openml.extensions.mxnet.Config.predict_proba" title="Permalink to this definition">¶</a></dt>
+<dd><p>predict_proba turns the outputs of the model into probabilities for each class</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.progress_callback">
+<code class="sig-name descname">progress_callback</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">fold: int</em>, <em class="sig-param">rep: int</em>, <em class="sig-param">epoch: int</em>, <em class="sig-param">step: int</em>, <em class="sig-param">loss: mxnet.ndarray.NDArray</em>, <em class="sig-param">metric: mxnet.metric.EvalMetric</em><span class="sig-paren">)</span><a class="headerlink" href="#openml.extensions.mxnet.Config.progress_callback" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>progress_callback is called when a training step is finished, in order to report</dt><dd><p>the current progress</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.sanitize">
+<code class="sig-name descname">sanitize</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">output: mxnet.ndarray.NDArray</em><span class="sig-paren">)</span> &#x2192; mxnet.ndarray.NDArray<a class="headerlink" href="#openml.extensions.mxnet.Config.sanitize" title="Permalink to this definition">¶</a></dt>
+<dd><p>sanitize sanitizes the input data in order to ensure that models can be trained safely</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openml.extensions.mxnet.Config.scheduler_gen">
+<code class="sig-name descname">scheduler_gen</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">task: openml.tasks.task.OpenMLTask</em><span class="sig-paren">)</span> &#x2192; mxnet.lr_scheduler.LRScheduler<a class="headerlink" href="#openml.extensions.mxnet.Config.scheduler_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>scheduler_gen returns the scheduler to be used for a given task</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2014-2019, the OpenML-Python team..<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+:mod:`openml.extensions.mxnet`.MXNetExtension
+====================================================
+
+.. currentmodule:: openml.extensions.mxnet
+
+.. autoclass:: MXNetExtension

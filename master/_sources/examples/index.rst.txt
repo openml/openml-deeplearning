@@ -171,9 +171,9 @@ OpenML experiment examples using Keras sequential and functional networks.
 
 .. only:: html
 
-    .. figure:: /examples/keras/images/thumb/sphx_glr_sequential_model_thumb.png
+    .. figure:: /examples/keras/images/thumb/sphx_glr_keras_sequential_classification_model_thumb.png
 
-        :ref:`sphx_glr_examples_keras_sequential_model.py`
+        :ref:`sphx_glr_examples_keras_keras_sequential_classification_model.py`
 
 .. raw:: html
 
@@ -183,7 +183,7 @@ OpenML experiment examples using Keras sequential and functional networks.
 .. toctree::
    :hidden:
 
-   /examples/keras/sequential_model
+   /examples/keras/keras_sequential_classification_model
 
 .. raw:: html
 
@@ -191,9 +191,9 @@ OpenML experiment examples using Keras sequential and functional networks.
 
 .. only:: html
 
-    .. figure:: /examples/keras/images/thumb/sphx_glr_regression_thumb.png
+    .. figure:: /examples/keras/images/thumb/sphx_glr_keras_sequential_regression_model_thumb.png
 
-        :ref:`sphx_glr_examples_keras_regression.py`
+        :ref:`sphx_glr_examples_keras_keras_sequential_regression_model.py`
 
 .. raw:: html
 
@@ -203,7 +203,7 @@ OpenML experiment examples using Keras sequential and functional networks.
 .. toctree::
    :hidden:
 
-   /examples/keras/regression
+   /examples/keras/keras_sequential_regression_model
 
 .. raw:: html
 
@@ -211,9 +211,9 @@ OpenML experiment examples using Keras sequential and functional networks.
 
 .. only:: html
 
-    .. figure:: /examples/keras/images/thumb/sphx_glr_functional_model_thumb.png
+    .. figure:: /examples/keras/images/thumb/sphx_glr_keras_functional_classification_model_thumb.png
 
-        :ref:`sphx_glr_examples_keras_functional_model.py`
+        :ref:`sphx_glr_examples_keras_keras_functional_classification_model.py`
 
 .. raw:: html
 
@@ -223,7 +223,81 @@ OpenML experiment examples using Keras sequential and functional networks.
 .. toctree::
    :hidden:
 
-   /examples/keras/functional_model
+   /examples/keras/keras_functional_classification_model
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+
+
+.. _sphx_glr_examples_mxnet:
+
+MXNet Examples
+===================
+
+OpenML experiment examples using MXNet hybrid sequential networks.
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a sequential network that does a binary classification on the credit-g dataset.">
+
+.. only:: html
+
+    .. figure:: /examples/mxnet/images/thumb/sphx_glr_mxnet_sequential_classification_model_thumb.png
+
+        :ref:`sphx_glr_examples_mxnet_mxnet_sequential_classification_model.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/mxnet/mxnet_sequential_classification_model
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of a sequential network that solves a regression task used as an OpenML flow.">
+
+.. only:: html
+
+    .. figure:: /examples/mxnet/images/thumb/sphx_glr_mxnet_sequential_regression_model_thumb.png
+
+        :ref:`sphx_glr_examples_mxnet_mxnet_sequential_regression_model.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/mxnet/mxnet_sequential_regression_model
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="An example of how to configuration hooks can be used to draw the learning curve and the loss in...">
+
+.. only:: html
+
+    .. figure:: /examples/mxnet/images/thumb/sphx_glr_mxnet_mnist_visdom_thumb.png
+
+        :ref:`sphx_glr_examples_mxnet_mxnet_mnist_visdom.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/mxnet/mxnet_mnist_visdom
 .. raw:: html
 
     <div style='clear:both'></div>
@@ -245,9 +319,9 @@ OpenML experiment examples using ONNX models.
 
 .. only:: html
 
-    .. figure:: /examples/onnx/images/thumb/sphx_glr_mxnet_model_thumb.png
+    .. figure:: /examples/onnx/images/thumb/sphx_glr_onnx_mxnet_model_thumb.png
 
-        :ref:`sphx_glr_examples_onnx_mxnet_model.py`
+        :ref:`sphx_glr_examples_onnx_onnx_mxnet_model.py`
 
 .. raw:: html
 
@@ -257,7 +331,7 @@ OpenML experiment examples using ONNX models.
 .. toctree::
    :hidden:
 
-   /examples/onnx/mxnet_model
+   /examples/onnx/onnx_mxnet_model
 .. raw:: html
 
     <div style='clear:both'></div>
@@ -279,9 +353,9 @@ OpenML experiment examples using PyTorch sequential networks.
 
 .. only:: html
 
-    .. figure:: /examples/pytorch/images/thumb/sphx_glr_sequential_regression_model_thumb.png
+    .. figure:: /examples/pytorch/images/thumb/sphx_glr_pytorch_sequential_regression_model_thumb.png
 
-        :ref:`sphx_glr_examples_pytorch_sequential_regression_model.py`
+        :ref:`sphx_glr_examples_pytorch_pytorch_sequential_regression_model.py`
 
 .. raw:: html
 
@@ -291,7 +365,7 @@ OpenML experiment examples using PyTorch sequential networks.
 .. toctree::
    :hidden:
 
-   /examples/pytorch/sequential_regression_model
+   /examples/pytorch/pytorch_sequential_regression_model
 
 .. raw:: html
 
@@ -299,9 +373,9 @@ OpenML experiment examples using PyTorch sequential networks.
 
 .. only:: html
 
-    .. figure:: /examples/pytorch/images/thumb/sphx_glr_sequential_classification_model_thumb.png
+    .. figure:: /examples/pytorch/images/thumb/sphx_glr_pytorch_sequential_classification_model_thumb.png
 
-        :ref:`sphx_glr_examples_pytorch_sequential_classification_model.py`
+        :ref:`sphx_glr_examples_pytorch_pytorch_sequential_classification_model.py`
 
 .. raw:: html
 
@@ -311,7 +385,7 @@ OpenML experiment examples using PyTorch sequential networks.
 .. toctree::
    :hidden:
 
-   /examples/pytorch/sequential_classification_model
+   /examples/pytorch/pytorch_sequential_classification_model
 
 .. raw:: html
 
@@ -319,9 +393,9 @@ OpenML experiment examples using PyTorch sequential networks.
 
 .. only:: html
 
-    .. figure:: /examples/pytorch/images/thumb/sphx_glr_visdom_visualization_thumb.png
+    .. figure:: /examples/pytorch/images/thumb/sphx_glr_pytorch_mnist_visdom_thumb.png
 
-        :ref:`sphx_glr_examples_pytorch_visdom_visualization.py`
+        :ref:`sphx_glr_examples_pytorch_pytorch_mnist_visdom.py`
 
 .. raw:: html
 
@@ -331,7 +405,7 @@ OpenML experiment examples using PyTorch sequential networks.
 .. toctree::
    :hidden:
 
-   /examples/pytorch/visdom_visualization
+   /examples/pytorch/pytorch_mnist_visdom
 .. raw:: html
 
     <div style='clear:both'></div>
