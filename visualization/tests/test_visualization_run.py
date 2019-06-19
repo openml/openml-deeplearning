@@ -15,7 +15,8 @@ from visualization.constants import (
     EMPTY_SELECTION,
     ERROR_KEY,
     EMPTY_LOADED,
-    RUN_ID_KEY
+    RUN_ID_KEY,
+    LOSS_KEY
 )
 
 from visualization.visualizer import (
@@ -40,7 +41,7 @@ from visualization.tests.utils import (
 )
 
 
-LOSS_KEY = 'loss'
+DATA_KEY = 'data'
 
 
 class TestVisualizationRun(VisualizationTestBase):
@@ -401,10 +402,10 @@ class TestVisualizationRun(VisualizationTestBase):
         self.assertEqual(loaded, LOSS_KEY)
         self.assertIsNotNone(figure)
         self.assertIsInstance(figure, dict)
-        self.assertTrue('data' in figure.keys())
+        self.assertTrue(DATA_KEY in figure.keys())
         self.assertTrue('layout' in figure.keys())
-        self.assertEqual(len(figure['data']), 1)
-        self.assertEqual(figure['data'][0]['x'], self.loss_data['loss'][0]['x'])
-        self.assertEqual(figure['data'][0]['y'], self.loss_data['loss'][0]['y'])
-        self.assertEqual(figure['data'][0]['name'], self.loss_data['loss'][0]['name'])
-        self.assertEqual(figure['data'][0]['mode'], 'lines')
+        self.assertEqual(len(figure[DATA_KEY]), 1)
+        self.assertEqual(figure[DATA_KEY][0]['x'], self.loss_data[LOSS_KEY][0]['x'])
+        self.assertEqual(figure[DATA_KEY][0]['y'], self.loss_data[LOSS_KEY][0]['y'])
+        self.assertEqual(figure[DATA_KEY][0]['name'], self.loss_data[LOSS_KEY][0]['name'])
+        self.assertEqual(figure[DATA_KEY][0]['mode'], 'lines')

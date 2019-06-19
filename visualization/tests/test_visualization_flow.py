@@ -1,7 +1,6 @@
 import os
 import json
 from google.protobuf import json_format
-import dash_html_components as html
 
 from visualization.tests.base import (
     VisualizationTestBase,
@@ -16,7 +15,8 @@ from visualization.constants import (
     EMPTY_LOADED,
     FLOW_ID_KEY,
     STATIC_PATH,
-    ONNX_MODEL_KEY
+    ONNX_MODEL_KEY,
+    EMPTY_TEXT
 )
 
 from visualization.visualizer import (
@@ -185,12 +185,12 @@ class TestVisualizationFlow(VisualizationTestBase):
         # There is no flow data, so error message should be empty string
         no_data_result = update_flow_error_text(self.none_data)
         result = deserialize_text_result(no_data_result)
-        self.assertEqual(result, '')
+        self.assertEqual(result, EMPTY_TEXT)
 
         # Flow data is empty, so error text should be empty string
         empty_data_result = update_flow_error_text(self.empty_data)
         result = deserialize_text_result(empty_data_result)
-        self.assertEqual(result, '')
+        self.assertEqual(result, EMPTY_TEXT)
 
         # Flow data has error, so the text should be equal to the error message in the data
         error_data_result = update_flow_error_text(self.error_data)

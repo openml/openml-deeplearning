@@ -33,8 +33,13 @@ from visualization.utils import (
 
 from visualization.constants import (
     STATIC_PATH,
-    ONNX_MODEL_PATH
+    ONNX_MODEL_PATH,
+    EMPTY_TEXT,
+    MSE_KEY,
+    MAE_KEY
 )
+
+DATA_KEY = 'data'
 
 
 class TestVisualizationUtils(VisualizationTestBase):
@@ -123,11 +128,11 @@ class TestVisualizationUtils(VisualizationTestBase):
     def test_get_error_text(self):
         # There is no data, so error message should be empty string
         no_data_result = get_error_text(self.none_data)
-        self.assertEqual(no_data_result, '')
+        self.assertEqual(no_data_result, EMPTY_TEXT)
 
         # Data is empty, so error text should be empty string
         empty_data_result = get_error_text(self.empty_data)
-        self.assertEqual(empty_data_result, '')
+        self.assertEqual(empty_data_result, EMPTY_TEXT)
 
         # Data has error, so the text should be equal to the error message in the data
         error_data_result = get_error_text(self.error_data)
@@ -209,28 +214,28 @@ class TestVisualizationUtils(VisualizationTestBase):
                          self.display_hidden)
 
     def test_create_figure(self):
-        figure = create_figure(self.non_empty_graph_data, 'data')
+        figure = create_figure(self.non_empty_graph_data, DATA_KEY)
 
         # Assert the figure is a dictionary, containing data and layout of the correct types
         self.assertIsInstance(figure, dict)
-        self.assertIsInstance(figure['data'], go.Scatter)
-        self.assertEqual(figure['data'], self.non_empty_graph_data)
+        self.assertIsInstance(figure[DATA_KEY], go.Scatter)
+        self.assertEqual(figure[DATA_KEY], self.non_empty_graph_data)
         self.assertIsNotNone(figure['layout'])
         self.assertIsInstance(figure['layout'], go.Layout)
 
     def test_extract_run_graph_data(self):
         data = {
-            'mse': [
+            MSE_KEY: [
                 {'x': [1], 'y': [1], 'name': 'Name1'},
                 {'x': [2], 'y': [2], 'name': 'Name2'}
             ],
-            'mae': [
+            MAE_KEY: [
                 {'x': [3], 'y': [3], 'name': 'Name3'}
             ]
         }
 
-        mean_square_error_data = extract_run_graph_data(data, 'mse')
-        mean_absolute_error_data = extract_run_graph_data(data, 'mae')
+        mean_square_error_data = extract_run_graph_data(data, MSE_KEY)
+        mean_absolute_error_data = extract_run_graph_data(data, MAE_KEY)
 
         # Assert the resulted values are lists
         self.assertIsInstance(mean_square_error_data, list)

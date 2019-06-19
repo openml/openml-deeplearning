@@ -16,6 +16,12 @@ DISPLAY_VISIBLE = ''
 EMPTY_TEXT = ''
 EMPTY_LOADED = ''
 EMPTY_SELECTION = ''
+ACCURACY_KEY = 'accuracy'
+MSE_KEY = 'mse'
+MAE_KEY = 'mae'
+RMSE_KEY = 'rmse'
+LOSS_KEY = 'loss'
+DISPLAY_KEY = 'display'
 
 LOADING_TEXT_FORMAT = 'Loading{}...'
 LOADING_TEXT_GENERAL = LOADING_TEXT_FORMAT.format('')
