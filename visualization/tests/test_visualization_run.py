@@ -2,8 +2,6 @@ import json
 
 from visualization.tests.base import (
     VisualizationTestBase,
-    MEAN_SQUARE_ERROR,
-    MEAN_ABSOLUTE_ERROR,
     ERROR_MESSAGE,
     DISPLAY_KEY
 )
@@ -16,7 +14,9 @@ from visualization.constants import (
     ERROR_KEY,
     EMPTY_LOADED,
     RUN_ID_KEY,
-    LOSS_KEY
+    LOSS_KEY,
+    MEAN_SQUARE_ERROR_KEY,
+    MEAN_ABSOLUTE_ERROR_KEY
 )
 
 from visualization.visualizer import (
@@ -92,7 +92,7 @@ class TestVisualizationRun(VisualizationTestBase):
     def test_update_run_graph_text(self):
         # There is no data, so the text should be empty
         none_data_same_metric_and_loaded_result = \
-            update_run_graph_text(MEAN_SQUARE_ERROR, MEAN_SQUARE_ERROR, self.none_data)
+            update_run_graph_text(MEAN_SQUARE_ERROR_KEY, MEAN_SQUARE_ERROR_KEY, self.none_data)
         result = deserialize_text_result(none_data_same_metric_and_loaded_result)
         self.assertEqual(result, '')
 
@@ -103,16 +103,16 @@ class TestVisualizationRun(VisualizationTestBase):
 
         # Metric has changed so new figure is being loaded and the loading text should be displayed
         data_metric_different_from_loaded_result = \
-            update_run_graph_text(MEAN_SQUARE_ERROR, MEAN_ABSOLUTE_ERROR, self.simple_data)
+            update_run_graph_text(MEAN_SQUARE_ERROR_KEY, MEAN_ABSOLUTE_ERROR_KEY, self.simple_data)
         result = deserialize_text_result(data_metric_different_from_loaded_result)
         self.assertEqual(result, LOADING_TEXT_RUN_INFO)
 
         # The run is loaded so the text for a loaded run should be displayed
         data_metric_same_as_loaded_result = \
-            update_run_graph_text(MEAN_SQUARE_ERROR, MEAN_SQUARE_ERROR, self.simple_data)
+            update_run_graph_text(MEAN_SQUARE_ERROR_KEY, MEAN_SQUARE_ERROR_KEY, self.simple_data)
         result = deserialize_text_result(data_metric_same_as_loaded_result)
         self.assertEqual(
-            result, RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[MEAN_SQUARE_ERROR], self.run_id))
+            result, RUN_GRAPH_TEXT_TEMPLATE.format(METRIC_TO_LABEL[MEAN_SQUARE_ERROR_KEY], self.run_id))
 
     def test_init_run_loading(self):
         # The function is used to pass data along, so the result should be same as input params

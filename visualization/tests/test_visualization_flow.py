@@ -4,8 +4,7 @@ from google.protobuf import json_format
 
 from visualization.tests.base import (
     VisualizationTestBase,
-    ERROR_MESSAGE,
-    DISPLAY_KEY
+    ERROR_MESSAGE
 )
 
 from visualization.constants import (
@@ -16,7 +15,8 @@ from visualization.constants import (
     FLOW_ID_KEY,
     STATIC_PATH,
     ONNX_MODEL_KEY,
-    EMPTY_TEXT
+    EMPTY_TEXT,
+    DISPLAY_KEY
 )
 
 from visualization.visualizer import (

@@ -1,12 +1,15 @@
+import os
 import onnx
 import unittest
 import plotly.graph_objs as go
 
-ERROR_KEY = 'error'
+from visualization.constants import (
+    STATIC_PATH,
+    DISPLAY_KEY,
+    ERROR_KEY
+)
+
 ERROR_MESSAGE = 'message'
-DISPLAY_KEY = 'display'
-MEAN_SQUARE_ERROR = 'mse'
-MEAN_ABSOLUTE_ERROR = 'mae'
 
 
 class VisualizationTestBase(unittest.TestCase):
@@ -34,3 +37,7 @@ class VisualizationTestBase(unittest.TestCase):
         self.hidden_style = {DISPLAY_KEY: 'none'}
 
         self.onnx_model = onnx.ModelProto()
+
+        # Create the static folder if id does not exist
+        if not os.path.exists(STATIC_PATH):
+            os.mkdir(STATIC_PATH)
