@@ -52,7 +52,12 @@ from visualization.constants import (
     EMPTY_LOADED,
     EMPTY_SELECTION,
     STATIC_PATH,
-    FLOW_ID_KEY
+    FLOW_ID_KEY,
+    ACCURACY_KEY,
+    MSE_KEY,
+    MAE_KEY,
+    RMSE_KEY,
+    LOSS_KEY
 )
 
 # Use the external Dash stylesheet
@@ -216,14 +221,22 @@ def load_run(run_id):
                                       'regression.'}), \
             [ERROR_KEY], [], EMPTY_SELECTION
 
-    metrics = ['loss']
-    # TODO: Extract options from data instead
+    # Obtain column names of the data to decide which metrics can be visualized
+    df_columns = list(df.columns.values)
+
+    metrics = [LOSS_KEY]
+
+    # Add metrics present in the data to the list of metrics
     if isinstance(task, OpenMLClassificationTask):
-        metrics.append('accuracy')
+        if ACCURACY_KEY in df_columns:
+            metrics.append(ACCURACY_KEY)
     if isinstance(task, OpenMLRegressionTask):
-        metrics.append('mse')  # mean square error
-        metrics.append('mae')  # mean absolute error
-        metrics.append('rmse')  # root mean square error
+        if MSE_KEY in df_columns:
+            metrics.append(MSE_KEY)  # mean square error
+        if MAE_KEY in df_columns:
+            metrics.append(MAE_KEY)  # mean absolute error
+        if RMSE_KEY in df_columns:
+            metrics.append(RMSE_KEY)  # root mean square error
 
     folds = df['foldn'].max() + 1
     repn = df['repn'].max() + 1
@@ -289,7 +302,7 @@ def load_run(run_id):
             'name': 'Mean'
         })
 
-    return json.dumps(data), [], dropdown_options, 'loss'
+    return json.dumps(data), [], dropdown_options, LOSS_KEY
 
 
 @app.callback(Output('info-run-error-text', 'children'),
@@ -382,7 +395,7 @@ def load_flow(flow_id):
     try:
         flow = openml.flows.get_flow(flow_id, reinstantiate=True)
     except (OpenMLServerException, ValueError) as e:
-        return json.dumps({ERROR_KEY: 'There was an error retrieving the flow - {}.'.format(e)}), \
+        return json.dumps({ERROR_KEY: 'There was an error retrieving the flow.'.format(e)}), \
             [ERROR_KEY]
 
     if not isinstance(flow.model, (keras.models.Model, onnx.ModelProto, torch.nn.Module,

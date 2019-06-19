@@ -29,8 +29,12 @@ from visualization.constants import (
     DISPLAY_VISIBLE,
     EMPTY_TEXT,
     STATIC_PATH,
-    ONNX_MODEL_PATH
+    ONNX_MODEL_PATH,
+    DISPLAY_KEY
 )
+
+# Disable warnings for http requests
+urllib3.disable_warnings()
 
 
 def has_error_or_is_loading(n_clicks, data_json, nr_loads):
@@ -43,14 +47,14 @@ def has_error_or_is_loading(n_clicks, data_json, nr_loads):
 
 
 def get_info_text_styles(loading_values, error_values):
-    load_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
-    error_style = {'display': DISPLAY_NONE, 'text-align': 'center'}
+    load_style = {DISPLAY_KEY: DISPLAY_NONE, 'text-align': 'center'}
+    error_style = {DISPLAY_KEY: DISPLAY_NONE, 'text-align': 'center'}
 
     if len(loading_values) != 0:
-        load_style['display'] = DISPLAY_VISIBLE
+        load_style[DISPLAY_KEY] = DISPLAY_VISIBLE
 
     if len(error_values) != 0:
-        error_style['display'] = DISPLAY_VISIBLE
+        error_style[DISPLAY_KEY] = DISPLAY_VISIBLE
 
     return load_style, error_style
 
@@ -79,9 +83,9 @@ def get_error_text(data_json):
 
 def get_visibility_style(n_clicks, data_json, nr_loads, curr_style):
     if has_error_or_is_loading(n_clicks, data_json, nr_loads):
-        curr_style['display'] = DISPLAY_NONE
+        curr_style[DISPLAY_KEY] = DISPLAY_NONE
     else:
-        curr_style['display'] = DISPLAY_VISIBLE
+        curr_style[DISPLAY_KEY] = DISPLAY_VISIBLE
 
     return curr_style
 

@@ -8,6 +8,9 @@ STYLE_KEY = 'style'
 VALUES_KEY = 'values'
 RESPONSE_KEY = 'response'
 PROPS_KEY = 'props'
+OPTIONS_KEY = 'options'
+VALUE_KEY = 'value'
+FIGURE_KEY = 'figure'
 
 
 # Mock Sklearn model
@@ -97,12 +100,12 @@ def deserialize_load_run_result(result_json):
             dropdown_dict = value
 
     return data_dict[CHILDREN_KEY], error_check_dict[VALUES_KEY], \
-        dropdown_dict['options'], dropdown_dict['value']
+        dropdown_dict[OPTIONS_KEY], dropdown_dict[VALUE_KEY]
 
 
 def deserialize_update_run_graph_result(result_json):
     return _deserialize_two_outputs_result(
-        result_json, 'graph', 'figure', 'loaded', CHILDREN_KEY)
+        result_json, 'graph', FIGURE_KEY, 'loaded', CHILDREN_KEY)
 
 
 def get_mxnet_model():
