@@ -115,8 +115,10 @@ def extract_run_graph_data(run_data, key):
     return data
 
 
-# TODO: Unit tests
 def get_training_data(url, run_id):
+    if '.csv' not in url:
+        return None
+
     # Create a request to the url
     http = urllib3.PoolManager()
     request = http.request('GET', url, preload_content=False)
@@ -144,7 +146,6 @@ def get_training_data(url, run_id):
     return df
 
 
-# TODO: Unit tests
 def get_onnx_model(model):
     if isinstance(model, keras.models.Model):
         # Create a session to avoid problems with names
@@ -230,7 +231,6 @@ def get_onnx_model(model):
     return onnx_model
 
 
-# TODO: Unit test
 def simplyfy_pydot_graph(pydot_graph):
     for k, v in pydot_graph.obj_dict['nodes'].items():
         if "(op" in k:
@@ -249,7 +249,6 @@ def simplyfy_pydot_graph(pydot_graph):
     return pydot_graph
 
 
-# TODO: Unit test
 def add_lists_element_wise(lst1, lst2):
     first = lst1.copy()
     second = lst2.copy()
