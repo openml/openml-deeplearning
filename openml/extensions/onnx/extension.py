@@ -244,7 +244,7 @@ class OnnxExtension(Extension):
     def _serialize_onnx(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
 
-        Serializes the ONNX protobuf to a python dictionary and creates OpenMLFlow
+        Serializes the ONNX protobuf to a Python dictionary and creates OpenMLFlow
 
         Parameters
         ----------
@@ -459,7 +459,7 @@ class OnnxExtension(Extension):
         Parameters
         ----------
         dependencies : str
-                       a string representing the required dependencies
+            a string representing the required dependencies
 
         Returns
         -------
@@ -515,42 +515,6 @@ class OnnxExtension(Extension):
         str
         """
         return '%s==%s' % (model_package_name, model_package_version_number)
-
-    def _can_measure_cputime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a single core (if so, openml-python can measure cpu-times)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-
-        return False
-
-    def _can_measure_wallclocktime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a preset number of cores (if so, openml-python can measure wall-clock time)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-
-        return False
 
     ################################################################################################
     # Methods for performing runs with extension modules
@@ -699,16 +663,9 @@ class OnnxExtension(Extension):
         if X_test is not None:
             X_test[np.isnan(X_test)] = sanitize_value
 
-        # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_mx)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_mx)
-
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
         try:
-            # for measuring runtime. Only available since Python 3.3
-            modelfit_start_cputime = time.process_time()
-            modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
                 # Obtain loss function from configuration
@@ -735,23 +692,12 @@ class OnnxExtension(Extension):
                         loss.backward()
                         trainer.step(input.shape[0])
 
-            modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
-            if can_measure_cputime:
-                user_defined_measures['usercpu_time_millis_training'] = modelfit_dur_cputime
-
-            modelfit_dur_walltime = (time.time() - modelfit_start_walltime) * 1000
-            if can_measure_wallclocktime:
-                user_defined_measures['wall_clock_time_millis_training'] = modelfit_dur_walltime
-
         except AttributeError as e:
             # typically happens when training a regressor on classification task
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
             model_classes = mx.nd.argmax(nd.array(y_train), axis=-1)
-
-        modelpredict_start_cputime = time.process_time()
-        modelpredict_start_walltime = time.time()
 
         # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
@@ -764,18 +710,6 @@ class OnnxExtension(Extension):
                 pred_y = pred_y.reshape((-1))
         else:
             raise ValueError(task)
-
-        if can_measure_cputime:
-            modelpredict_duration_cputime = (time.process_time()
-                                             - modelpredict_start_cputime) * 1000
-            user_defined_measures['usercpu_time_millis_testing'] = modelpredict_duration_cputime
-            user_defined_measures['usercpu_time_millis'] = (modelfit_dur_cputime
-                                                            + modelpredict_duration_cputime)
-        if can_measure_wallclocktime:
-            modelpredict_duration_walltime = (time.time() - modelpredict_start_walltime) * 1000
-            user_defined_measures['wall_clock_time_millis_testing'] = modelpredict_duration_walltime
-            user_defined_measures['wall_clock_time_millis'] = (modelfit_dur_walltime
-                                                               + modelpredict_duration_walltime)
 
         if isinstance(task, OpenMLClassificationTask):
 
@@ -887,7 +821,7 @@ class OnnxExtension(Extension):
             trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
-        optimization model.
+        optimization model (UNUSED)
 
         Parameters
         ----------
