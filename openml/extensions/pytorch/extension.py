@@ -55,14 +55,14 @@ SIMPLE_TYPES = tuple([bool, int, float, str] + SIMPLE_NUMPY_TYPES)
 
 
 class PytorchExtension(Extension):
-    """Connect pytorch to OpenML-Python."""
+    """Connect Pytorch to OpenML-Python."""
 
     ################################################################################################
     # General setup
 
     @classmethod
     def can_handle_flow(cls, flow: 'OpenMLFlow') -> bool:
-        """Check whether a given describes a pytorch estimator.
+        """Check whether a given describes a Pytorch estimator.
 
         This is done by parsing the ``external_version`` field.
 
@@ -95,7 +95,7 @@ class PytorchExtension(Extension):
     # Methods for flow serialization and de-serialization
 
     def flow_to_model(self, flow: 'OpenMLFlow', initialize_with_defaults: bool = False) -> Any:
-        """Initializes a pytorch model based on a flow.
+        """Initializes a Pytorch model based on a flow.
 
         Parameters
         ----------
@@ -120,7 +120,7 @@ class PytorchExtension(Extension):
         initialize_with_defaults: bool = False,
         recursion_depth: int = 0,
     ) -> Any:
-        """Recursive function to deserialize a pytorch flow.
+        """Recursive function to deserialize a Pytorch flow.
 
         This function delegates all work to the respective functions to deserialize special data
         structures etc.
@@ -248,7 +248,7 @@ class PytorchExtension(Extension):
         return rval
 
     def model_to_flow(self, model: Any) -> 'OpenMLFlow':
-        """Transform a pytorch model to a flow for uploading it to OpenML.
+        """Transform a Pytorch model to a flow for uploading it to OpenML.
 
         Parameters
         ----------
@@ -264,12 +264,10 @@ class PytorchExtension(Extension):
     def _serialize_pytorch(self, o: Any, parent_model: Optional[Any] = None) -> Any:
         rval = None  # type: Any
 
-        # TODO: assert that only on first recursion lvl `parent_model` can be None
         if self.is_estimator(o):
             # is the main model or a submodel
             rval = self._serialize_model(o)
         elif isinstance(o, (list, tuple)):
-            # TODO: explain what type of parameter is here
             rval = [self._serialize_pytorch(element, parent_model) for element in o]
             if isinstance(o, tuple):
                 rval = tuple(rval)
@@ -279,7 +277,6 @@ class PytorchExtension(Extension):
             # base parameter values
             rval = o
         elif isinstance(o, dict):
-            # TODO: explain what type of parameter is here
             if not isinstance(o, OrderedDict):
                 o = OrderedDict([(key, value) for key, value in sorted(o.items())])
 
@@ -294,13 +291,11 @@ class PytorchExtension(Extension):
                 rval[key] = value
             rval = rval
         elif isinstance(o, type):
-            # TODO: explain what type of parameter is here
             rval = self._serialize_type(o)
         # This only works for user-defined functions (and not even partial).
         # I think this is exactly what we want here as there shouldn't be any
         # built-in or functool.partials in a pipeline
         elif inspect.isfunction(o):
-            # TODO: explain what type of parameter is here
             rval = self._serialize_function(o)
         elif inspect.ismethoddescriptor(o):
             rval = self._serialize_methoddescriptor(o)
@@ -345,7 +340,6 @@ class PytorchExtension(Extension):
         str
         """
         run_environment = " ".join(self.get_version_information())
-        # fixme str(model) might contain (...)
         return run_environment + " " + str(model)
 
     @classmethod
@@ -414,7 +408,6 @@ class PytorchExtension(Extension):
                           tags=['openml-python', 'pytorch',
                                 'python', torch_version_formatted],
                           language='English',
-                          # TODO fill in dependencies!
                           dependencies=dependencies)
 
         return flow
@@ -919,42 +912,6 @@ class PytorchExtension(Extension):
         else:
             raise ValueError('Param_grid should either be a dict or list of dicts')
 
-    def _can_measure_cputime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a single core (if so, openml-python can measure cpu-times)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-
-        return False
-
-    def _can_measure_wallclocktime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a preset number of cores (if so, openml-python can measure wall-clock time)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            True
-        """
-
-        return True
-
     ################################################################################################
     # Methods for performing runs with extension modules
 
@@ -1097,10 +1054,6 @@ class PytorchExtension(Extension):
         if torch.cuda.is_available():
             model_copy = model_copy.cuda()
 
-        # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_copy)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
-
         from .config import \
             criterion_gen, \
             optimizer_gen, scheduler_gen, \
@@ -1112,9 +1065,6 @@ class PytorchExtension(Extension):
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
         try:
-            # for measuring runtime. Only available since Python 3.3
-            modelfit_start_cputime = time.process_time()
-            modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
                 model_copy.train()
@@ -1166,14 +1116,6 @@ class PytorchExtension(Extension):
                         progress_callback(fold_no, rep_no, epoch, batch_idx,
                                           loss_opt.item(), accuracy)
 
-            modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
-            if can_measure_cputime:
-                user_defined_measures['usercpu_time_millis_training'] = modelfit_dur_cputime
-
-            modelfit_dur_walltime = (time.time() - modelfit_start_walltime) * 1000
-            if can_measure_wallclocktime:
-                user_defined_measures['wall_clock_time_millis_training'] = modelfit_dur_walltime
-
         except AttributeError as e:
             # typically happens when training a regressor on classification task
             raise PyOpenMLError(str(e))
@@ -1181,11 +1123,7 @@ class PytorchExtension(Extension):
         if isinstance(task, OpenMLClassificationTask):
             model_classes = np.amax(y_train)
 
-        modelpredict_start_cputime = time.process_time()
-        modelpredict_start_walltime = time.time()
-
-        # In supervised learning this returns the predictions for Y, in clustering
-        # it returns the clusters
+        # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
             model_copy.eval()
 
@@ -1199,18 +1137,6 @@ class PytorchExtension(Extension):
             pred_y = pred_y.cpu().detach().numpy()
         else:
             raise ValueError(task)
-
-        if can_measure_cputime:
-            modelpredict_duration_cputime = (time.process_time()
-                                             - modelpredict_start_cputime) * 1000
-            user_defined_measures['usercpu_time_millis_testing'] = modelpredict_duration_cputime
-            user_defined_measures['usercpu_time_millis'] = (modelfit_dur_cputime
-                                                            + modelpredict_duration_cputime)
-        if can_measure_wallclocktime:
-            modelpredict_duration_walltime = (time.time() - modelpredict_start_walltime) * 1000
-            user_defined_measures['wall_clock_time_millis_testing'] = modelpredict_duration_walltime
-            user_defined_measures['wall_clock_time_millis'] = (modelfit_dur_walltime
-                                                               + modelpredict_duration_walltime)
 
         if isinstance(task, OpenMLClassificationTask):
 
@@ -1467,7 +1393,7 @@ class PytorchExtension(Extension):
         trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
-        optimization model.
+        optimization model (UNUSED)
 
         Parameters
         ----------
