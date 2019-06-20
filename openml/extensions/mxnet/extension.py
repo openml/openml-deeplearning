@@ -5,7 +5,6 @@ import importlib
 import json
 import re
 import sys
-import time
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import zlib
@@ -27,13 +26,6 @@ from openml.tasks import (
     OpenMLClassificationTask,
     OpenMLRegressionTask,
 )
-
-
-if sys.version_info >= (3, 5):
-    from json.decoder import JSONDecodeError
-else:
-    JSONDecodeError = ValueError
-
 
 DEPENDENCIES_PATTERN = re.compile(
     r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'
@@ -351,15 +343,9 @@ class MXNetExtension(Extension):
         'OrderedDict[str, OpenMLFlow]',
         Set,
     ]:
-        # This function contains four "global" states and is quite long and
-        # complicated. If it gets to complicated to ensure it's correctness,
-        # it would be best to make it a class with the four "global" states being
-        # the class attributes and the if/elif/else in the for-loop calls to
-        # separate class methods
-
-        # stores all entities that should become subcomponents
+        # Stores all entities that should become subcomponents (UNUSED)
         sub_components = OrderedDict()  # type: OrderedDict[str, OpenMLFlow]
-        # stores the keys of all subcomponents that should become
+        # Stores the keys of all subcomponents that should become (UNUSED)
         sub_components_explicit = set()  # type: Set
         parameters = OrderedDict()  # type: OrderedDict[str, Optional[str]]
         parameters_meta_info = OrderedDict()  # type: OrderedDict[str, Optional[Dict]]
@@ -428,40 +414,6 @@ class MXNetExtension(Extension):
     ) -> str:
         return '%s==%s' % (model_package_name, model_package_version_number)
 
-    def _can_measure_cputime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a single core (if so, openml-python can measure cpu-times)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-        return False
-
-    def _can_measure_wallclocktime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a preset number of cores (if so, openml-python can measure wall-clock time)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            True
-        """
-        return True
-
     ################################################################################################
     # Methods for performing runs with extension modules
 
@@ -514,13 +466,7 @@ class MXNetExtension(Extension):
         fold_no: int,
         y_train: Optional[np.ndarray] = None,
         X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
-    ) -> Tuple[
-        np.ndarray,
-        np.ndarray,
-        'OrderedDict[str, float]',
-        Optional[OpenMLRunTrace],
-        Optional[Any]
-    ]:
+    ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional[OpenMLRunTrace]]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction
         information.
 
@@ -553,17 +499,14 @@ class MXNetExtension(Extension):
 
         Returns
         -------
-        predictions : np.ndarray
-            Model predictions.
-        probabilities :  Optional, np.ndarray
-            Predicted probabilities (only applicable for supervised classification tasks).
+
+        pred_y : np.ndarray
+
+        proba_y :np.ndarray
+
         user_defined_measures : OrderedDict[str, float]
-            User defined measures that were generated on this fold
-        trace : Optional, OpenMLRunTrace
-            Hyperparameter optimization trace (only applicable for supervised tasks with
-            hyperparameter optimization).
-        additional_information: Optional, Any
-            Additional information provided by the extension to be converted into additional files.
+
+        trace : Optional[OpenMLRunTrace]
         """
 
         def _prediction_to_probabilities(y: np.ndarray, classes: List[Any]) -> np.ndarray:
@@ -606,18 +549,9 @@ class MXNetExtension(Extension):
         if initializer is not None:
             model_copy.collect_params().initialize(initializer)
 
-        # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_copy)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
-
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
-        reported_metrics = None
-
         try:
-            # for measuring runtime. Only available since Python 3.3
-            modelfit_start_cputime = time.process_time()
-            modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
                 X_train_mxnet = mxnet.nd.array(X_train)
@@ -636,8 +570,6 @@ class MXNetExtension(Extension):
 
                 iteration_metric = active.metric_gen(task)
 
-                reported_metrics = []
-
                 for epoch in range(active.epoch_count):
                     iteration_metric.reset()
 
@@ -652,27 +584,12 @@ class MXNetExtension(Extension):
 
                         active.progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
 
-                        reported_metrics.append(
-                            (epoch, i, loss.mean().asscalar(), iteration_metric.get())
-                        )
-
-            modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
-            if can_measure_cputime:
-                user_defined_measures['usercpu_time_millis_training'] = modelfit_dur_cputime
-
-            modelfit_dur_walltime = (time.time() - modelfit_start_walltime) * 1000
-            if can_measure_wallclocktime:
-                user_defined_measures['wall_clock_time_millis_training'] = modelfit_dur_walltime
-
         except AttributeError as e:
             # typically happens when training a regressor on classification task
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
             model_classes = np.amax(y_train)
-
-        modelpredict_start_cputime = time.process_time()
-        modelpredict_start_walltime = time.time()
 
         # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
@@ -684,18 +601,6 @@ class MXNetExtension(Extension):
             pred_y = pred_y.asnumpy()
         else:
             raise ValueError(task)
-
-        if can_measure_cputime:
-            modelpredict_duration_cputime = (time.process_time()
-                                             - modelpredict_start_cputime) * 1000
-            user_defined_measures['usercpu_time_millis_testing'] = modelpredict_duration_cputime
-            user_defined_measures['usercpu_time_millis'] = (modelfit_dur_cputime
-                                                            + modelpredict_duration_cputime)
-        if can_measure_wallclocktime:
-            modelpredict_duration_walltime = (time.time() - modelpredict_start_walltime) * 1000
-            user_defined_measures['wall_clock_time_millis_testing'] = modelpredict_duration_walltime
-            user_defined_measures['wall_clock_time_millis'] = (modelfit_dur_walltime
-                                                               + modelpredict_duration_walltime)
 
         if isinstance(task, OpenMLClassificationTask):
 
@@ -744,61 +649,9 @@ class MXNetExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        return pred_y, proba_y, user_defined_measures, None, reported_metrics
+        trace = None
 
-    def compile_additional_information(
-            self,
-            task: 'OpenMLTask',
-            additional_information: List[Tuple[int, int, Any]]
-    ) -> Dict[str, Tuple[str, str]]:
-        """Compiles additional information provided by the extension during the runs into a final
-        set of files.
-
-        Parameters
-        ----------
-        task : OpenMLTask
-            The task the model was run on.
-        additional_information: List[Tuple[int, int, Any]]
-            A list of (fold, repetition, additional information) tuples obtained during training.
-
-        Returns
-        -------
-        files : Dict[str, Tuple[str, str]]
-            A dictionary of files with their file name and contents.
-        """
-
-        from io import StringIO
-        import csv
-        from .config import active
-
-        (metric_names, _) = active.metric_gen(task).get()
-
-        with StringIO() as training_data_str:
-            fieldnames = ['foldn', 'repn', 'epoch', 'iter', 'loss'] + metric_names
-            training_data = \
-                csv.DictWriter(training_data_str,
-                               fieldnames=fieldnames)
-
-            training_data.writeheader()
-
-            for (fold_no, rep_no, addinfo) in additional_information:
-                for (epoch_no, iteration_no, loss, metrics) in addinfo:
-                    iteration = {
-                        'foldn': fold_no,
-                        'repn': rep_no,
-                        'epoch': epoch_no,
-                        'iter': iteration_no,
-                        'loss': loss,
-                    }
-
-                    for (metric_name, metric_value) in zip(*metrics):
-                        iteration[metric_name] = metric_value
-
-                    training_data.writerow(iteration)
-
-            return {
-                'training': ('training.csv', training_data_str.getvalue()),
-            }
+        return pred_y, proba_y, user_defined_measures, trace
 
     def obtain_parameter_values(
         self,
@@ -900,7 +753,7 @@ class MXNetExtension(Extension):
         trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
-        optimization model.
+        optimization model (UNUSED)
 
         Parameters
         ----------
