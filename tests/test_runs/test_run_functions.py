@@ -1040,7 +1040,7 @@ class TestRun(TestBase):
             task=task,
             add_local_measures=True,
         )
-        arff_datacontent, trace, fold_evaluations, _ = res
+        arff_datacontent, trace, _, fold_evaluations, _ = res
         # predictions
         self.assertIsInstance(arff_datacontent, list)
         # trace. SGD does not produce any
@@ -1238,7 +1238,7 @@ class TestRun(TestBase):
         model = Pipeline(steps=[('Imputer', Imputer(strategy='median')),
                                 ('Estimator', DecisionTreeClassifier())])
 
-        data_content, _, _, _ = _run_task_get_arffcontent(
+        data_content, _, _, _, _ = _run_task_get_arffcontent(
             flow=flow,
             model=model,
             task=task,

@@ -1299,7 +1299,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
             X_test=X_test,
         )
 
-        y_hat, y_hat_proba, user_defined_measures, trace = res
+        y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
         # predictions
         self.assertIsInstance(y_hat, np.ndarray)
@@ -1357,7 +1357,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
             X_test=X_test,
         )
 
-        y_hat, y_hat_proba, user_defined_measures, trace = res
+        y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
         # predictions
         self.assertIsInstance(y_hat, np.ndarray)
@@ -1419,7 +1419,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
                 ('estimator', HardNaiveBayes())
             ])
 
-            pred_1, proba_1, _, _ = self.extension._run_model_on_fold(
+            pred_1, proba_1, _, _, _ = self.extension._run_model_on_fold(
                 model=clf1,
                 task=task,
                 X_train=X_train,
@@ -1428,7 +1428,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
                 fold_no=0,
                 rep_no=0,
             )
-            pred_2, proba_2, _, _ = self.extension._run_model_on_fold(
+            pred_2, proba_2, _, _, _ = self.extension._run_model_on_fold(
                 model=clf2,
                 task=task,
                 X_train=X_train,
@@ -1482,7 +1482,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
             X_test=X_test,
         )
 
-        y_hat, y_hat_proba, user_defined_measures, trace = res
+        y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
         # predictions
         self.assertIsInstance(y_hat, np.ndarray)
@@ -1525,7 +1525,7 @@ class TestSklearnExtensionRunFunctions(TestBase):
             X_train=X,
         )
 
-        y_hat, y_hat_proba, user_defined_measures, trace = res
+        y_hat, y_hat_proba, user_defined_measures, trace, addinfo = res
 
         # predictions
         self.assertIsInstance(y_hat, np.ndarray)

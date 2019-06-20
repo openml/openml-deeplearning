@@ -514,7 +514,13 @@ class MXNetExtension(Extension):
         fold_no: int,
         y_train: Optional[np.ndarray] = None,
         X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional[OpenMLRunTrace]]:
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        'OrderedDict[str, float]',
+        Optional[OpenMLRunTrace],
+        Optional[Any]
+    ]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction
         information.
 
@@ -547,14 +553,17 @@ class MXNetExtension(Extension):
 
         Returns
         -------
-
-        pred_y : np.ndarray
-
-        proba_y :np.ndarray
-
+        predictions : np.ndarray
+            Model predictions.
+        probabilities :  Optional, np.ndarray
+            Predicted probabilities (only applicable for supervised classification tasks).
         user_defined_measures : OrderedDict[str, float]
-
-        trace : Optional[OpenMLRunTrace]
+            User defined measures that were generated on this fold
+        trace : Optional, OpenMLRunTrace
+            Hyperparameter optimization trace (only applicable for supervised tasks with
+            hyperparameter optimization).
+        additional_information: Optional, Any
+            Additional information provided by the extension to be converted into additional files.
         """
 
         def _prediction_to_probabilities(y: np.ndarray, classes: List[Any]) -> np.ndarray:
@@ -603,6 +612,8 @@ class MXNetExtension(Extension):
 
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
+        reported_metrics = None
+
         try:
             # for measuring runtime. Only available since Python 3.3
             modelfit_start_cputime = time.process_time()
@@ -625,6 +636,8 @@ class MXNetExtension(Extension):
 
                 iteration_metric = active.metric_gen(task)
 
+                reported_metrics = []
+
                 for epoch in range(active.epoch_count):
                     iteration_metric.reset()
 
@@ -638,6 +651,10 @@ class MXNetExtension(Extension):
                         trainer.step(active.batch_size)
 
                         active.progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
+
+                        reported_metrics.append(
+                            (epoch, i, loss.mean().asscalar(), iteration_metric.get())
+                        )
 
             modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
             if can_measure_cputime:
@@ -727,9 +744,61 @@ class MXNetExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        trace = None
+        return pred_y, proba_y, user_defined_measures, None, reported_metrics
 
-        return pred_y, proba_y, user_defined_measures, trace
+    def compile_additional_information(
+            self,
+            task: 'OpenMLTask',
+            additional_information: List[Tuple[int, int, Any]]
+    ) -> Dict[str, Tuple[str, str]]:
+        """Compiles additional information provided by the extension during the runs into a final
+        set of files.
+
+        Parameters
+        ----------
+        task : OpenMLTask
+            The task the model was run on.
+        additional_information: List[Tuple[int, int, Any]]
+            A list of (fold, repetition, additional information) tuples obtained during training.
+
+        Returns
+        -------
+        files : Dict[str, Tuple[str, str]]
+            A dictionary of files with their file name and contents.
+        """
+
+        from io import StringIO
+        import csv
+        from .config import active
+
+        (metric_names, _) = active.metric_gen(task).get()
+
+        with StringIO() as training_data_str:
+            fieldnames = ['foldn', 'repn', 'epoch', 'iter', 'loss'] + metric_names
+            training_data = \
+                csv.DictWriter(training_data_str,
+                               fieldnames=fieldnames)
+
+            training_data.writeheader()
+
+            for (fold_no, rep_no, addinfo) in additional_information:
+                for (epoch_no, iteration_no, loss, metrics) in addinfo:
+                    iteration = {
+                        'foldn': fold_no,
+                        'repn': rep_no,
+                        'epoch': epoch_no,
+                        'iter': iteration_no,
+                        'loss': loss,
+                    }
+
+                    for (metric_name, metric_value) in zip(*metrics):
+                        iteration[metric_name] = metric_value
+
+                    training_data.writerow(iteration)
+
+            return {
+                'training': ('training.csv', training_data_str.getvalue()),
+            }
 
     def obtain_parameter_values(
         self,

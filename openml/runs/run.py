@@ -41,7 +41,7 @@ class OpenMLRun(object):
                  sample_evaluations=None, data_content=None, trace=None,
                  model=None, task_type=None, task_evaluation_measure=None,
                  flow_name=None, parameter_settings=None, predictions_url=None,
-                 task=None, flow=None, run_id=None):
+                 task=None, flow=None, run_id=None, additional_information=None):
         self.uploader = uploader
         self.uploader_name = uploader_name
         self.task_id = task_id
@@ -66,6 +66,7 @@ class OpenMLRun(object):
         self.model = model
         self.tags = tags
         self.predictions_url = predictions_url
+        self.additional_information = additional_information
 
     def __str__(self):
         flow_name = self.flow_name
@@ -451,6 +452,10 @@ class OpenMLRun(object):
         if self.trace is not None:
             trace_arff = arff.dumps(self.trace.trace_to_arff())
             file_elements['trace'] = ("trace.arff", trace_arff)
+
+        if self.additional_information is not None:
+            for (name, (file, contents)) in self.additional_information.items():
+                file_elements[name] = (file, contents)
 
         return_value = openml._api_calls._perform_api_call(
             "/run/", 'post', file_elements=file_elements

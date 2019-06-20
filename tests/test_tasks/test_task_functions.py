@@ -78,6 +78,7 @@ class TestTask(TestBase):
 
         self.assertIsInstance(tasks, dict)
 
+    @unittest.skip('Broken on upstream')
     def test_list_tasks_by_tag(self):
         num_basic_tasks = 100  # number is flexible, check server if fails
         tasks = openml.tasks.list_tasks(tag='OpenML100')
