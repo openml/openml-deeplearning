@@ -1,19 +1,19 @@
-from collections import OrderedDict  # noqa: F401
 import copy
-from distutils.version import LooseVersion
 import importlib
 import json
 import re
 import sys
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import zlib
+from collections import OrderedDict  # noqa: F401
+from distutils.version import LooseVersion
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+import mxnet
+import mxnet.autograd
 import numpy as np
 import pandas as pd
 import scipy.sparse
-import mxnet
-import mxnet.autograd
 
 import openml
 from openml.exceptions import PyOpenMLError
@@ -31,7 +31,6 @@ DEPENDENCIES_PATTERN = re.compile(
     r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'
     r'(?P<version>(\d+\.)?(\d+\.)?(\d+)?(dev)?[0-9]*))?$'
 )
-
 
 SIMPLE_NUMPY_TYPES = [nptype for type_cat, nptypes in np.sctypes.items()
                       for nptype in nptypes if type_cat != 'others']
@@ -191,10 +190,8 @@ class MXNetExtension(Extension):
 
     @classmethod
     def _is_mxnet_flow(cls, flow: OpenMLFlow) -> bool:
-        return (
-            flow.external_version.startswith('mxnet==')
-            or ',mxnet==' in flow.external_version
-        )
+        return (flow.external_version.startswith('mxnet==')
+                or ',mxnet==' in flow.external_version)
 
     def _serialize_model(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
@@ -257,9 +254,9 @@ class MXNetExtension(Extension):
         return flow
 
     def _get_external_version_string(
-        self,
-        model: Any,
-        sub_components: Dict[str, OpenMLFlow],
+            self,
+            model: Any,
+            sub_components: Dict[str, OpenMLFlow],
     ) -> str:
         # Create external version string for a flow, given the model and the
         # already parsed dictionary of sub_components. Retrieves the external
@@ -335,8 +332,8 @@ class MXNetExtension(Extension):
         )
 
     def _extract_information_from_model(
-        self,
-        model: Any,
+            self,
+            model: Any,
     ) -> Tuple[
         'OrderedDict[str, Optional[str]]',
         'OrderedDict[str, Optional[Dict]]',
@@ -360,9 +357,9 @@ class MXNetExtension(Extension):
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
 
     def _deserialize_model(
-        self,
-        flow: OpenMLFlow,
-        keep_defaults: bool,
+            self,
+            flow: OpenMLFlow,
+            keep_defaults: bool,
     ) -> Any:
         self._check_dependencies(flow.dependencies)
 
@@ -408,9 +405,9 @@ class MXNetExtension(Extension):
                                  '%s not satisfied.' % dependency_string)
 
     def _format_external_version(
-        self,
-        model_package_name: str,
-        model_package_version_number: str,
+            self,
+            model_package_name: str,
+            model_package_version_number: str,
     ) -> str:
         return '%s==%s' % (model_package_name, model_package_version_number)
 
@@ -458,15 +455,21 @@ class MXNetExtension(Extension):
         return model
 
     def _run_model_on_fold(
-        self,
-        model: Any,
-        task: 'OpenMLTask',
-        X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
-        rep_no: int,
-        fold_no: int,
-        y_train: Optional[np.ndarray] = None,
-        X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, 'OrderedDict[str, float]', Optional[OpenMLRunTrace]]:
+            self,
+            model: Any,
+            task: 'OpenMLTask',
+            X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
+            rep_no: int,
+            fold_no: int,
+            y_train: Optional[np.ndarray] = None,
+            X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        'OrderedDict[str, float]',
+        Optional[OpenMLRunTrace],
+        Optional[Any]
+    ]:
         """Run a model on a repeat,fold,subsample triplet of the task and return prediction
         information.
 
@@ -551,6 +554,8 @@ class MXNetExtension(Extension):
 
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
+        reported_metrics = None
+
         try:
 
             if isinstance(task, OpenMLSupervisedTask):
@@ -570,6 +575,8 @@ class MXNetExtension(Extension):
 
                 iteration_metric = active.metric_gen(task)
 
+                reported_metrics = []
+
                 for epoch in range(active.epoch_count):
                     iteration_metric.reset()
 
@@ -583,6 +590,10 @@ class MXNetExtension(Extension):
                         trainer.step(active.batch_size)
 
                         active.progress_callback(fold_no, rep_no, epoch, i, loss, iteration_metric)
+
+                        reported_metrics.append(
+                            (epoch, i, loss.mean().asscalar(), iteration_metric.get())
+                        )
 
         except AttributeError as e:
             # typically happens when training a regressor on classification task
@@ -649,14 +660,64 @@ class MXNetExtension(Extension):
         else:
             raise TypeError(type(task))
 
-        trace = None
+        return pred_y, proba_y, user_defined_measures, None, reported_metrics
 
-        return pred_y, proba_y, user_defined_measures, trace
+    def compile_additional_information(
+            self,
+            task: 'OpenMLTask',
+            additional_information: List[Tuple[int, int, Any]]
+    ) -> Dict[str, Tuple[str, str]]:
+        """Compiles additional information provided by the extension during the runs into a final
+        set of files.
+        Parameters
+        ----------
+        task : OpenMLTask
+            The task the model was run on.
+        additional_information: List[Tuple[int, int, Any]]
+            A list of (fold, repetition, additional information) tuples obtained during training.
+        Returns
+        -------
+        files : Dict[str, Tuple[str, str]]
+            A dictionary of files with their file name and contents.
+        """
+
+        from io import StringIO
+        import csv
+        from .config import active
+
+        (metric_names, _) = active.metric_gen(task).get()
+
+        with StringIO() as training_data_str:
+            fieldnames = ['foldn', 'repn', 'epoch', 'iter', 'loss'] + metric_names
+            training_data = \
+                csv.DictWriter(training_data_str,
+                               fieldnames=fieldnames)
+
+            training_data.writeheader()
+
+            for (fold_no, rep_no, addinfo) in additional_information:
+                for (epoch_no, iteration_no, loss, metrics) in addinfo:
+                    iteration = {
+                        'foldn': fold_no,
+                        'repn': rep_no,
+                        'epoch': epoch_no,
+                        'iter': iteration_no,
+                        'loss': loss,
+                    }
+
+                    for (metric_name, metric_value) in zip(*metrics):
+                        iteration[metric_name] = metric_value
+
+                    training_data.writerow(iteration)
+
+            return {
+                'training': ('training.csv', training_data_str.getvalue()),
+            }
 
     def obtain_parameter_values(
-        self,
-        flow: 'OpenMLFlow',
-        model: Any = None,
+            self,
+            flow: 'OpenMLFlow',
+            model: Any = None,
     ) -> List[Dict[str, Any]]:
         """Extracts all parameter settings required for the flow from the model.
 
@@ -748,9 +809,9 @@ class MXNetExtension(Extension):
     # Methods for hyperparameter optimization
 
     def instantiate_model_from_hpo_class(
-        self,
-        model: Any,
-        trace_iteration: OpenMLTraceIteration,
+            self,
+            model: Any,
+            trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
         optimization model (UNUSED)
