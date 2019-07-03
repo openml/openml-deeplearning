@@ -114,11 +114,11 @@
 <dl class="class">
 <dt id="openml.extensions.pytorch.PytorchExtension">
 <em class="property">class </em><code class="sig-prename descclassname">openml.extensions.pytorch.</code><code class="sig-name descname">PytorchExtension</code><a class="headerlink" href="#openml.extensions.pytorch.PytorchExtension" title="Permalink to this definition">¶</a></dt>
-<dd><p>Connect pytorch to OpenML-Python.</p>
+<dd><p>Connect Pytorch to OpenML-Python.</p>
 <dl class="method">
 <dt id="openml.extensions.pytorch.PytorchExtension.can_handle_flow">
 <em class="property">classmethod </em><code class="sig-name descname">can_handle_flow</code><span class="sig-paren">(</span><em class="sig-param">flow: 'OpenMLFlow'</em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#openml.extensions.pytorch.PytorchExtension.can_handle_flow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check whether a given describes a pytorch estimator.</p>
+<dd><p>Check whether a given describes a Pytorch estimator.</p>
 <p>This is done by parsing the <code class="docutils literal notranslate"><span class="pre">external_version</span></code> field.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -196,7 +196,7 @@ set of files.</p>
 <dl class="method">
 <dt id="openml.extensions.pytorch.PytorchExtension.flow_to_model">
 <code class="sig-name descname">flow_to_model</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">flow: 'OpenMLFlow'</em>, <em class="sig-param">initialize_with_defaults: bool = False</em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#openml.extensions.pytorch.PytorchExtension.flow_to_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initializes a pytorch model based on a flow.</p>
+<dd><p>Initializes a Pytorch model based on a flow.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -234,7 +234,7 @@ ignored and a flow with its defaults is returned.</p>
 <dt id="openml.extensions.pytorch.PytorchExtension.instantiate_model_from_hpo_class">
 <code class="sig-name descname">instantiate_model_from_hpo_class</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em>, <em class="sig-param">trace_iteration: openml.runs.trace.OpenMLTraceIteration</em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#openml.extensions.pytorch.PytorchExtension.instantiate_model_from_hpo_class" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instantiate a <code class="docutils literal notranslate"><span class="pre">base_estimator</span></code> which can be searched over by the hyperparameter
-optimization model.</p>
+optimization model (UNUSED)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -275,7 +275,7 @@ near future.</p>
 <dl class="method">
 <dt id="openml.extensions.pytorch.PytorchExtension.model_to_flow">
 <code class="sig-name descname">model_to_flow</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em><span class="sig-paren">)</span> &#x2192; 'OpenMLFlow'<a class="headerlink" href="#openml.extensions.pytorch.PytorchExtension.model_to_flow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform a pytorch model to a flow for uploading it to OpenML.</p>
+<dd><p>Transform a Pytorch model to a flow for uploading it to OpenML.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">

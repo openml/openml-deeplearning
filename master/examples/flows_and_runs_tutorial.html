@@ -167,6 +167,12 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Categorical features: [True, False, True, True, False, True, True, False, True, True, False, True, False, True, True, False, True, False, True, True]
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/preprocessing/_encoders.py:363: FutureWarning: The handling of integer data will change in version 0.22. Currently, the categories are determined based on the range [0, max(values)], while in the future they will be determined based on the unique values.
+If you want the future behaviour and silence this warning, you can specify &quot;categories=&#39;auto&#39;&quot;.
+In case you used a LabelEncoder before this OneHotEncoder to convert the categories to integers, then you can now use the OneHotEncoder directly.
+  warnings.warn(msg, FutureWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/preprocessing/_encoders.py:385: DeprecationWarning: The &#39;categorical_features&#39; keyword is deprecated in version 0.20 and will be removed in 0.22. You can use the ColumnTransformer instead.
+  &quot;use the ColumnTransformer instead.&quot;, DeprecationWarning)
 </pre></div>
 </div>
 </div>
@@ -185,6 +191,20 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
 <span class="c1"># pprint(vars(run), depth=2)</span>
 </pre></div>
 </div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I0703 12:38:20.394696 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 0 sample 0.
+I0703 12:38:20.425461 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 1 sample 0.
+I0703 12:38:20.455220 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 2 sample 0.
+I0703 12:38:20.484881 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 3 sample 0.
+I0703 12:38:20.513942 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 4 sample 0.
+I0703 12:38:20.543859 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 5 sample 0.
+I0703 12:38:20.574167 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 6 sample 0.
+I0703 12:38:20.603417 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 7 sample 0.
+I0703 12:38:20.634449 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 8 sample 0.
+I0703 12:38:20.664230 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 9 sample 0.
+I0703 12:38:20.680642 139733218952960 functions.py:255] Executed Task 403 with Flow id:15742
+</pre></div>
+</div>
 <p>Share the run on the OpenML server</p>
 <p>So far the run is only available locally. By calling the publish function,
 the run is sent to the OpenML server:</p>
@@ -195,7 +215,7 @@ the run is sent to the OpenML server:</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Uploaded to http://test.openml.org/r/28833
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Uploaded to http://test.openml.org/r/38650
 </pre></div>
 </div>
 <p>We can now also inspect the flow object which was automatically created:</p>
@@ -212,7 +232,7 @@ the run is sent to the OpenML server:</p>
  &#39;custom_name&#39;: None,
  &#39;dependencies&#39;: &#39;sklearn==0.20.0\nnumpy&gt;=1.6.1\nscipy&gt;=0.9&#39;,
  &#39;description&#39;: &#39;Automatically created scikit-learn flow.&#39;,
- &#39;extension&#39;: &lt;openml.extensions.sklearn.extension.SklearnExtension object at 0x7efd0a9e2978&gt;,
+ &#39;extension&#39;: &lt;openml.extensions.sklearn.extension.SklearnExtension object at 0x7f161cd14470&gt;,
  &#39;external_version&#39;: &#39;openml==0.8.0,sklearn==0.20.0&#39;,
  &#39;flow_id&#39;: 15742,
  &#39;language&#39;: &#39;English&#39;,
@@ -242,7 +262,60 @@ the run is sent to the OpenML server:</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Uploaded to http://test.openml.org/r/28835
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+I0703 12:38:26.815386 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 0 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:26.876530 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 1 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:26.939764 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 2 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.002173 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 3 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.065316 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 4 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.124872 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 5 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.185875 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 6 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.247457 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 7 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.309809 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 8 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.370566 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 115 for repeat 0 fold 9 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:27.421491 139733218952960 functions.py:255] Executed Task 115 on local Flow with name sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier).
+Uploaded to http://test.openml.org/r/38651
 </pre></div>
 </div>
 </div>
@@ -273,6 +346,15 @@ a model on a task without uploading results or flows to the server immediately.<
 <span class="c1"># it does not yet exist on the server.</span>
 </pre></div>
 </div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I0703 12:38:29.884251 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 6 for repeat 0 fold 0 sample 0.
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+  warnings.warn(msg, category=DeprecationWarning)
+/home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/ensemble/forest.py:248: FutureWarning: The default value of n_estimators will change from 10 in version 0.20 to 100 in 0.22.
+  &quot;10 in version 0.20 to 100 in 0.22.&quot;, FutureWarning)
+I0703 12:38:29.914556 139733218952960 functions.py:255] Executed Task 6 on local Flow with name sklearn.pipeline.Pipeline(Imputer=sklearn.preprocessing.imputation.Imputer,OneHotEncoder=sklearn.preprocessing._encoders.OneHotEncoder,Classifier=sklearn.ensemble.forest.RandomForestClassifier).
+</pre></div>
+</div>
 <p>Alternatively, one can also directly run flows.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get a task</span>
 <span class="n">task</span> <span class="o">=</span> <span class="n">openml</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">get_task</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
@@ -286,6 +368,20 @@ a model on a task without uploading results or flows to the server immediately.<
 <span class="n">flow</span> <span class="o">=</span> <span class="n">extension</span><span class="o">.</span><span class="n">model_to_flow</span><span class="p">(</span><span class="n">clf</span><span class="p">)</span>
 
 <span class="n">run</span> <span class="o">=</span> <span class="n">openml</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">run_flow_on_task</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">avoid_duplicate_runs</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I0703 12:38:31.605193 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 0 sample 0.
+I0703 12:38:31.636193 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 1 sample 0.
+I0703 12:38:31.665655 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 2 sample 0.
+I0703 12:38:31.694592 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 3 sample 0.
+I0703 12:38:31.723289 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 4 sample 0.
+I0703 12:38:31.752401 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 5 sample 0.
+I0703 12:38:31.782585 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 6 sample 0.
+I0703 12:38:31.812409 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 7 sample 0.
+I0703 12:38:31.841514 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 8 sample 0.
+I0703 12:38:31.871611 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.tree.tree.ExtraTreeClassifier&#39; on task 403 for repeat 0 fold 9 sample 0.
+I0703 12:38:31.887261 139733218952960 functions.py:255] Executed Task 403 on local Flow with name sklearn.tree.tree.ExtraTreeClassifier.
 </pre></div>
 </div>
 </div>
@@ -318,13 +414,24 @@ task_id:<a class="reference external" href="http://www.openml.org/t/52950">52950
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>kNN on diabetes: http://test.openml.org/r/28838
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I0703 12:38:31.911137 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 0 sample 0.
+I0703 12:38:31.925047 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 1 sample 0.
+I0703 12:38:31.938726 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 2 sample 0.
+I0703 12:38:31.952651 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 3 sample 0.
+I0703 12:38:31.966342 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 4 sample 0.
+I0703 12:38:31.979829 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 5 sample 0.
+I0703 12:38:31.993497 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 6 sample 0.
+I0703 12:38:32.007152 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 7 sample 0.
+I0703 12:38:32.020673 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 8 sample 0.
+I0703 12:38:32.034216 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.neighbors.classification.KNeighborsClassifier&#39; on task 115 for repeat 0 fold 9 sample 0.
+I0703 12:38:32.038969 139733218952960 functions.py:255] Executed Task 115 on local Flow with name sklearn.neighbors.classification.KNeighborsClassifier.
+kNN on diabetes: http://test.openml.org/r/38653
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">openml</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">stop_using_configuration_for_example</span><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  19.207 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  19.249 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-flows-and-runs-tutorial-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/8edd601204234b2c940ab2a10829b046/flows_and_runs_tutorial.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">flows_and_runs_tutorial.py</span></code></a></p>
@@ -333,7 +440,7 @@ task_id:<a class="reference external" href="http://www.openml.org/t/52950">52950
 <p><a class="reference download internal" download="" href="../_downloads/2be64c909346765435f1f333927e3d46/flows_and_runs_tutorial.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">flows_and_runs_tutorial.ipynb</span></code></a></p>
 </div>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
 

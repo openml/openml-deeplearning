@@ -198,6 +198,12 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
 <span class="n">run_original</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">publish</span><span class="p">()</span>  <span class="c1"># this implicitly uploads the flow</span>
 </pre></div>
 </div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>WARNING: Logging before flag parsing goes to stderr.
+I0703 12:38:11.051397 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(simpleimputer=sklearn.impute.SimpleImputer,randomforestclassifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 6 for repeat 0 fold 0 sample 0.
+I0703 12:38:11.076056 139733218952960 functions.py:255] Executed Task 6 on local Flow with name sklearn.pipeline.Pipeline(simpleimputer=sklearn.impute.SimpleImputer,randomforestclassifier=sklearn.ensemble.forest.RandomForestClassifier).
+</pre></div>
+</div>
 </div>
 <div class="section" id="download-the-flow-and-solve-the-same-task-again">
 <h2>2) Download the flow and solve the same task again.<a class="headerlink" href="#download-the-flow-and-solve-the-same-task-again" title="Permalink to this headline">¶</a></h2>
@@ -215,6 +221,139 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
     <span class="n">model_duplicate</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">avoid_duplicate_runs</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I0703 12:38:14.420961 139733218952960 extension.py:148] - flow_to_sklearn START o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561b70&gt;, components=None, init_defaults=False
+I0703 12:38:14.421192 139733218952960 extension.py:661] - deserialize sklearn.pipeline.Pipeline(simpleimputer=sklearn.impute.SimpleImputer,randomforestclassifier=sklearn.ensemble.forest.RandomForestClassifier)
+I0703 12:38:14.421445 139733218952960 extension.py:679] -- flow_parameter=memory, value=null
+I0703 12:38:14.421531 139733218952960 extension.py:148] -- flow_to_sklearn START o=null, components=OrderedDict([(&#39;randomforestclassifier&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;), (&#39;simpleimputer&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a95be438&gt;)]), init_defaults=False
+I0703 12:38:14.421608 139733218952960 extension.py:245] -- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.421661 139733218952960 extension.py:679] -- flow_parameter=steps, value=[{&quot;oml-python:serialized_object&quot;: &quot;component_reference&quot;, &quot;value&quot;: {&quot;key&quot;: &quot;simpleimputer&quot;, &quot;step_name&quot;: &quot;simpleimputer&quot;}}, {&quot;oml-python:serialized_object&quot;: &quot;component_reference&quot;, &quot;value&quot;: {&quot;key&quot;: &quot;randomforestclassifier&quot;, &quot;step_name&quot;: &quot;randomforestclassifier&quot;}}]
+I0703 12:38:14.421717 139733218952960 extension.py:148] -- flow_to_sklearn START o=[{&quot;oml-python:serialized_object&quot;: &quot;component_reference&quot;, &quot;value&quot;: {&quot;key&quot;: &quot;simpleimputer&quot;, &quot;step_name&quot;: &quot;simpleimputer&quot;}}, {&quot;oml-python:serialized_object&quot;: &quot;component_reference&quot;, &quot;value&quot;: {&quot;key&quot;: &quot;randomforestclassifier&quot;, &quot;step_name&quot;: &quot;randomforestclassifier&quot;}}], components=OrderedDict([(&#39;randomforestclassifier&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;), (&#39;simpleimputer&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a95be438&gt;)]), init_defaults=False
+I0703 12:38:14.421792 139733218952960 extension.py:148] --- flow_to_sklearn START o={&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;simpleimputer&#39;, &#39;step_name&#39;: &#39;simpleimputer&#39;}}, components=OrderedDict([(&#39;randomforestclassifier&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;), (&#39;simpleimputer&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a95be438&gt;)]), init_defaults=False
+I0703 12:38:14.421852 139733218952960 extension.py:148] ---- flow_to_sklearn START o={&#39;key&#39;: &#39;simpleimputer&#39;, &#39;step_name&#39;: &#39;simpleimputer&#39;}, components=None, init_defaults=False
+I0703 12:38:14.421909 139733218952960 extension.py:148] ----- flow_to_sklearn START o=key, components=None, init_defaults=False
+I0703 12:38:14.421977 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=key, rval=key
+I0703 12:38:14.422029 139733218952960 extension.py:148] ----- flow_to_sklearn START o=simpleimputer, components=None, init_defaults=False
+I0703 12:38:14.422087 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=simpleimputer, rval=simpleimputer
+I0703 12:38:14.422138 139733218952960 extension.py:148] ----- flow_to_sklearn START o=step_name, components=None, init_defaults=False
+I0703 12:38:14.422194 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=step_name, rval=step_name
+I0703 12:38:14.422243 139733218952960 extension.py:148] ----- flow_to_sklearn START o=simpleimputer, components=None, init_defaults=False
+I0703 12:38:14.422298 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=simpleimputer, rval=simpleimputer
+I0703 12:38:14.422360 139733218952960 extension.py:245] ---- flow_to_sklearn END   o={&#39;key&#39;: &#39;simpleimputer&#39;, &#39;step_name&#39;: &#39;simpleimputer&#39;}, rval=OrderedDict([(&#39;key&#39;, &#39;simpleimputer&#39;), (&#39;step_name&#39;, &#39;simpleimputer&#39;)])
+I0703 12:38:14.422411 139733218952960 extension.py:148] ---- flow_to_sklearn START o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a95be438&gt;, components=None, init_defaults=False
+I0703 12:38:14.422462 139733218952960 extension.py:661] ---- deserialize sklearn.impute.SimpleImputer
+I0703 12:38:14.422618 139733218952960 extension.py:679] ----- flow_parameter=copy, value=true
+I0703 12:38:14.422678 139733218952960 extension.py:148] ----- flow_to_sklearn START o=true, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.422735 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=True, rval=True
+I0703 12:38:14.422784 139733218952960 extension.py:679] ----- flow_parameter=fill_value, value=null
+I0703 12:38:14.422835 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.422888 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.422936 139733218952960 extension.py:679] ----- flow_parameter=missing_values, value=NaN
+I0703 12:38:14.422983 139733218952960 extension.py:148] ----- flow_to_sklearn START o=NaN, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.423038 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=nan, rval=nan
+I0703 12:38:14.423085 139733218952960 extension.py:679] ----- flow_parameter=strategy, value=&quot;median&quot;
+I0703 12:38:14.423132 139733218952960 extension.py:148] ----- flow_to_sklearn START o=&quot;median&quot;, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.423183 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=median, rval=median
+I0703 12:38:14.423230 139733218952960 extension.py:679] ----- flow_parameter=verbose, value=0
+I0703 12:38:14.423275 139733218952960 extension.py:148] ----- flow_to_sklearn START o=0, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.423334 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=0, rval=0
+I0703 12:38:14.423608 139733218952960 extension.py:245] ---- flow_to_sklearn END   o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a95be438&gt;, rval=SimpleImputer(copy=True, fill_value=None, missing_values=nan,
+       strategy=&#39;median&#39;, verbose=0)
+I0703 12:38:14.423797 139733218952960 extension.py:245] --- flow_to_sklearn END   o={&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;simpleimputer&#39;, &#39;step_name&#39;: &#39;simpleimputer&#39;}}, rval=(&#39;simpleimputer&#39;, SimpleImputer(copy=True, fill_value=None, missing_values=nan,
+       strategy=&#39;median&#39;, verbose=0))
+I0703 12:38:14.423890 139733218952960 extension.py:148] --- flow_to_sklearn START o={&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;randomforestclassifier&#39;, &#39;step_name&#39;: &#39;randomforestclassifier&#39;}}, components=OrderedDict([(&#39;randomforestclassifier&#39;, &lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;)]), init_defaults=False
+I0703 12:38:14.423947 139733218952960 extension.py:148] ---- flow_to_sklearn START o={&#39;key&#39;: &#39;randomforestclassifier&#39;, &#39;step_name&#39;: &#39;randomforestclassifier&#39;}, components=None, init_defaults=False
+I0703 12:38:14.424001 139733218952960 extension.py:148] ----- flow_to_sklearn START o=key, components=None, init_defaults=False
+I0703 12:38:14.424066 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=key, rval=key
+I0703 12:38:14.424116 139733218952960 extension.py:148] ----- flow_to_sklearn START o=randomforestclassifier, components=None, init_defaults=False
+I0703 12:38:14.424173 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=randomforestclassifier, rval=randomforestclassifier
+I0703 12:38:14.424223 139733218952960 extension.py:148] ----- flow_to_sklearn START o=step_name, components=None, init_defaults=False
+I0703 12:38:14.424278 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=step_name, rval=step_name
+I0703 12:38:14.424336 139733218952960 extension.py:148] ----- flow_to_sklearn START o=randomforestclassifier, components=None, init_defaults=False
+I0703 12:38:14.424392 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=randomforestclassifier, rval=randomforestclassifier
+I0703 12:38:14.424447 139733218952960 extension.py:245] ---- flow_to_sklearn END   o={&#39;key&#39;: &#39;randomforestclassifier&#39;, &#39;step_name&#39;: &#39;randomforestclassifier&#39;}, rval=OrderedDict([(&#39;key&#39;, &#39;randomforestclassifier&#39;), (&#39;step_name&#39;, &#39;randomforestclassifier&#39;)])
+I0703 12:38:14.424499 139733218952960 extension.py:148] ---- flow_to_sklearn START o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;, components=None, init_defaults=False
+I0703 12:38:14.424549 139733218952960 extension.py:661] ---- deserialize sklearn.ensemble.forest.RandomForestClassifier
+I0703 12:38:14.424736 139733218952960 extension.py:679] ----- flow_parameter=bootstrap, value=true
+I0703 12:38:14.424801 139733218952960 extension.py:148] ----- flow_to_sklearn START o=true, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.424862 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=True, rval=True
+I0703 12:38:14.424912 139733218952960 extension.py:679] ----- flow_parameter=class_weight, value=null
+I0703 12:38:14.424960 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425013 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.425060 139733218952960 extension.py:679] ----- flow_parameter=criterion, value=&quot;entropy&quot;
+I0703 12:38:14.425107 139733218952960 extension.py:148] ----- flow_to_sklearn START o=&quot;entropy&quot;, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425159 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=entropy, rval=entropy
+I0703 12:38:14.425206 139733218952960 extension.py:679] ----- flow_parameter=max_depth, value=null
+I0703 12:38:14.425253 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425304 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.425383 139733218952960 extension.py:679] ----- flow_parameter=max_features, value=0.2
+I0703 12:38:14.425459 139733218952960 extension.py:148] ----- flow_to_sklearn START o=0.2, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425521 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=0.2, rval=0.2
+I0703 12:38:14.425576 139733218952960 extension.py:679] ----- flow_parameter=max_leaf_nodes, value=null
+I0703 12:38:14.425623 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425675 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.425723 139733218952960 extension.py:679] ----- flow_parameter=min_impurity_decrease, value=0.0
+I0703 12:38:14.425770 139733218952960 extension.py:148] ----- flow_to_sklearn START o=0.0, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425824 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=0.0, rval=0.0
+I0703 12:38:14.425872 139733218952960 extension.py:679] ----- flow_parameter=min_impurity_split, value=null
+I0703 12:38:14.425919 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.425971 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.426017 139733218952960 extension.py:679] ----- flow_parameter=min_samples_leaf, value=1
+I0703 12:38:14.426064 139733218952960 extension.py:148] ----- flow_to_sklearn START o=1, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426115 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=1, rval=1
+I0703 12:38:14.426163 139733218952960 extension.py:679] ----- flow_parameter=min_samples_split, value=2
+I0703 12:38:14.426215 139733218952960 extension.py:148] ----- flow_to_sklearn START o=2, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426266 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=2, rval=2
+I0703 12:38:14.426323 139733218952960 extension.py:679] ----- flow_parameter=min_weight_fraction_leaf, value=0.0
+I0703 12:38:14.426374 139733218952960 extension.py:148] ----- flow_to_sklearn START o=0.0, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426426 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=0.0, rval=0.0
+I0703 12:38:14.426479 139733218952960 extension.py:679] ----- flow_parameter=n_estimators, value=16
+I0703 12:38:14.426526 139733218952960 extension.py:148] ----- flow_to_sklearn START o=16, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426577 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=16, rval=16
+I0703 12:38:14.426624 139733218952960 extension.py:679] ----- flow_parameter=n_jobs, value=null
+I0703 12:38:14.426673 139733218952960 extension.py:148] ----- flow_to_sklearn START o=null, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426724 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=None, rval=None
+I0703 12:38:14.426772 139733218952960 extension.py:679] ----- flow_parameter=oob_score, value=false
+I0703 12:38:14.426825 139733218952960 extension.py:148] ----- flow_to_sklearn START o=false, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.426877 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=False, rval=False
+I0703 12:38:14.426924 139733218952960 extension.py:679] ----- flow_parameter=random_state, value=42
+I0703 12:38:14.426971 139733218952960 extension.py:148] ----- flow_to_sklearn START o=42, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.427022 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=42, rval=42
+I0703 12:38:14.427068 139733218952960 extension.py:679] ----- flow_parameter=verbose, value=0
+I0703 12:38:14.427115 139733218952960 extension.py:148] ----- flow_to_sklearn START o=0, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.427166 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=0, rval=0
+I0703 12:38:14.427214 139733218952960 extension.py:679] ----- flow_parameter=warm_start, value=false
+I0703 12:38:14.427260 139733218952960 extension.py:148] ----- flow_to_sklearn START o=false, components=OrderedDict(), init_defaults=False
+I0703 12:38:14.427311 139733218952960 extension.py:245] ----- flow_to_sklearn END   o=False, rval=False
+I0703 12:38:14.427641 139733218952960 extension.py:245] ---- flow_to_sklearn END   o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561860&gt;, rval=RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;entropy&#39;,
+            max_depth=None, max_features=0.2, max_leaf_nodes=None,
+            min_impurity_decrease=0.0, min_impurity_split=None,
+            min_samples_leaf=1, min_samples_split=2,
+            min_weight_fraction_leaf=0.0, n_estimators=16, n_jobs=None,
+            oob_score=False, random_state=42, verbose=0, warm_start=False)
+I0703 12:38:14.427964 139733218952960 extension.py:245] --- flow_to_sklearn END   o={&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;randomforestclassifier&#39;, &#39;step_name&#39;: &#39;randomforestclassifier&#39;}}, rval=(&#39;randomforestclassifier&#39;, RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;entropy&#39;,
+            max_depth=None, max_features=0.2, max_leaf_nodes=None,
+            min_impurity_decrease=0.0, min_impurity_split=None,
+            min_samples_leaf=1, min_samples_split=2,
+            min_weight_fraction_leaf=0.0, n_estimators=16, n_jobs=None,
+            oob_score=False, random_state=42, verbose=0, warm_start=False))
+I0703 12:38:14.428354 139733218952960 extension.py:245] -- flow_to_sklearn END   o=[{&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;simpleimputer&#39;, &#39;step_name&#39;: &#39;simpleimputer&#39;}}, {&#39;oml-python:serialized_object&#39;: &#39;component_reference&#39;, &#39;value&#39;: {&#39;key&#39;: &#39;randomforestclassifier&#39;, &#39;step_name&#39;: &#39;randomforestclassifier&#39;}}], rval=[(&#39;simpleimputer&#39;, SimpleImputer(copy=True, fill_value=None, missing_values=nan,
+       strategy=&#39;median&#39;, verbose=0)), (&#39;randomforestclassifier&#39;, RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;entropy&#39;,
+            max_depth=None, max_features=0.2, max_leaf_nodes=None,
+            min_impurity_decrease=0.0, min_impurity_split=None,
+            min_samples_leaf=1, min_samples_split=2,
+            min_weight_fraction_leaf=0.0, n_estimators=16, n_jobs=None,
+            oob_score=False, random_state=42, verbose=0, warm_start=False))]
+I0703 12:38:14.428890 139733218952960 extension.py:245] - flow_to_sklearn END   o=&lt;openml.flows.flow.OpenMLFlow object at 0x7f15a9561b70&gt;, rval=Pipeline(memory=None,
+     steps=[(&#39;simpleimputer&#39;, SimpleImputer(copy=True, fill_value=None, missing_values=nan,
+       strategy=&#39;median&#39;, verbose=0)), (&#39;randomforestclassifier&#39;, RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;entropy&#39;,
+            max_depth=None, max_features=0.2, max_leaf_nodes=None,
+ ...mators=16, n_jobs=None,
+            oob_score=False, random_state=42, verbose=0, warm_start=False))])
+I0703 12:38:14.531917 139733218952960 functions.py:432] Going to execute flow &#39;sklearn.pipeline.Pipeline(simpleimputer=sklearn.impute.SimpleImputer,randomforestclassifier=sklearn.ensemble.forest.RandomForestClassifier)&#39; on task 6 for repeat 0 fold 0 sample 0.
+I0703 12:38:14.555600 139733218952960 functions.py:255] Executed Task 6 on local Flow with name sklearn.pipeline.Pipeline(simpleimputer=sklearn.impute.SimpleImputer,randomforestclassifier=sklearn.ensemble.forest.RandomForestClassifier).
+</pre></div>
+</div>
 </div>
 <div class="section" id="we-will-verify-that-the-obtained-results-are-exactly-the-same">
 <h2>3) We will verify that the obtained results are exactly the same.<a class="headerlink" href="#we-will-verify-that-the-obtained-results-are-exactly-the-same" title="Permalink to this headline">¶</a></h2>
@@ -226,7 +365,7 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">openml</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">stop_using_configuration_for_example</span><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  8.579 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.375 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-run-setup-tutorial-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/aefb771b9f18ce5b432e1f778f60c660/run_setup_tutorial.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">run_setup_tutorial.py</span></code></a></p>
@@ -235,7 +374,7 @@ server from crowding with example datasets, tasks, runs, and so on.</p>
 <p><a class="reference download internal" download="" href="../_downloads/abb1434300cd47ee668f4f1d9b777726/run_setup_tutorial.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">run_setup_tutorial.ipynb</span></code></a></p>
 </div>
 </div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 </div>
 

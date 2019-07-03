@@ -12,6 +12,7 @@ OpenML Run Example
 
 An example of an automated machine learning experiment.
 
+
 .. code-block:: default
 
     import openml
@@ -56,6 +57,15 @@ An example of an automated machine learning experiment.
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+
 
 
 Download the OpenML task for the german credit card dataset.
@@ -91,7 +101,39 @@ Run the scikit-learn model on the task (requires an API key).
 
  .. code-block:: none
 
-    URL for run: https://test.openml.org/api/v1/xml/run/28845
+    I0703 12:38:52.434911 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 0 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.488517 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 1 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.538849 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 2 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.588593 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 3 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.638321 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 4 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.688356 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 5 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.738678 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 6 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.788713 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 7 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.839610 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 8 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.889438 139733218952960 functions.py:432] Going to execute flow 'sklearn.pipeline.Pipeline(imputer=sklearn.preprocessing.imputation.Imputer,estimator=sklearn.tree.tree.DecisionTreeClassifier)' on task 97 for repeat 0 fold 9 sample 0.
+    /home/travis/miniconda/envs/testenv/lib/python3.7/site-packages/sklearn/utils/deprecation.py:58: DeprecationWarning: Class Imputer is deprecated; Imputer was deprecated in version 0.20 and will be removed in 0.22. Import impute.SimpleImputer from sklearn instead.
+      warnings.warn(msg, category=DeprecationWarning)
+    I0703 12:38:52.898526 139733218952960 functions.py:255] Executed Task 97 with Flow id:198
+    URL for run: https://test.openml.org/api/v1/xml/run/38654
+
 
 
 
@@ -107,7 +149,7 @@ Run the scikit-learn model on the task (requires an API key).
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.425 seconds)
+   **Total running time of the script:** ( 0 minutes  5.742 seconds)
 
 
 .. _sphx_glr_download_examples_sklearn_openml_run_example.py:
@@ -135,4 +177,4 @@ Run the scikit-learn model on the task (requires an API key).
 
  .. rst-class:: sphx-glr-signature
 
-    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

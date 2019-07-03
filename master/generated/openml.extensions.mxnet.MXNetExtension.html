@@ -156,21 +156,19 @@
 <dt id="openml.extensions.mxnet.MXNetExtension.compile_additional_information">
 <code class="sig-name descname">compile_additional_information</code><span class="sig-paren">(</span><em class="sig-param">self, task: 'OpenMLTask', additional_information: List[Tuple[int, int, Any]]</em><span class="sig-paren">)</span> &#x2192; Dict[str, Tuple[str, str]]<a class="headerlink" href="#openml.extensions.mxnet.MXNetExtension.compile_additional_information" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compiles additional information provided by the extension during the runs into a final
-set of files.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>task</strong><span class="classifier">OpenMLTask</span></dt><dd><p>The task the model was run on.</p>
-</dd>
-<dt><strong>additional_information: List[Tuple[int, int, Any]]</strong></dt><dd><p>A list of (fold, repetition, additional information) tuples obtained during training.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt><strong>files</strong><span class="classifier">Dict[str, Tuple[str, str]]</span></dt><dd><p>A dictionary of files with their file name and contents.</p>
+set of files.
+Parameters
+———-
+task : OpenMLTask</p>
+<blockquote>
+<div><p>The task the model was run on.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>additional_information: List[Tuple[int, int, Any]]</dt><dd><p>A list of (fold, repetition, additional information) tuples obtained during training.</p>
 </dd>
 </dl>
+<dl class="simple">
+<dt>files<span class="classifier">Dict[str, Tuple[str, str]]</span></dt><dd><p>A dictionary of files with their file name and contents.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -234,7 +232,7 @@ ignored and a flow with its defaults is returned.</p>
 <dt id="openml.extensions.mxnet.MXNetExtension.instantiate_model_from_hpo_class">
 <code class="sig-name descname">instantiate_model_from_hpo_class</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em>, <em class="sig-param">trace_iteration: openml.runs.trace.OpenMLTraceIteration</em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#openml.extensions.mxnet.MXNetExtension.instantiate_model_from_hpo_class" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instantiate a <code class="docutils literal notranslate"><span class="pre">base_estimator</span></code> which can be searched over by the hyperparameter
-optimization model.</p>
+optimization model (UNUSED)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">

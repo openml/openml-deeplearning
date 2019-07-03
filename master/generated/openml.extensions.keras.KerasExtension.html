@@ -196,7 +196,7 @@ set of files.</p>
 <dl class="method">
 <dt id="openml.extensions.keras.KerasExtension.flow_to_model">
 <code class="sig-name descname">flow_to_model</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">flow: 'OpenMLFlow'</em>, <em class="sig-param">initialize_with_defaults: bool = False</em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#openml.extensions.keras.KerasExtension.flow_to_model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initializes a keras model based on a flow.</p>
+<dd><p>Initializes a Keras model based on a flow.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -234,7 +234,7 @@ ignored and a flow with its defaults is returned.</p>
 <dt id="openml.extensions.keras.KerasExtension.instantiate_model_from_hpo_class">
 <code class="sig-name descname">instantiate_model_from_hpo_class</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em>, <em class="sig-param">trace_iteration: openml.runs.trace.OpenMLTraceIteration</em><span class="sig-paren">)</span> &#x2192; Any<a class="headerlink" href="#openml.extensions.keras.KerasExtension.instantiate_model_from_hpo_class" title="Permalink to this definition">¶</a></dt>
 <dd><p>Instantiate a <code class="docutils literal notranslate"><span class="pre">base_estimator</span></code> which can be searched over by the hyperparameter
-optimization model.</p>
+optimization model (UNUSED)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -275,7 +275,7 @@ near future.</p>
 <dl class="method">
 <dt id="openml.extensions.keras.KerasExtension.model_to_flow">
 <code class="sig-name descname">model_to_flow</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">model: Any</em><span class="sig-paren">)</span> &#x2192; 'OpenMLFlow'<a class="headerlink" href="#openml.extensions.keras.KerasExtension.model_to_flow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform a keras model to a flow for uploading it to OpenML.</p>
+<dd><p>Transform a Keras model to a flow for uploading it to OpenML.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
