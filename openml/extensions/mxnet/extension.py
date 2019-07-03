@@ -1,20 +1,19 @@
-from collections import OrderedDict  # noqa: F401
 import copy
-from distutils.version import LooseVersion
 import importlib
 import json
 import re
 import sys
-import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import warnings
 import zlib
+from collections import OrderedDict  # noqa: F401
+from distutils.version import LooseVersion
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+import mxnet
+import mxnet.autograd
 import numpy as np
 import pandas as pd
 import scipy.sparse
-import mxnet
-import mxnet.autograd
 
 import openml
 from openml.exceptions import PyOpenMLError
@@ -28,18 +27,10 @@ from openml.tasks import (
     OpenMLRegressionTask,
 )
 
-
-if sys.version_info >= (3, 5):
-    from json.decoder import JSONDecodeError
-else:
-    JSONDecodeError = ValueError
-
-
 DEPENDENCIES_PATTERN = re.compile(
     r'^(?P<name>[\w\-]+)((?P<operation>==|>=|>)'
     r'(?P<version>(\d+\.)?(\d+\.)?(\d+)?(dev)?[0-9]*))?$'
 )
-
 
 SIMPLE_NUMPY_TYPES = [nptype for type_cat, nptypes in np.sctypes.items()
                       for nptype in nptypes if type_cat != 'others']
@@ -199,10 +190,8 @@ class MXNetExtension(Extension):
 
     @classmethod
     def _is_mxnet_flow(cls, flow: OpenMLFlow) -> bool:
-        return (
-            flow.external_version.startswith('mxnet==')
-            or ',mxnet==' in flow.external_version
-        )
+        return (flow.external_version.startswith('mxnet==')
+                or ',mxnet==' in flow.external_version)
 
     def _serialize_model(self, model: Any) -> OpenMLFlow:
         """Create an OpenMLFlow.
@@ -265,9 +254,9 @@ class MXNetExtension(Extension):
         return flow
 
     def _get_external_version_string(
-        self,
-        model: Any,
-        sub_components: Dict[str, OpenMLFlow],
+            self,
+            model: Any,
+            sub_components: Dict[str, OpenMLFlow],
     ) -> str:
         # Create external version string for a flow, given the model and the
         # already parsed dictionary of sub_components. Retrieves the external
@@ -343,23 +332,17 @@ class MXNetExtension(Extension):
         )
 
     def _extract_information_from_model(
-        self,
-        model: Any,
+            self,
+            model: Any,
     ) -> Tuple[
         'OrderedDict[str, Optional[str]]',
         'OrderedDict[str, Optional[Dict]]',
         'OrderedDict[str, OpenMLFlow]',
         Set,
     ]:
-        # This function contains four "global" states and is quite long and
-        # complicated. If it gets to complicated to ensure it's correctness,
-        # it would be best to make it a class with the four "global" states being
-        # the class attributes and the if/elif/else in the for-loop calls to
-        # separate class methods
-
-        # stores all entities that should become subcomponents
+        # Stores all entities that should become subcomponents (UNUSED)
         sub_components = OrderedDict()  # type: OrderedDict[str, OpenMLFlow]
-        # stores the keys of all subcomponents that should become
+        # Stores the keys of all subcomponents that should become (UNUSED)
         sub_components_explicit = set()  # type: Set
         parameters = OrderedDict()  # type: OrderedDict[str, Optional[str]]
         parameters_meta_info = OrderedDict()  # type: OrderedDict[str, Optional[Dict]]
@@ -374,9 +357,9 @@ class MXNetExtension(Extension):
         return parameters, parameters_meta_info, sub_components, sub_components_explicit
 
     def _deserialize_model(
-        self,
-        flow: OpenMLFlow,
-        keep_defaults: bool,
+            self,
+            flow: OpenMLFlow,
+            keep_defaults: bool,
     ) -> Any:
         self._check_dependencies(flow.dependencies)
 
@@ -422,45 +405,11 @@ class MXNetExtension(Extension):
                                  '%s not satisfied.' % dependency_string)
 
     def _format_external_version(
-        self,
-        model_package_name: str,
-        model_package_version_number: str,
+            self,
+            model_package_name: str,
+            model_package_version_number: str,
     ) -> str:
         return '%s==%s' % (model_package_name, model_package_version_number)
-
-    def _can_measure_cputime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a single core (if so, openml-python can measure cpu-times)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            False
-        """
-        return False
-
-    def _can_measure_wallclocktime(self, model: Any) -> bool:
-        """
-        Returns True if the parameter settings of model are chosen s.t. the model
-        will run on a preset number of cores (if so, openml-python can measure wall-clock time)
-
-        Parameters:
-        -----------
-        model:
-            The model that will be fitted
-
-        Returns:
-        --------
-        bool:
-            True
-        """
-        return True
 
     ################################################################################################
     # Methods for performing runs with extension modules
@@ -506,14 +455,14 @@ class MXNetExtension(Extension):
         return model
 
     def _run_model_on_fold(
-        self,
-        model: Any,
-        task: 'OpenMLTask',
-        X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
-        rep_no: int,
-        fold_no: int,
-        y_train: Optional[np.ndarray] = None,
-        X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
+            self,
+            model: Any,
+            task: 'OpenMLTask',
+            X_train: Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame],
+            rep_no: int,
+            fold_no: int,
+            y_train: Optional[np.ndarray] = None,
+            X_test: Optional[Union[np.ndarray, scipy.sparse.spmatrix, pd.DataFrame]] = None,
     ) -> Tuple[
         np.ndarray,
         np.ndarray,
@@ -553,17 +502,14 @@ class MXNetExtension(Extension):
 
         Returns
         -------
-        predictions : np.ndarray
-            Model predictions.
-        probabilities :  Optional, np.ndarray
-            Predicted probabilities (only applicable for supervised classification tasks).
+
+        pred_y : np.ndarray
+
+        proba_y :np.ndarray
+
         user_defined_measures : OrderedDict[str, float]
-            User defined measures that were generated on this fold
-        trace : Optional, OpenMLRunTrace
-            Hyperparameter optimization trace (only applicable for supervised tasks with
-            hyperparameter optimization).
-        additional_information: Optional, Any
-            Additional information provided by the extension to be converted into additional files.
+
+        trace : Optional[OpenMLRunTrace]
         """
 
         def _prediction_to_probabilities(y: np.ndarray, classes: List[Any]) -> np.ndarray:
@@ -606,18 +552,11 @@ class MXNetExtension(Extension):
         if initializer is not None:
             model_copy.collect_params().initialize(initializer)
 
-        # Runtime can be measured if the model is run sequentially
-        can_measure_cputime = self._can_measure_cputime(model_copy)
-        can_measure_wallclocktime = self._can_measure_wallclocktime(model_copy)
-
         user_defined_measures = OrderedDict()  # type: 'OrderedDict[str, float]'
 
         reported_metrics = None
 
         try:
-            # for measuring runtime. Only available since Python 3.3
-            modelfit_start_cputime = time.process_time()
-            modelfit_start_walltime = time.time()
 
             if isinstance(task, OpenMLSupervisedTask):
                 X_train_mxnet = mxnet.nd.array(X_train)
@@ -656,23 +595,12 @@ class MXNetExtension(Extension):
                             (epoch, i, loss.mean().asscalar(), iteration_metric.get())
                         )
 
-            modelfit_dur_cputime = (time.process_time() - modelfit_start_cputime) * 1000
-            if can_measure_cputime:
-                user_defined_measures['usercpu_time_millis_training'] = modelfit_dur_cputime
-
-            modelfit_dur_walltime = (time.time() - modelfit_start_walltime) * 1000
-            if can_measure_wallclocktime:
-                user_defined_measures['wall_clock_time_millis_training'] = modelfit_dur_walltime
-
         except AttributeError as e:
             # typically happens when training a regressor on classification task
             raise PyOpenMLError(str(e))
 
         if isinstance(task, OpenMLClassificationTask):
             model_classes = np.amax(y_train)
-
-        modelpredict_start_cputime = time.process_time()
-        modelpredict_start_walltime = time.time()
 
         # In supervised learning this returns the predictions for Y
         if isinstance(task, OpenMLSupervisedTask):
@@ -684,18 +612,6 @@ class MXNetExtension(Extension):
             pred_y = pred_y.asnumpy()
         else:
             raise ValueError(task)
-
-        if can_measure_cputime:
-            modelpredict_duration_cputime = (time.process_time()
-                                             - modelpredict_start_cputime) * 1000
-            user_defined_measures['usercpu_time_millis_testing'] = modelpredict_duration_cputime
-            user_defined_measures['usercpu_time_millis'] = (modelfit_dur_cputime
-                                                            + modelpredict_duration_cputime)
-        if can_measure_wallclocktime:
-            modelpredict_duration_walltime = (time.time() - modelpredict_start_walltime) * 1000
-            user_defined_measures['wall_clock_time_millis_testing'] = modelpredict_duration_walltime
-            user_defined_measures['wall_clock_time_millis'] = (modelfit_dur_walltime
-                                                               + modelpredict_duration_walltime)
 
         if isinstance(task, OpenMLClassificationTask):
 
@@ -753,14 +669,12 @@ class MXNetExtension(Extension):
     ) -> Dict[str, Tuple[str, str]]:
         """Compiles additional information provided by the extension during the runs into a final
         set of files.
-
         Parameters
         ----------
         task : OpenMLTask
             The task the model was run on.
         additional_information: List[Tuple[int, int, Any]]
             A list of (fold, repetition, additional information) tuples obtained during training.
-
         Returns
         -------
         files : Dict[str, Tuple[str, str]]
@@ -801,9 +715,9 @@ class MXNetExtension(Extension):
             }
 
     def obtain_parameter_values(
-        self,
-        flow: 'OpenMLFlow',
-        model: Any = None,
+            self,
+            flow: 'OpenMLFlow',
+            model: Any = None,
     ) -> List[Dict[str, Any]]:
         """Extracts all parameter settings required for the flow from the model.
 
@@ -895,12 +809,12 @@ class MXNetExtension(Extension):
     # Methods for hyperparameter optimization
 
     def instantiate_model_from_hpo_class(
-        self,
-        model: Any,
-        trace_iteration: OpenMLTraceIteration,
+            self,
+            model: Any,
+            trace_iteration: OpenMLTraceIteration,
     ) -> Any:
         """Instantiate a ``base_estimator`` which can be searched over by the hyperparameter
-        optimization model.
+        optimization model (UNUSED)
 
         Parameters
         ----------
