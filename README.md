@@ -14,11 +14,7 @@ You can find usage examples in the [documentation](https://openml.github.io/open
 Adrian-Stefan Mares, Andrei Danila, Bogdan Enache, Gergana Goncheva, Loïc Alexander Hijl, Veselin Minev, Thanh-Dat Nguyen, Antoine Labasse, Lutou Nijhuis, Claudiu-Teodor Nohai, Dragos Mihai Serban, Tsvetan Zahariev, Sonya Zarkova
 
 ### Code Structure
-In the code structure, we are using the following 3 categories:
-* DON'T CHECK - AUTOMATICALLY GENERATED
-* DON'T CHECK - 3RD PARTY SOURCES
-* CHECK - OUR CODE
-
+<pre>
 .
 ├── appveyor - DON'T CHECK - AUTOMATICALLY GENERATED
 │   └── run_with_env.cmd
@@ -273,3 +269,4 @@ In the code structure, we are using the following 3 categories:
     │   └── utils.py
     ├── utils.py
     └── visualizer.py
+</pre>
