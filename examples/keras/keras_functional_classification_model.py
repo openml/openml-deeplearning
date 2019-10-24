@@ -7,7 +7,7 @@ An example of a functional (non-sequential) network used as an OpenML flow.
 
 import keras
 
-import openml.extensions.keras
+import openml.extensions.keras.KerasExtension
 
 ############################################################################
 # Define an input layer for the network. In this example we are using the

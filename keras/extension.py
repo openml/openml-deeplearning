@@ -980,4 +980,3 @@ class KerasExtension(Extension):
         return model
 
 
-register_extension(KerasExtension)

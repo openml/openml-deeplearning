@@ -9,7 +9,7 @@ and the loss in real time.
 import mxnet
 
 import openml
-import openml.extensions.mxnet
+import openml.extensions.mxnet.MXNetExtension
 
 import logging
 

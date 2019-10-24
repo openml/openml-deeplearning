@@ -830,4 +830,3 @@ class MXNetExtension(Extension):
         return model
 
 
-register_extension(MXNetExtension)
